@@ -1,0 +1,7 @@
+# Forzar saltos de linea LF en scripts y archivos de contenedor.
+# Evita que en Windows se conviertan a CRLF y rompan la imagen Docker.
+*.sh            text eol=lf
+docker/*        text eol=lf
+Dockerfile      text eol=lf
+.dockerignore   text eol=lf
+entrypoint.sh   text eol=lf
