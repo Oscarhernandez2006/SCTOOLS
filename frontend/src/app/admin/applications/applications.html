@@ -1,0 +1,297 @@
+<!-- Toast -->
+@if (toastVisible()) {
+  <div class="toast">
+    <span class="material-symbols-outlined toast__icon">check_circle</span>
+    {{ toastMessage() }}
+  </div>
+}
+
+<!-- Topbar -->
+<header class="topbar">
+  <div class="topbar__left">
+    <button class="topbar__back" (click)="goBack()" title="Volver al portal">
+      <span class="material-symbols-outlined">arrow_back</span>
+    </button>
+    <div class="topbar__brand">
+      <span class="material-symbols-outlined topbar__brand-icon">grid_view</span>
+      <div>
+        <h1 class="topbar__title">Administrar aplicaciones</h1>
+        <p class="topbar__subtitle">Crea, edita y publica las herramientas del portal</p>
+      </div>
+    </div>
+  </div>
+  <button class="btn btn--primary" (click)="openCreate()">
+    <span class="material-symbols-outlined">add</span>
+    Nueva aplicación
+  </button>
+</header>
+
+<div class="container">
+  <div class="toolbar">
+    <div class="search">
+      <span class="material-symbols-outlined search__icon">search</span>
+      <input
+        class="search__input"
+        type="text"
+        placeholder="Buscar por nombre o categoría..."
+        [ngModel]="searchQuery()"
+        (ngModelChange)="searchQuery.set($event)"
+      />
+    </div>
+    <span class="toolbar__count">{{ filteredApps().length }} aplicaciones</span>
+  </div>
+
+  @if (loading()) {
+    <div class="placeholder">Cargando aplicaciones...</div>
+  } @else {
+    <div class="cards">
+      @for (app of filteredApps(); track app.id) {
+        <div class="app-row" [class.app-row--inactive]="!app.is_active">
+          <span class="app-row__icon" [style.background]="(app.color || '#3D7A5F') + '22'" [style.color]="app.color || '#3D7A5F'">
+            <span class="material-symbols-outlined">{{ app.icon || 'apps' }}</span>
+          </span>
+          <div class="app-row__info">
+            <div class="app-row__head">
+              <span class="app-row__name">{{ app.name }}</span>
+              <span class="app-row__type">{{ app.type === 'app' ? 'Aplicación' : 'Formulario' }}</span>
+              @if (app.sso_enabled) { <span class="app-row__badge app-row__badge--sso">SSO</span> }
+              @if (!app.is_active) { <span class="app-row__badge app-row__badge--off">Inactiva</span> }
+            </div>
+            <span class="app-row__desc">{{ app.description }}</span>
+            <a class="app-row__url" [href]="app.url" target="_blank" rel="noopener">
+              <span class="material-symbols-outlined">link</span>{{ app.url }}
+            </a>
+          </div>
+          <div class="app-row__actions">
+            <button class="icon-btn" (click)="openEdit(app)" title="Editar">
+              <span class="material-symbols-outlined">edit</span>
+            </button>
+            <button class="icon-btn icon-btn--danger" (click)="askDelete(app)" title="Eliminar">
+              <span class="material-symbols-outlined">delete</span>
+            </button>
+          </div>
+        </div>
+      } @empty {
+        <div class="placeholder">
+          <span class="material-symbols-outlined placeholder__icon">apps</span>
+          <p>No hay aplicaciones todavía. Crea la primera con "Nueva aplicación".</p>
+        </div>
+      }
+    </div>
+  }
+</div>
+
+<!-- Modal crear/editar -->
+@if (modalOpen()) {
+  <div class="modal-overlay" (click)="closeModal()"></div>
+  <div class="modal">
+    <div class="modal__header">
+      <h2 class="modal__title">{{ editing() ? 'Editar aplicación' : 'Nueva aplicación' }}</h2>
+      <button class="modal__close" (click)="closeModal()">
+        <span class="material-symbols-outlined">close</span>
+      </button>
+    </div>
+
+    <div class="modal__body">
+      <!-- Previsualización en vivo (como se verá en el portal) -->
+      <div class="live-preview">
+        <span class="live-preview__label">Vista previa</span>
+        <div class="prev-card" [style.--prev-accent]="form().color || '#3D7A5F'">
+          <div class="prev-card__icon-wrap" [style.background]="(form().color || '#3D7A5F') + '14'">
+            @if (form().logo) {
+              <img class="prev-card__logo" [src]="form().logo" [alt]="form().name" />
+            } @else {
+              <span class="material-symbols-outlined prev-card__icon" [style.color]="form().color || '#3D7A5F'">{{ form().icon || 'apps' }}</span>
+            }
+          </div>
+          <div class="prev-card__body">
+            <span class="prev-card__cat">{{ form().category || 'Categoría' }}</span>
+            <h3 class="prev-card__name">{{ form().name || 'Nombre de la aplicación' }}</h3>
+            <p class="prev-card__desc">{{ form().description || 'Descripción de la herramienta...' }}</p>
+          </div>
+          <div class="prev-card__footer">
+            <span class="prev-card__link">Abrir <span class="material-symbols-outlined">arrow_forward</span></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="field">
+        <label class="field__label">Nombre *</label>
+        <input class="field__input" type="text" [ngModel]="form().name" (ngModelChange)="onNameChange($event)" placeholder="Ej: SIGCAN" />
+      </div>
+
+      <div class="field-row">
+        <div class="field">
+          <label class="field__label">Identificador (slug) *</label>
+          <input class="field__input" type="text" [ngModel]="form().slug" (ngModelChange)="updateField('slug', $event)" placeholder="sigcan" />
+          <span class="field__hint">Solo minúsculas, números y guiones.</span>
+        </div>
+        <div class="field">
+          <label class="field__label">Categoría</label>
+          <input class="field__input" type="text" [ngModel]="form().category" (ngModelChange)="updateField('category', $event)" placeholder="Canastillas" />
+        </div>
+      </div>
+
+      <div class="field">
+        <label class="field__label">Enlace (URL) *</label>
+        <input class="field__input" type="url" [ngModel]="form().url" (ngModelChange)="updateField('url', $event)" placeholder="https://..." />
+      </div>
+
+      <div class="field">
+        <label class="field__label">Descripción</label>
+        <textarea class="field__input field__input--area" rows="2" [ngModel]="form().description" (ngModelChange)="updateField('description', $event)" placeholder="Breve descripción de la herramienta"></textarea>
+      </div>
+
+      <!-- Selector de ícono -->
+      <div class="field">
+        <label class="field__label">Ícono</label>
+        <div class="icon-select">
+          <button type="button" class="icon-select__trigger" (click)="toggleIconPicker()">
+            <span class="icon-select__chosen" [style.color]="form().color || '#3D7A5F'">
+              <span class="material-symbols-outlined">{{ form().icon || 'apps' }}</span>
+            </span>
+            <span class="icon-select__text">{{ form().icon || 'apps' }}</span>
+            <span class="material-symbols-outlined icon-select__caret">{{ iconPickerOpen() ? 'expand_less' : 'expand_more' }}</span>
+          </button>
+
+          @if (iconPickerOpen()) {
+            <div class="icon-picker">
+              <div class="icon-picker__search">
+                <span class="material-symbols-outlined">search</span>
+                <input
+                  type="text"
+                  placeholder="Buscar ícono..."
+                  [ngModel]="iconSearch()"
+                  (ngModelChange)="iconSearch.set($event)"
+                />
+              </div>
+              <div class="icon-picker__grid">
+                @for (ic of filteredIcons(); track ic) {
+                  <button
+                    type="button"
+                    class="icon-picker__item"
+                    [class.icon-picker__item--active]="form().icon === ic"
+                    [title]="ic"
+                    (click)="selectIcon(ic)"
+                  >
+                    <span class="material-symbols-outlined">{{ ic }}</span>
+                  </button>
+                } @empty {
+                  <span class="icon-picker__empty">Sin resultados</span>
+                }
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+
+      <div class="field">
+        <label class="field__label">Color</label>
+        <div class="color-field">
+          <input class="color-field__picker" type="color" [ngModel]="form().color" (ngModelChange)="updateField('color', $event)" />
+          <input class="field__input" type="text" [ngModel]="form().color" (ngModelChange)="updateField('color', $event)" placeholder="#3D7A5F" />
+        </div>
+      </div>
+
+      <div class="field-row">
+        <div class="field">
+          <label class="field__label">Tipo</label>
+          <select class="field__input" [ngModel]="form().type" (ngModelChange)="updateField('type', $event)">
+            <option value="app">Aplicación</option>
+            <option value="form">Formulario</option>
+          </select>
+        </div>
+        <div class="field">
+          <label class="field__label">Orden</label>
+          <input class="field__input" type="number" min="0" [ngModel]="form().sort_order" (ngModelChange)="updateField('sort_order', $event)" />
+        </div>
+      </div>
+
+      <!-- Subida de logo -->
+      <div class="field">
+        <label class="field__label">Logo (imagen, opcional)</label>
+        <div class="logo-upload">
+          @if (form().logo) {
+            <div class="logo-upload__preview">
+              <img [src]="form().logo" alt="Logo" />
+            </div>
+          } @else {
+            <div class="logo-upload__placeholder">
+              <span class="material-symbols-outlined">image</span>
+            </div>
+          }
+          <div class="logo-upload__actions">
+            <label class="btn btn--ghost btn--sm">
+              <span class="material-symbols-outlined">upload</span>
+              {{ form().logo ? 'Cambiar imagen' : 'Subir imagen' }}
+              <input type="file" accept="image/*" hidden (change)="onLogoSelected($event)" />
+            </label>
+            @if (form().logo) {
+              <button type="button" class="btn btn--ghost btn--sm" (click)="removeLogo()">
+                <span class="material-symbols-outlined">delete</span>
+                Quitar
+              </button>
+            }
+            <span class="logo-upload__hint">PNG, JPG o SVG. Máx. 1 MB. Si hay logo, reemplaza al ícono.</span>
+          </div>
+        </div>
+        @if (logoError()) {
+          <span class="field__error">{{ logoError() }}</span>
+        }
+      </div>
+
+      <div class="toggles">
+        <label class="toggle-line">
+          <span class="switch" [class.switch--on]="form().is_active">
+            <input type="checkbox" class="switch__input" [checked]="form().is_active" (change)="updateField('is_active', !form().is_active)" />
+            <span class="switch__track"><span class="switch__thumb"></span></span>
+          </span>
+          <span>
+            <span class="toggle-line__title">Activa</span>
+            <span class="toggle-line__desc">Visible en el portal para usuarios con acceso.</span>
+          </span>
+        </label>
+
+        <label class="toggle-line">
+          <span class="switch" [class.switch--on]="form().sso_enabled">
+            <input type="checkbox" class="switch__input" [checked]="form().sso_enabled" (change)="updateField('sso_enabled', !form().sso_enabled)" />
+            <span class="switch__track"><span class="switch__thumb"></span></span>
+          </span>
+          <span>
+            <span class="toggle-line__title">SSO habilitado</span>
+            <span class="toggle-line__desc">Inicio de sesión automático desde el portal (cuando esté implementado).</span>
+          </span>
+        </label>
+      </div>
+
+      @if (formError()) {
+        <div class="form-error">
+          <span class="material-symbols-outlined">error</span>
+          {{ formError() }}
+        </div>
+      }
+    </div>
+
+    <div class="modal__footer">
+      <button class="btn btn--ghost" (click)="closeModal()" [disabled]="saving()">Cancelar</button>
+      <button class="btn btn--primary" (click)="save()" [disabled]="saving()">
+        <span class="material-symbols-outlined">save</span>
+        {{ saving() ? 'Guardando...' : (editing() ? 'Guardar cambios' : 'Crear aplicación') }}
+      </button>
+    </div>
+  </div>
+}
+
+<!-- Confirmar eliminación -->
+@if (confirmDelete(); as app) {
+  <div class="modal-overlay" (click)="cancelDelete()"></div>
+  <div class="confirm">
+    <span class="material-symbols-outlined confirm__icon">warning</span>
+    <h3 class="confirm__title">Eliminar "{{ app.name }}"</h3>
+    <p class="confirm__text">Esta acción no se puede deshacer y quitará el acceso de todos los usuarios a esta aplicación.</p>
+    <div class="confirm__actions">
+      <button class="btn btn--ghost" (click)="cancelDelete()">Cancelar</button>
+      <button class="btn btn--danger" (click)="doDelete()">Eliminar</button>
+    </div>
+  </div>
+}

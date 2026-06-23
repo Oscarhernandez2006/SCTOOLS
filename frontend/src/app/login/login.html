@@ -1,0 +1,147 @@
+﻿<div class="login">
+  <!-- Panel izquierdo: carrusel -->
+  <aside class="login__aside">
+    <!-- Elementos decorativos de fondo -->
+    <div class="login__aside-deco">
+      <div class="login__aside-circle login__aside-circle--1"></div>
+      <div class="login__aside-circle login__aside-circle--2"></div>
+      <div class="login__aside-grid"></div>
+    </div>
+
+    <div class="login__carousel">
+      @for (slide of slides; track $index) {
+        <div class="login__slide" [class.login__slide--active]="activeSlide() === $index">
+          @if (slide.type === 'tagline') {
+            <!-- Slide tagline con cursor -->
+            <p class="login__tagline-line">Diferentes herramientas</p>
+            <p class="login__tagline-line">un mismo software</p>
+            <p class="login__tagline-line login__tagline-line--accent">al alcance de un click</p>
+            <div class="login__brand">
+              <span class="login__brand-name">SC TOOLS</span>
+              <span class="material-symbols-outlined login__brand-cursor">arrow_selector_tool</span>
+            </div>
+          } @else if (slide.type === 'features') {
+            <!-- Slide con lista de features -->
+            <img class="login__slide-logo" src="logosican.png" alt="SIGCAN Logo" />
+            <h1 class="login__slide-title">{{ slide.title }}</h1>
+            <p class="login__slide-subtitle">{{ slide.subtitle }}</p>
+            <ul class="login__feat-list">
+              @for (feat of slide.features; track feat.name) {
+                <li class="login__feat-item">
+                  <span class="material-symbols-outlined login__feat-icon">{{ feat.icon }}</span>
+                  <span>{{ feat.name }}</span>
+                </li>
+              }
+            </ul>
+          } @else {
+            <!-- Slide informativo -->
+            <div class="login__slide-icon-ring">
+              <span class="material-symbols-outlined login__slide-icon">{{ slide.icon }}</span>
+            </div>
+            <h1 class="login__slide-title">{{ slide.title }}</h1>
+            <p class="login__slide-subtitle">{{ slide.subtitle }}</p>
+            <p class="login__slide-desc">{{ slide.description }}</p>
+          }
+        </div>
+      }
+    </div>
+
+    <!-- Progress bars -->
+    <div class="login__progress">
+      @for (slide of slides; track $index) {
+        <button
+          class="login__progress-item"
+          [class.login__progress-item--active]="activeSlide() === $index"
+          (click)="goToSlide($index)"
+        >
+          <div class="login__progress-bar"></div>
+        </button>
+      }
+    </div>
+  </aside>
+
+  <!-- Panel derecho: formulario -->
+  <main class="login__main">
+    <div class="login__card">
+      <div class="login__card-header">
+        <div class="login__mobile-brand">
+          <span>SC TOOLS</span>
+        </div>
+        <h2 class="login__title">Iniciar sesi&#243;n</h2>
+        <p class="login__subtitle">Ingresa tus credenciales para continuar</p>
+      </div>
+
+      <form class="login__form" (ngSubmit)="onLogin()">
+        <div class="login__field">
+          <label class="login__label" for="cedula">
+            <span class="material-symbols-outlined login__label-icon">badge</span>
+            C&#233;dula
+          </label>
+          <div class="login__input-wrapper">
+            <span class="material-symbols-outlined login__input-icon">person</span>
+            <input
+              class="login__input"
+              id="cedula"
+              type="text"
+              inputmode="numeric"
+              pattern="[0-9]*"
+              placeholder="Ingresa tu n&#250;mero de c&#233;dula"
+              [(ngModel)]="cedula"
+              name="cedula"
+              autocomplete="username"
+              autofocus
+              (keypress)="onlyNumbers($event)"
+            />
+          </div>
+        </div>
+
+        <div class="login__field">
+          <label class="login__label" for="password">
+            <span class="material-symbols-outlined login__label-icon">lock</span>
+            Contrase&#241;a
+          </label>
+          <div class="login__input-wrapper">
+            <span class="material-symbols-outlined login__input-icon">key</span>
+            <input
+              class="login__input"
+              id="password"
+              [type]="showPassword() ? 'text' : 'password'"
+              placeholder="&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;"
+              [(ngModel)]="password"
+              name="password"
+              autocomplete="current-password"
+            />
+            <button type="button" class="login__toggle-pw" (click)="togglePassword()">
+              <span class="material-symbols-outlined">{{ showPassword() ? 'visibility_off' : 'visibility' }}</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="login__options">
+          <label class="login__remember">
+            <input type="checkbox" />
+            <span>Recordar sesi&#243;n</span>
+          </label>
+          <a class="login__forgot" href="#">&#191;Olvidaste tu contrase&#241;a?</a>
+        </div>
+
+        @if (errorMessage()) {
+          <div class="login__error" [class.login__error--shake]="shakeError()">
+            <span class="material-symbols-outlined login__error-icon">error</span>
+            {{ errorMessage() }}
+          </div>
+        }
+
+        <button type="submit" class="btn btn--primary login__btn-submit" [disabled]="loading()">
+          @if (loading()) {
+            <span class="login__spinner"></span>
+            Ingresando...
+          } @else {
+            <span class="material-symbols-outlined">login</span>
+            Iniciar sesi&#243;n
+          }
+        </button>
+      </form>
+    </div>
+  </main>
+</div>

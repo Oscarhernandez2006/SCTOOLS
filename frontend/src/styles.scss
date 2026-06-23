@@ -1,0 +1,163 @@
+/* ============================================================
+   SC TOOLS — Global Styles (Obsidian & Sage)
+   ============================================================ */
+
+:root {
+  --color-primary: #12191F;
+  --color-primary-mid: #1E2D2F;
+  --color-accent: #3D7A5F;
+  --color-accent-light: #6BAE8A;
+  --color-surface: #F0F4F2;
+  --color-canvas: #FAFCFB;
+  --color-alert: #E8734A;
+  --color-text-primary: #12191F;
+  --color-text-secondary: #4A5568;
+  --color-text-muted: #8AA39A;
+  --color-border: #D5DDD9;
+  --color-white: #FFFFFF;
+
+  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-heading: 'Plus Jakarta Sans', 'Inter', sans-serif;
+
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+
+  --shadow-sm: 0 1px 3px rgba(18, 25, 31, 0.06);
+  --shadow-md: 0 4px 12px rgba(18, 25, 31, 0.08);
+  --shadow-lg: 0 8px 30px rgba(18, 25, 31, 0.12);
+  --shadow-xl: 0 16px 48px rgba(18, 25, 31, 0.16);
+
+  --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-base: 250ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: 400ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ---- Reset ---- */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: var(--font-body);
+  color: var(--color-text-primary);
+  background: var(--color-canvas);
+  line-height: 1.6;
+  min-height: 100vh;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading);
+  line-height: 1.25;
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+input, button, textarea {
+  font-family: inherit;
+  font-size: inherit;
+  border: none;
+  outline: none;
+}
+
+/* ---- Material Symbols config ---- */
+.material-symbols-outlined {
+  font-variation-settings:
+    'FILL' 0,
+    'wght' 400,
+    'GRAD' 0,
+    'opsz' 24;
+  vertical-align: middle;
+  user-select: none;
+}
+
+/* ---- Buttons ---- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  border-radius: var(--radius-md);
+  font-weight: 500;
+  font-size: 0.9375rem;
+  cursor: pointer;
+  transition: all var(--transition-base);
+  border: 2px solid transparent;
+  line-height: 1;
+
+  &:active {
+    transform: scale(0.97);
+  }
+}
+
+.btn--primary {
+  background: var(--color-accent);
+  color: var(--color-white);
+
+  &:hover {
+    background: #357052;
+    box-shadow: var(--shadow-md);
+  }
+}
+
+.btn--secondary {
+  background: transparent;
+  color: var(--color-text-primary);
+  border-color: var(--color-border);
+
+  &:hover {
+    border-color: var(--color-accent);
+    color: var(--color-accent);
+    background: rgba(61, 122, 95, 0.04);
+  }
+}
+
+.btn--ghost {
+  background: transparent;
+  color: var(--color-text-secondary);
+
+  &:hover {
+    color: var(--color-accent);
+    background: rgba(61, 122, 95, 0.06);
+  }
+}
+
+/* ---- Card ---- */
+.card {
+  background: var(--color-white);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-sm);
+  transition: all var(--transition-base);
+}
+
+.card--hover:hover {
+  box-shadow: var(--shadow-lg);
+  border-color: var(--color-accent-light);
+  transform: translateY(-2px) scale(1.02);
+}
+
+/* ---- Scrollbar ---- */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-text-muted);
+  border-radius: 3px;
+}

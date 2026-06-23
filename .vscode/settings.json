@@ -1,0 +1,8 @@
+{
+    "chat.tools.terminal.autoApprove": {
+        "/^cd \"c:\\\\Users\\\\sistemas\\\\Desktop\\\\SC TOOLS\\\\backend\"; php artisan make:seeder UserSeeder 2>&1$/": {
+            "approve": true,
+            "matchCommandLine": true
+        }
+    }
+}

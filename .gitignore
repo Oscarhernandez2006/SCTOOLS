@@ -1,0 +1,23 @@
+# ===== Seguridad: nunca subir secretos =====
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# ===== Dependencias =====
+node_modules/
+vendor/
+
+# ===== Builds / cache =====
+dist/
+/out-tsc/
+.angular/cache/
+backend/public/build/
+backend/public/hot/
+backend/storage/*.key
+
+# ===== Logs y temporales =====
+*.log
+Thumbs.db
+.DS_Store

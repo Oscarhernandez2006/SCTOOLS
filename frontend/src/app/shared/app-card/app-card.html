@@ -1,0 +1,30 @@
+<div
+  class="app-card card card--hover"
+  @fadeSlideIn
+  (click)="onClick()"
+  [style.--card-accent]="data().color"
+>
+  <div class="app-card__icon-wrapper" [style.background]="data().color + '14'">
+    @if (data().logo) {
+      <img class="app-card__logo" [src]="data().logo" [alt]="data().name" />
+    } @else {
+      <span
+        class="material-symbols-outlined app-card__icon"
+        [style.color]="data().color"
+      >{{ data().icon }}</span>
+    }
+  </div>
+
+  <div class="app-card__body">
+    <span class="app-card__category">{{ data().category }}</span>
+    <h3 class="app-card__name">{{ data().name }}</h3>
+    <p class="app-card__description">{{ data().description }}</p>
+  </div>
+
+  <div class="app-card__footer">
+    <span class="app-card__link">
+      Abrir
+      <span class="material-symbols-outlined app-card__arrow">arrow_forward</span>
+    </span>
+  </div>
+</div>

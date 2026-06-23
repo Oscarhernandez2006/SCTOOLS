@@ -1,0 +1,322 @@
+<!-- Toast -->
+@if (toastVisible()) {
+  <div class="toast">
+    <span class="material-symbols-outlined toast__icon">open_in_new</span>
+    {{ toastMessage() }}
+  </div>
+}
+
+<!-- Profile Modal -->
+@if (profileOpen()) {
+  <div class="profile-overlay" (click)="closeProfile()"></div>
+  <div class="profile-modal">
+    <div class="profile-modal__header">
+      <h2 class="profile-modal__title">Mi perfil</h2>
+      <button class="profile-modal__close" (click)="closeProfile()">
+        <span class="material-symbols-outlined">close</span>
+      </button>
+    </div>
+    <div class="profile-modal__body">
+      <div class="profile-modal__avatar">{{ currentUserInitials }}</div>
+      <h3 class="profile-modal__name">{{ currentUserName }}</h3>
+      <span class="profile-modal__role">Usuario del sistema</span>
+
+      <div class="profile-modal__fields">
+        <div class="profile-modal__field">
+          <span class="material-symbols-outlined profile-modal__field-icon">badge</span>
+          <div>
+            <span class="profile-modal__field-label">C&#233;dula</span>
+            <span class="profile-modal__field-value">{{ user()?.cedula }}</span>
+          </div>
+        </div>
+        <div class="profile-modal__field">
+          <span class="material-symbols-outlined profile-modal__field-icon">mail</span>
+          <div>
+            <span class="profile-modal__field-label">Correo electr&#243;nico</span>
+            <span class="profile-modal__field-value">{{ user()?.email }}</span>
+          </div>
+        </div>
+        <div class="profile-modal__field">
+          <span class="material-symbols-outlined profile-modal__field-icon">calendar_today</span>
+          <div>
+            <span class="profile-modal__field-label">Sesi&#243;n iniciada</span>
+            <span class="profile-modal__field-value">{{ currentDate | date:'dd MMM yyyy, h:mm a' }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Topbar -->
+<header class="topbar">
+  <div class="topbar__left">
+    <button class="topbar__toggle" (click)="toggleSidebar()">
+      <span class="material-symbols-outlined">menu</span>
+    </button>
+    <div class="topbar__brand">
+      <span class="topbar__name">SC<span class="topbar__name-accent">TOOLS</span></span>
+      <span class="material-symbols-outlined topbar__cursor">arrow_selector_tool</span>
+    </div>
+  </div>
+
+  <div class="topbar__right">
+    <!-- Reloj -->
+    <div class="topbar__clock">
+      <span class="material-symbols-outlined topbar__clock-icon">schedule</span>
+      <span class="topbar__clock-time">{{ currentTime() | date:'h:mm:ss a' }}</span>
+    </div>
+
+    <!-- Clima -->
+    @if (weatherTemp() !== null) {
+      <div class="topbar__weather">
+        <span class="material-symbols-outlined topbar__weather-icon">{{ weatherIcon() }}</span>
+        <span class="topbar__weather-temp">{{ weatherTemp() }}°C</span>
+      </div>
+    }
+
+    <!-- Calendario popover -->
+    <div class="topbar__calendar-wrapper">
+      <button class="topbar__icon-btn" (click)="calendarOpen.set(!calendarOpen())">
+        <span class="material-symbols-outlined">calendar_month</span>
+      </button>
+
+      @if (calendarOpen()) {
+        <div class="calendar-popover">
+          <div class="calendar">
+            <div class="calendar__header">
+              <button class="calendar__nav" (click)="changeMonth(-1)">
+                <span class="material-symbols-outlined">chevron_left</span>
+              </button>
+              <span class="calendar__month">{{ calendarMonth }}</span>
+              <button class="calendar__nav" (click)="changeMonth(1)">
+                <span class="material-symbols-outlined">chevron_right</span>
+              </button>
+            </div>
+
+            <div class="calendar__weekdays">
+              @for (d of ['Do','Lu','Ma','Mi','Ju','Vi','Sa']; track d) {
+                <span class="calendar__weekday">{{ d }}</span>
+              }
+            </div>
+
+            <div class="calendar__grid">
+              @for (day of calendarDays; track $index) {
+                @if (day) {
+                  <button
+                    class="calendar__day"
+                    [class.calendar__day--today]="isToday(day)"
+                    [class.calendar__day--event]="hasEvent(day)"
+                    [class.calendar__day--selected]="selectedDay() === day"
+                    (click)="selectDay(day)"
+                  >
+                    {{ day }}
+                  </button>
+                } @else {
+                  <span class="calendar__day calendar__day--blank"></span>
+                }
+              }
+            </div>
+
+            @if (selectedDay() && hasEvent(selectedDay()!)) {
+              <div class="calendar__events">
+                @for (ev of getEventsForDay(selectedDay()!); track ev) {
+                  <div class="calendar__event">
+                    <span class="material-symbols-outlined calendar__event-icon">event</span>
+                    {{ ev }}
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        </div>
+      }
+    </div>
+
+    <div class="topbar__user" (click)="userMenuOpen.set(!userMenuOpen())">
+      <div class="topbar__avatar">{{ currentUserInitials }}</div>
+      <div class="topbar__user-info">
+        <span class="topbar__user-name">{{ currentUserName }}</span>
+        <span class="topbar__user-role">Usuario</span>
+      </div>
+      <span class="material-symbols-outlined topbar__chevron" [class.topbar__chevron--open]="userMenuOpen()">expand_more</span>
+
+      @if (userMenuOpen()) {
+        <div class="topbar__dropdown">
+          <button class="topbar__dropdown-item" (click)="openProfile()">
+            <span class="material-symbols-outlined">person</span>
+            Mi perfil
+          </button>
+          @if (isAdmin) {
+            <button class="topbar__dropdown-item" (click)="goToPermissions()">
+              <span class="material-symbols-outlined">admin_panel_settings</span>
+              Administrar permisos
+            </button>
+          }
+          <button class="topbar__dropdown-item topbar__dropdown-item--danger" (click)="logout()">
+            <span class="material-symbols-outlined">logout</span>
+            Cerrar sesi&#243;n
+          </button>
+        </div>
+      }
+    </div>
+  </div>
+</header>
+
+<!-- Layout -->
+<div class="layout" [class.layout--collapsed]="sidebarCollapsed()">
+  <!-- Sidebar -->
+  <aside class="sidebar" [class.sidebar--collapsed]="sidebarCollapsed()">
+    <nav class="sidebar__nav">
+      @for (item of sidebarLinks(); track item.label) {
+        <button
+          class="sidebar__item"
+          [class.sidebar__item--active]="!item.route && activeView() === item.view"
+          [title]="item.label"
+          (click)="selectSidebar(item)"
+        >
+          <span class="material-symbols-outlined sidebar__item-icon">{{ item.icon }}</span>
+          @if (!sidebarCollapsed()) {
+            <span class="sidebar__item-label">{{ item.label }}</span>
+          }
+        </button>
+      }
+    </nav>
+
+    <div class="sidebar__footer">
+
+    </div>
+  </aside>
+
+  <!-- Content -->
+  <main class="content">
+    @if (activeView() === 'inicio') {
+    <!-- Greeting -->
+    <section class="greeting">
+      <div class="greeting__text">
+        <span class="material-symbols-outlined greeting__icon">{{ greetingIcon }}</span>
+        <h2 class="greeting__title">{{ greeting }}, <strong>{{ currentUserFirstName }}</strong></h2>
+      </div>
+      <p class="greeting__subtitle">{{ currentDate | date:'EEEE, dd \'de\' MMMM \'de\' yyyy' }}</p>
+    </section>
+    }
+
+    <!-- Metrics -->
+    @if (activeView() === 'inicio') {
+    <section class="metrics">
+      <div class="metrics__card">
+        <span class="material-symbols-outlined metrics__icon">grid_view</span>
+        <div>
+          <span class="metrics__value">{{ activeModules() }}</span>
+          <span class="metrics__label">Módulos activos</span>
+        </div>
+      </div>
+      <div class="metrics__card">
+        <span class="material-symbols-outlined metrics__icon">description</span>
+        <div>
+          <span class="metrics__value">{{ forms().length }}</span>
+          <span class="metrics__label">Formularios</span>
+        </div>
+      </div>
+      <div class="metrics__card">
+        <span class="material-symbols-outlined metrics__icon">calendar_today</span>
+        <div>
+          <span class="metrics__value">{{ currentDate | date:'dd MMM yyyy' }}</span>
+          <span class="metrics__label">Fecha actual</span>
+        </div>
+      </div>
+      @if (weatherTemp() !== null) {
+        <div class="metrics__card">
+          <span class="material-symbols-outlined metrics__icon">{{ weatherIcon() }}</span>
+          <div>
+            <span class="metrics__value">{{ weatherTemp() }}°C — {{ weatherDesc() }}</span>
+            <span class="metrics__label">Clima actual</span>
+          </div>
+        </div>
+      }
+    </section>
+    }
+
+    @if (activeView() === 'aplicaciones') {
+    <section class="page-head">
+      <span class="material-symbols-outlined page-head__icon">apps</span>
+      <div>
+        <h2 class="page-head__title">Aplicaciones disponibles</h2>
+        <p class="page-head__subtitle">Estas son las herramientas y formularios a los que tienes acceso</p>
+      </div>
+    </section>
+    }
+
+    <!-- Search -->
+    <section class="search-section">
+      <div class="search">
+        <span class="material-symbols-outlined search__icon">search</span>
+        <input
+          class="search__input"
+          type="text"
+          placeholder="Buscar aplicaciones y formularios..."
+          [ngModel]="searchQuery()"
+          (ngModelChange)="searchQuery.set($event)"
+        />
+        @if (searchQuery()) {
+          <button class="search__clear" (click)="searchQuery.set('')">
+            <span class="material-symbols-outlined">close</span>
+          </button>
+        }
+      </div>
+    </section>
+
+    <!-- Recientes -->
+    @if (activeView() === 'inicio') {
+    <section class="recent">
+      <h3 class="section-title">
+        <span class="material-symbols-outlined section-title__icon">schedule</span>
+        Recientes
+      </h3>
+      <div class="recent__chips">
+        @for (name of recentApps(); track name) {
+          <button class="recent__chip" (click)="searchQuery.set(name)">
+            <span class="material-symbols-outlined recent__chip-icon">history</span>
+            {{ name }}
+          </button>
+        }
+      </div>
+    </section>
+    }
+
+    <!-- Grid de apps -->
+    <section class="apps-section">
+      <h3 class="section-title">
+        <span class="material-symbols-outlined section-title__icon">apps</span>
+        Aplicaciones
+        <span class="section-title__count">{{ filteredApps().length }}</span>
+      </h3>
+
+      <div class="apps-grid">
+        @for (app of filteredApps(); track app.name) {
+          <app-card [data]="app" (cardClick)="onAppClick($event)" />
+        } @empty {
+          <div class="apps-grid__empty">
+            <span class="material-symbols-outlined apps-grid__empty-icon">search_off</span>
+            <p>No se encontraron aplicaciones</p>
+          </div>
+        }
+      </div>
+    </section>
+
+    <!-- Formularios -->
+    <section class="apps-section">
+      <h3 class="section-title">
+        <span class="material-symbols-outlined section-title__icon">description</span>
+        Formularios
+        <span class="section-title__count">{{ filteredForms().length }}</span>
+      </h3>
+
+      <div class="apps-grid">
+        @for (form of filteredForms(); track form.name) {
+          <app-card [data]="form" (cardClick)="onAppClick($event)" />
+        }
+      </div>
+    </section>
+  </main>
+</div>
