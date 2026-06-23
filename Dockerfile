@@ -21,7 +21,7 @@ COPY backend/ ./
 RUN composer dump-autoload --optimize --no-dev --no-interaction --no-scripts
 
 # ============ Stage 3: imagen de ejecución ============
-FROM php:8.3-fpm-alpine AS runtime
+FROM php:8.4-fpm-alpine AS runtime
 
 # Dependencias del sistema + extensiones PHP (MySQL y PostgreSQL).
 RUN apk add --no-cache nginx supervisor icu-libs libzip libpq oniguruma \
