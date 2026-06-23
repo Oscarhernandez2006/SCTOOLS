@@ -1,0 +1,49 @@
+# ============================================================
+# SC TOOLS — despliegue en Dokploy con Traefik.
+# Sirve API Laravel (/api) + frontend Angular (SPA) en un solo contenedor.
+#
+# NOTA: En Dokploy normalmente defines el dominio y el puerto (80) desde la UI
+# y Traefik se configura solo. Estas labels son por si despliegas con "Compose"
+# y administras Traefik manualmente: ajusta el Host() a tu dominio real.
+# Define las variables sensibles (APP_KEY, DB_*, SSO_SHARED_SECRET, etc.) en el
+# panel de variables de entorno de Dokploy, NO en este archivo.
+# ============================================================
+services:
+  sctools:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      APP_NAME: "SC TOOLS"
+      APP_ENV: production
+      APP_DEBUG: "false"
+      # APP_KEY: definelo en Dokploy (base64:...). Generalo con: php artisan key:generate --show
+      APP_URL: ${APP_URL}
+      APP_KEY: ${APP_KEY}
+
+      # Base de datos (MySQL o PostgreSQL).
+      DB_CONNECTION: ${DB_CONNECTION}
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT}
+      DB_DATABASE: ${DB_DATABASE}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+
+      # Drivers que dependen de la BD.
+      SESSION_DRIVER: database
+      CACHE_STORE: database
+      QUEUE_CONNECTION: database
+
+      # SSO: debe coincidir EXACTAMENTE con el secreto de SIGCAN.
+      SSO_SHARED_SECRET: ${SSO_SHARED_SECRET}
+
+      RUN_MIGRATIONS: "true"
+    expose:
+      - "80"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.sctools.rule=Host(`sctools.tu-dominio.com`)"
+      - "traefik.http.routers.sctools.entrypoints=websecure"
+      - "traefik.http.routers.sctools.tls.certresolver=letsencrypt"
+      - "traefik.http.services.sctools.loadbalancer.server.port=80"

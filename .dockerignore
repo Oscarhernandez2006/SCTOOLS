@@ -1,0 +1,26 @@
+# Control de versiones / editores
+**/.git
+**/.gitignore
+**/.vscode
+**/.idea
+**/.angular
+
+# Dependencias (se instalan dentro del build)
+**/node_modules
+**/vendor
+
+# Builds
+frontend/dist
+backend/public/build
+backend/public/hot
+
+# Secretos y locales (NUNCA en la imagen)
+**/.env
+**/.env.*
+!**/.env.example
+backend/storage/*.key
+
+# Logs y temporales
+**/*.log
+**/.DS_Store
+**/Thumbs.db
