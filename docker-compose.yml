@@ -41,9 +41,23 @@ services:
       RUN_MIGRATIONS: "true"
     expose:
       - "80"
+    networks:
+      - dokploy-network
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.sctools.rule=Host(`sctools.tu-dominio.com`)"
-      - "traefik.http.routers.sctools.entrypoints=websecure"
-      - "traefik.http.routers.sctools.tls.certresolver=letsencrypt"
+      - "traefik.docker.network=dokploy-network"
+      # HTTP -> redirige a HTTPS
+      - "traefik.http.routers.sctools-web.rule=Host(`sctools.grupo-santacruz.com`)"
+      - "traefik.http.routers.sctools-web.entrypoints=web"
+      - "traefik.http.routers.sctools-web.middlewares=sctools-redirect"
+      # HTTPS
+      - "traefik.http.routers.sctools-secure.rule=Host(`sctools.grupo-santacruz.com`)"
+      - "traefik.http.routers.sctools-secure.entrypoints=websecure"
+      - "traefik.http.routers.sctools-secure.tls=true"
+      - "traefik.http.routers.sctools-secure.tls.certresolver=letsencrypt"
+      - "traefik.http.middlewares.sctools-redirect.redirectscheme.scheme=https"
       - "traefik.http.services.sctools.loadbalancer.server.port=80"
+
+networks:
+  dokploy-network:
+    external: true
