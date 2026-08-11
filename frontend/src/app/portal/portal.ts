@@ -6,6 +6,8 @@ import { HttpClient } from '@angular/common/http';
 import { AppCard, AppCardData } from '../shared/app-card/app-card';
 import { AuthService } from '../services/auth.service';
 import { Application, ApplicationsService } from '../services/applications.service';
+import { DashboardStats, StatsService } from '../services/stats.service';
+import { SiesaService } from '../services/siesa.service';
 
 @Component({
   selector: 'app-portal',
@@ -16,6 +18,8 @@ import { Application, ApplicationsService } from '../services/applications.servi
 export class Portal implements OnInit, OnDestroy {
   private authService = inject(AuthService);
   private applicationsService = inject(ApplicationsService);
+  private statsService = inject(StatsService);
+  private siesaService = inject(SiesaService);
   private http = inject(HttpClient);
   private clockInterval: ReturnType<typeof setInterval> | null = null;
 
@@ -28,6 +32,7 @@ export class Portal implements OnInit, OnDestroy {
     this.fetchWeather();
     this.loadApplications();
     this.authService.refreshUser();
+    this.loadStats();
   }
 
   ngOnDestroy(): void {
@@ -232,6 +237,67 @@ export class Portal implements OnInit, OnDestroy {
 
   closeProfile(): void {
     this.profileOpen.set(false);
+    this.resetPasswordForm();
+  }
+
+  // ---- Cambio de contraseña propio ----
+  readonly pwdOpen = signal(false);
+  readonly pwdSaving = signal(false);
+  readonly pwdError = signal('');
+  readonly pwdSuccess = signal('');
+  readonly showPwdCurrent = signal(false);
+  readonly showPwdNew = signal(false);
+  pwdCurrent = '';
+  pwdNew = '';
+  pwdConfirm = '';
+
+  togglePwdSection(): void {
+    this.pwdOpen.update((v) => !v);
+    this.pwdError.set('');
+    this.pwdSuccess.set('');
+  }
+
+  private resetPasswordForm(): void {
+    this.pwdOpen.set(false);
+    this.pwdCurrent = '';
+    this.pwdNew = '';
+    this.pwdConfirm = '';
+    this.pwdError.set('');
+    this.pwdSuccess.set('');
+    this.showPwdCurrent.set(false);
+    this.showPwdNew.set(false);
+  }
+
+  changePassword(): void {
+    if (this.pwdSaving()) return;
+    if (!this.pwdCurrent) {
+      this.pwdError.set('Ingresa tu contraseña actual.');
+      return;
+    }
+    if (this.pwdNew.length < 6) {
+      this.pwdError.set('La nueva contraseña debe tener al menos 6 caracteres.');
+      return;
+    }
+    if (this.pwdNew !== this.pwdConfirm) {
+      this.pwdError.set('Las contraseñas no coinciden.');
+      return;
+    }
+    this.pwdSaving.set(true);
+    this.pwdError.set('');
+    this.pwdSuccess.set('');
+    this.authService.changePassword(this.pwdCurrent, this.pwdNew).subscribe({
+      next: () => {
+        this.pwdSaving.set(false);
+        this.pwdSuccess.set('Contraseña actualizada correctamente');
+        this.pwdCurrent = '';
+        this.pwdNew = '';
+        this.pwdConfirm = '';
+      },
+      error: (err) => {
+        this.pwdSaving.set(false);
+        this.pwdError.set(err?.error?.message || 'No se pudo cambiar la contraseña');
+      },
+    });
   }
 
   readonly sidebarLinks = computed(() => {
@@ -241,6 +307,7 @@ export class Portal implements OnInit, OnDestroy {
     ];
     if (this.isAdmin) {
       links.push({ icon: 'tune', label: 'Gestionar apps', view: 'inicio', route: '/admin/aplicaciones', adminOnly: true });
+      links.push({ icon: 'group', label: 'Usuarios', view: 'inicio', route: '/admin/usuarios', adminOnly: true });
       links.push({ icon: 'admin_panel_settings', label: 'Permisos', view: 'inicio', route: '/admin/permisos', adminOnly: true });
     }
     return links;
@@ -259,6 +326,9 @@ export class Portal implements OnInit, OnDestroy {
   readonly forms = signal<AppCardData[]>([]);
 
   readonly appsLoading = signal<boolean>(true);
+
+  readonly skeletonItems = [1, 2, 3, 4];
+  readonly skeletonKpis = [1, 2, 3, 4, 5];
 
   readonly recentApps = computed(() => this.apps().slice(0, 4).map((a) => a.name));
 
@@ -301,9 +371,10 @@ export class Portal implements OnInit, OnDestroy {
   }
 
   filteredApps = computed(() => {
+    const all = this.apps().map((a) => (a.slug === 'siesa' ? this.decorateSiesaCard(a) : a));
     const q = this.searchQuery().trim();
-    if (!q) return this.apps();
-    return this.apps().filter((a) => this.matchesSearch(a, q));
+    if (!q) return all;
+    return all.filter((a) => this.matchesSearch(a, q));
   });
 
   filteredForms = computed(() => {
@@ -314,11 +385,159 @@ export class Portal implements OnInit, OnDestroy {
 
   activeModules = computed(() => this.apps().length);
 
+  // ---- Dashboard de estadísticas (solo admin) ----
+  readonly stats = signal<DashboardStats | null>(null);
+  readonly statsLoading = signal<boolean>(false);
+
+  private loadStats(): void {
+    if (!this.isAdmin) return;
+    this.statsLoading.set(true);
+    this.statsService.getStats().subscribe({
+      next: (data) => {
+        this.stats.set(data);
+        this.statsLoading.set(false);
+      },
+      error: () => {
+        this.stats.set(null);
+        this.statsLoading.set(false);
+      },
+    });
+  }
+
+  /** Ancho (%) de la barra de accesos por app relativo al máximo. */
+  accessBarWidth(count: number): number {
+    const max = Math.max(1, ...(this.stats()?.access_per_app ?? []).map((a) => a.users_count));
+    return Math.round((count / max) * 100);
+  }
+
+  /** Ancho (%) de la barra de SSO por app relativo al máximo. */
+  ssoBarWidth(count: number): number {
+    const max = Math.max(1, ...(this.stats()?.sso_by_app ?? []).map((a) => a.count));
+    return Math.round((count / max) * 100);
+  }
+
+  /** Altura (%) de la columna de la tendencia de ingresos. */
+  trendBarHeight(count: number): number {
+    const max = Math.max(1, ...(this.stats()?.logins_trend ?? []).map((t) => t.count));
+    return Math.max(6, Math.round((count / max) * 100));
+  }
+
+  /** Etiqueta corta (día de la semana) para la tendencia. */
+  trendDayLabel(day: string): string {
+    const d = new Date(day + 'T00:00:00');
+    return d.toLocaleDateString('es-CO', { weekday: 'short' }).replace('.', '');
+  }
+
+  // ---- Integración Siesa ----
+  // El estado vive en AuthService: se hidrata en el login (sin petición extra).
+  readonly siesaStatus = this.authService.siesaStatus;
+  readonly siesaModalOpen = signal(false);
+  readonly siesaSaving = signal(false);
+  readonly siesaError = signal('');
+  siesaUsername = '';
+  siesaPassword = '';
+  showSiesaPassword = signal(false);
+
+  readonly siesaConnected = computed(() => !!this.siesaStatus()?.has_credentials);
+
+  /**
+   * Siesa se carga desde la DB como una app más (respeta permisos). Aquí sólo
+   * le añadimos, de forma reactiva, el botón de credenciales y el estado de
+   * conexión del usuario sobre la card que viene del backend.
+   */
+  private decorateSiesaCard(app: AppCardData): AppCardData {
+    const connected = this.siesaConnected();
+    const username = this.siesaStatus()?.username;
+    return {
+      ...app,
+      icon: app.icon || 'cloud_sync',
+      secondaryActionIcon: 'key',
+      secondaryActionLabel: connected ? 'Editar credenciales de Siesa' : 'Configurar credenciales de Siesa',
+      statusText: connected ? (username ? 'Conectado · ' + username : 'Conectado') : 'Sin credenciales',
+      statusOn: connected,
+    };
+  }
+
+  openSiesaModal(): void {
+    this.siesaError.set('');
+    this.siesaPassword = '';
+    this.siesaUsername = this.siesaStatus()?.username ?? '';
+    this.siesaModalOpen.set(true);
+  }
+
+  closeSiesaModal(): void {
+    this.siesaModalOpen.set(false);
+  }
+
+  toggleSiesaPassword(): void {
+    this.showSiesaPassword.update((v) => !v);
+  }
+
+  saveSiesaCredentials(): void {
+    if (!this.siesaUsername || !this.siesaPassword) {
+      this.siesaError.set('Ingresa tu usuario y contraseña de Siesa');
+      return;
+    }
+    this.siesaSaving.set(true);
+    this.siesaError.set('');
+    this.siesaService.saveCredentials(this.siesaUsername.trim(), this.siesaPassword).subscribe({
+      next: (s) => {
+        this.authService.setSiesaStatus({ has_credentials: true, domain: s.domain, username: s.username });
+        this.siesaSaving.set(false);
+        this.siesaPassword = '';
+        this.siesaModalOpen.set(false);
+        this.toastMessage.set('Credenciales de Siesa guardadas');
+        this.toastVisible.set(true);
+        setTimeout(() => this.toastVisible.set(false), 2000);
+      },
+      error: (err) => {
+        this.siesaSaving.set(false);
+        this.siesaError.set(err.error?.message || 'No se pudieron guardar las credenciales');
+      },
+    });
+  }
+
+  deleteSiesaCredentials(): void {
+    this.siesaSaving.set(true);
+    this.siesaService.deleteCredentials().subscribe({
+      next: () => {
+        this.authService.setSiesaStatus({ has_credentials: false, domain: 'awssiesacloud', username: null });
+        this.siesaSaving.set(false);
+        this.siesaModalOpen.set(false);
+        this.toastMessage.set('Credenciales de Siesa eliminadas');
+        this.toastVisible.set(true);
+        setTimeout(() => this.toastVisible.set(false), 2000);
+      },
+      error: () => this.siesaSaving.set(false),
+    });
+  }
+
+  openSiesa(): void {
+    // Auto-login puro sin extensión: la página /siesa-launch arma el cliente
+    // HTML5 de Siesa con las credenciales del usuario y abre la sesión. Si no
+    // hay credenciales guardadas, redirige al login manual de Siesa.
+    if (this.siesaConnected()) {
+      window.open('/siesa-launch', '_blank');
+    } else {
+      window.open(this.siesaService.siesaUrl, '_blank');
+    }
+  }
+
   toggleSidebar(): void {
     this.sidebarCollapsed.update((v) => !v);
   }
 
   onAppClick(app: AppCardData): void {
+    // Siesa: abre el auto-login (o el modal si aún no hay credenciales).
+    if (app.slug === 'siesa') {
+      if (this.siesaConnected()) {
+        this.openSiesa();
+      } else {
+        this.openSiesaModal();
+      }
+      return;
+    }
+
     // Apps con SSO: pedimos un ticket de un solo uso y abrimos ya logueado.
     if (app.ssoEnabled && app.slug) {
       this.toastMessage.set(`Iniciando sesión en ${app.name}...`);
@@ -346,6 +565,13 @@ export class Portal implements OnInit, OnDestroy {
       this.toastVisible.set(false);
       window.open(app.url, '_blank');
     }, 1000);
+  }
+
+  /** Acción secundaria de una card (p. ej. editar credenciales de Siesa). */
+  onCardSecondary(app: AppCardData): void {
+    if (app.slug === 'siesa') {
+      this.openSiesaModal();
+    }
   }
 
   logout(): void {

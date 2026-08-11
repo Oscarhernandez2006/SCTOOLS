@@ -198,6 +198,14 @@
     position: relative;
   }
 
+  &__brand-logo {
+    width: 52px;
+    height: 52px;
+    object-fit: contain;
+    margin-right: 0.75rem;
+    filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.25));
+  }
+
   &__brand-name {
     font-family: var(--font-heading);
     font-size: 2.75rem;
@@ -326,6 +334,13 @@
     color: var(--color-text-primary);
     margin-bottom: 1.5rem;
     letter-spacing: -0.03em;
+  }
+
+  &__mobile-brand-logo {
+    width: 32px;
+    height: 32px;
+    object-fit: contain;
+    margin-right: 0.55rem;
   }
 
   &__title {

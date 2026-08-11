@@ -47,6 +47,29 @@ export interface ManagedApplication {
 
 export type ApplicationPayload = Omit<ManagedApplication, 'id'>;
 
+export interface ManagedUser {
+  id: number;
+  name: string;
+  cedula: string;
+  email: string | null;
+  is_active: boolean;
+  is_admin: boolean;
+  has_siesa: boolean;
+  application_ids: number[];
+}
+
+export interface UserPayload {
+  name: string;
+  cedula: string;
+  email: string | null;
+  password?: string;
+  is_admin: boolean;
+  is_active: boolean;
+  application_ids: number[];
+  siesa_username?: string;
+  siesa_password?: string;
+}
+
 @Injectable({ providedIn: 'root' })
 export class AdminService {
   private http = inject(HttpClient);
@@ -86,5 +109,23 @@ export class AdminService {
 
   deleteApplication(id: number): Observable<{ message: string }> {
     return this.http.delete<{ message: string }>(`/api/admin/manage/applications/${id}`);
+  }
+
+  // ---- Gestión de usuarios (CRUD) ----
+
+  getManagedUsers(): Observable<ManagedUser[]> {
+    return this.http.get<ManagedUser[]>('/api/admin/manage/users');
+  }
+
+  createUser(payload: UserPayload): Observable<ManagedUser> {
+    return this.http.post<ManagedUser>('/api/admin/manage/users', payload);
+  }
+
+  updateUser(id: number, payload: UserPayload): Observable<ManagedUser> {
+    return this.http.put<ManagedUser>(`/api/admin/manage/users/${id}`, payload);
+  }
+
+  deleteUser(id: number): Observable<{ message: string }> {
+    return this.http.delete<{ message: string }>(`/api/admin/manage/users/${id}`);
   }
 }

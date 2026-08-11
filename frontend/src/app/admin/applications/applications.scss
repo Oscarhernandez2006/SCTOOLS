@@ -6,6 +6,18 @@
   display: block;
   min-height: 100vh;
   background: var(--color-bg, #F4F6F5);
+  --sidebar-top: 72px;
+}
+
+// ---- Layout con sidebar ----
+.admin-shell {
+  display: flex;
+  align-items: flex-start;
+}
+
+.admin-shell__main {
+  flex: 1;
+  min-width: 0;
 }
 
 // ---- Toast ----

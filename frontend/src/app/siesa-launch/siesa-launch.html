@@ -1,0 +1,20 @@
+<div class="launch">
+  <div class="launch__card">
+    <img class="launch__logo" src="logo-suite.svg" alt="Santa Cruz Suite" />
+
+    @if (status() === 'loading') {
+      <div class="launch__spinner" aria-hidden="true"></div>
+    } @else {
+      <div class="launch__error-icon">
+        <span class="material-symbols-outlined">error</span>
+      </div>
+    }
+
+    <h1 class="launch__title">Siesa Cloud</h1>
+    <p class="launch__msg">{{ message() }}</p>
+
+    @if (status() === 'error') {
+      <a class="launch__btn" href="https://carnesantacruzapp.siesacloud.com/">Abrir Siesa manualmente</a>
+    }
+  </div>
+</div>

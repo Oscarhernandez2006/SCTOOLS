@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\LoginLog;
+use App\Models\SiesaCredential;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -91,6 +92,8 @@ class AuthController extends Controller
                 'email' => $user->email,
                 'is_admin' => $user->is_admin,
             ],
+            // Se envía el estado de Siesa aquí para evitar una petición extra al cargar el portal.
+            'siesa' => $this->siesaStatus($user),
         ]);
     }
 
@@ -111,7 +114,44 @@ class AuthController extends Controller
             'cedula' => $user->cedula,
             'email' => $user->email,
             'is_admin' => $user->is_admin,
+            'siesa' => $this->siesaStatus($user),
         ]);
+    }
+
+    /**
+     * Estado (sin contraseña) de las credenciales de Siesa del usuario.
+     */
+    private function siesaStatus(User $user): array
+    {
+        $cred = SiesaCredential::where('user_id', $user->id)->first();
+
+        return [
+            'has_credentials' => (bool) $cred,
+            'domain' => $cred->domain ?? 'awssiesacloud',
+            'username' => $cred->username ?? null,
+        ];
+    }
+
+    /**
+     * Permite al usuario autenticado cambiar su propia contraseña.
+     */
+    public function updatePassword(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'current_password' => 'required|string',
+            'password' => 'required|string|min:6|confirmed',
+        ]);
+
+        $user = $request->user();
+
+        if (!Hash::check($validated['current_password'], $user->password)) {
+            return response()->json(['message' => 'La contraseña actual es incorrecta'], 422);
+        }
+
+        $user->password = $validated['password'];
+        $user->save();
+
+        return response()->json(['message' => 'Contraseña actualizada correctamente']);
     }
 
     private function extractClientInfo(Request $request): array

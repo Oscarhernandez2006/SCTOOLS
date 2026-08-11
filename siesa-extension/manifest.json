@@ -1,0 +1,32 @@
+{
+  "manifest_version": 3,
+  "name": "Santa Cruz Suite — Auto-login Siesa",
+  "version": "1.0.0",
+  "description": "Inicia sesión automáticamente en Siesa Cloud usando las credenciales cifradas guardadas en la Suite Santa Cruz.",
+  "permissions": ["storage"],
+  "host_permissions": [
+    "http://localhost:4200/*",
+    "http://localhost:8000/*",
+    "https://carnesantacruzapp.siesacloud.com/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Auto-login Siesa"
+  },
+  "content_scripts": [
+    {
+      "matches": ["http://localhost:4200/*"],
+      "js": ["suite-content.js"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": ["https://carnesantacruzapp.siesacloud.com/*"],
+      "js": ["siesa-content.js"],
+      "run_at": "document_idle",
+      "all_frames": true
+    }
+  ]
+}

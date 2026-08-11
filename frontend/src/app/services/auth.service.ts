@@ -1,7 +1,8 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, signal } from '@angular/core';
 import { Router } from '@angular/router';
-import { Observable, tap } from 'rxjs';
+import { Observable } from 'rxjs';
+import { SiesaStatus } from './siesa.service';
 
 export interface AuthUser {
   id: number;
@@ -22,15 +23,23 @@ interface LoginResponse {
   message: string;
   token: string;
   user: AuthUser;
+  siesa: SiesaStatus;
+}
+
+interface MeResponse extends AuthUser {
+  siesa?: SiesaStatus;
 }
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private readonly TOKEN_KEY = 'sc_tools_token';
   private readonly USER_KEY = 'sc_tools_user';
+  private readonly SIESA_KEY = 'sc_tools_siesa';
 
   currentUser = signal<AuthUser | null>(this.getStoredUser());
   isAuthenticated = signal<boolean>(this.hasToken());
+  // Estado de credenciales Siesa: se hidrata en el login para no pedirlo aparte.
+  siesaStatus = signal<SiesaStatus | null>(this.getStoredSiesa());
 
   constructor(private http: HttpClient, private router: Router) {}
 
@@ -50,6 +59,7 @@ export class AuthService {
             localStorage.setItem(this.USER_KEY, JSON.stringify(res.user));
             this.currentUser.set(res.user);
             this.isAuthenticated.set(true);
+            this.setSiesaStatus(res.siesa ?? null);
             observer.next(res);
             observer.complete();
           },
@@ -66,16 +76,27 @@ export class AuthService {
     });
   }
 
-  getMe(): Observable<AuthUser> {
-    return this.http.get<AuthUser>('/api/auth/me');
+  getMe(): Observable<MeResponse> {
+    return this.http.get<MeResponse>('/api/auth/me');
+  }
+
+  /** Cambia la contraseña del usuario autenticado. */
+  changePassword(currentPassword: string, newPassword: string): Observable<{ message: string }> {
+    return this.http.put<{ message: string }>('/api/auth/password', {
+      current_password: currentPassword,
+      password: newPassword,
+      password_confirmation: newPassword,
+    });
   }
 
   /** Refresca los datos del usuario (incluido is_admin) desde el backend. */
   refreshUser(): void {
     this.getMe().subscribe({
       next: (user) => {
-        localStorage.setItem(this.USER_KEY, JSON.stringify(user));
-        this.currentUser.set(user);
+        const { siesa, ...profile } = user;
+        localStorage.setItem(this.USER_KEY, JSON.stringify(profile));
+        this.currentUser.set(profile);
+        if (siesa) this.setSiesaStatus(siesa);
       },
       error: () => {},
     });
@@ -94,11 +115,28 @@ export class AuthService {
     return data ? JSON.parse(data) : null;
   }
 
+  private getStoredSiesa(): SiesaStatus | null {
+    const data = localStorage.getItem(this.SIESA_KEY);
+    return data ? JSON.parse(data) : null;
+  }
+
+  /** Actualiza el estado de Siesa en memoria y en localStorage. */
+  setSiesaStatus(status: SiesaStatus | null): void {
+    this.siesaStatus.set(status);
+    if (status) {
+      localStorage.setItem(this.SIESA_KEY, JSON.stringify(status));
+    } else {
+      localStorage.removeItem(this.SIESA_KEY);
+    }
+  }
+
   private clearSession(): void {
     localStorage.removeItem(this.TOKEN_KEY);
     localStorage.removeItem(this.USER_KEY);
+    localStorage.removeItem(this.SIESA_KEY);
     this.currentUser.set(null);
     this.isAuthenticated.set(false);
+    this.siesaStatus.set(null);
     this.router.navigate(['/login']);
   }
 

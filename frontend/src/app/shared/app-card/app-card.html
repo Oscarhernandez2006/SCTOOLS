@@ -15,10 +15,29 @@
     }
   </div>
 
+  @if (data().secondaryActionIcon) {
+    <button
+      type="button"
+      class="app-card__secondary"
+      [attr.aria-label]="data().secondaryActionLabel || 'Acción'"
+      [attr.title]="data().secondaryActionLabel || 'Acción'"
+      (click)="onSecondaryClick($event)"
+    >
+      <span class="material-symbols-outlined">{{ data().secondaryActionIcon }}</span>
+    </button>
+  }
+
   <div class="app-card__body">
     <span class="app-card__category">{{ data().category }}</span>
     <h3 class="app-card__name">{{ data().name }}</h3>
     <p class="app-card__description">{{ data().description }}</p>
+
+    @if (data().statusText) {
+      <span class="app-card__status" [class.app-card__status--on]="data().statusOn">
+        <span class="material-symbols-outlined app-card__status-icon">{{ data().statusOn ? 'check_circle' : 'info' }}</span>
+        {{ data().statusText }}
+      </span>
+    }
   </div>
 
   <div class="app-card__footer">

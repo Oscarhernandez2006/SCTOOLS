@@ -19,5 +19,15 @@ class UserSeeder extends Seeder
                 'is_active' => true,
             ]
         );
+
+        User::updateOrCreate(
+            ['cedula' => '87654321'],
+            [
+                'name' => 'Usuario Principal',
+                'email' => 'usuario@gruposantacruz.com',
+                'password' => Hash::make('usuario123'),
+                'is_active' => true,
+            ]
+        );
     }
 }

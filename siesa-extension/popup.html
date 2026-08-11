@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Auto-login Siesa</title>
+  <style>
+    :root {
+      --bg: #12191f;
+      --surface: #1e2d2f;
+      --accent: #6bae8a;
+      --accent-dark: #3d7a5f;
+      --text: #f0f4f2;
+      --muted: rgba(240, 244, 242, 0.65);
+      --warn: #e6b95c;
+      --danger: #c0504a;
+    }
+    * { box-sizing: border-box; }
+    body {
+      width: 300px;
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+    .header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 16px;
+      background: linear-gradient(135deg, var(--bg) 0%, var(--surface) 100%);
+      border-bottom: 1px solid rgba(107, 174, 138, 0.25);
+    }
+    .logo {
+      width: 38px;
+      height: 38px;
+      border-radius: 9px;
+      background: linear-gradient(135deg, var(--accent) 0%, var(--accent-dark) 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 15px;
+      color: #fff;
+    }
+    .title { font-size: 14px; font-weight: 700; }
+    .subtitle { font-size: 11px; color: var(--muted); }
+    .body { padding: 16px; }
+    .row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 9px 11px;
+      border-radius: 8px;
+      background: rgba(240, 244, 242, 0.05);
+      margin-bottom: 10px;
+      font-size: 12.5px;
+    }
+    .dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      background: var(--muted);
+    }
+    .dot--on { background: var(--accent); box-shadow: 0 0 6px var(--accent); }
+    .dot--warn { background: var(--warn); }
+    .dot--off { background: var(--danger); }
+    .row__label { flex: 1; }
+    .row__value { color: var(--muted); font-size: 11.5px; }
+    .btn {
+      display: block;
+      width: 100%;
+      padding: 10px;
+      border: none;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      text-align: center;
+      text-decoration: none;
+      background: linear-gradient(135deg, var(--accent) 0%, var(--accent-dark) 100%);
+      color: #fff;
+      margin-top: 4px;
+    }
+    .btn:hover { filter: brightness(1.06); }
+    .hint {
+      font-size: 11px;
+      color: var(--muted);
+      line-height: 1.5;
+      margin-top: 12px;
+    }
+    .hint a { color: var(--accent); }
+    .local {
+      margin-top: 12px;
+      border: 1px solid rgba(240, 244, 242, 0.12);
+      border-radius: 8px;
+      padding: 8px 10px;
+    }
+    .local > summary {
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--accent);
+      list-style: none;
+    }
+    .local > summary::-webkit-details-marker { display: none; }
+    .input {
+      width: 100%;
+      margin-top: 8px;
+      padding: 8px 9px;
+      border-radius: 7px;
+      border: 1px solid rgba(240, 244, 242, 0.15);
+      background: rgba(240, 244, 242, 0.06);
+      color: var(--text);
+      font-size: 12.5px;
+      box-sizing: border-box;
+    }
+    .input::placeholder { color: rgba(240, 244, 242, 0.4); }
+    .input-wrap { position: relative; }
+    .eye {
+      position: absolute;
+      right: 6px;
+      top: 50%;
+      transform: translateY(-30%);
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 13px;
+    }
+    .local__actions { display: flex; gap: 8px; margin-top: 8px; }
+    .btn--sm { padding: 7px; font-size: 12px; margin-top: 0; }
+    .btn--ghost {
+      background: rgba(240, 244, 242, 0.08);
+      color: var(--text);
+      border: 1px solid rgba(240, 244, 242, 0.2);
+    }
+    .local__msg { font-size: 11px; color: var(--accent); margin: 8px 0 0; min-height: 14px; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="logo">SC</div>
+    <div>
+      <div class="title">Auto-login Siesa</div>
+      <div class="subtitle">Santa Cruz Suite</div>
+    </div>
+  </div>
+  <div class="body">
+    <div class="row">
+      <span id="dot-session" class="dot"></span>
+      <span class="row__label">Sesión de la Suite</span>
+      <span id="val-session" class="row__value">…</span>
+    </div>
+    <div class="row">
+      <span id="dot-creds" class="dot"></span>
+      <span class="row__label">Credenciales de Siesa</span>
+      <span id="val-creds" class="row__value">…</span>
+    </div>
+
+    <a class="btn" href="https://carnesantacruzapp.siesacloud.com/" target="_blank" rel="noopener">
+      Abrir Siesa
+    </a>
+
+    <details id="local-panel" class="local">
+      <summary>Guardar credenciales aquí (respaldo)</summary>
+      <p class="hint">
+        Si el método vía Suite falla, guarda aquí tu usuario y clave de Siesa.
+        Se almacenan en este navegador y se usan para el auto-login.
+      </p>
+      <input id="local-user" class="input" type="text" placeholder="Usuario de Siesa" autocomplete="off" />
+      <div class="input-wrap">
+        <input id="local-pass" class="input" type="password" placeholder="Contraseña de Siesa" autocomplete="new-password" />
+        <button id="toggle-pass" class="eye" type="button" title="Mostrar/ocultar">👁</button>
+      </div>
+      <div class="local__actions">
+        <button id="local-save" class="btn btn--sm">Guardar</button>
+        <button id="local-clear" class="btn btn--ghost btn--sm">Borrar</button>
+      </div>
+      <p id="local-msg" class="local__msg"></p>
+    </details>
+
+    <p id="hint" class="hint"></p>
+  </div>
+  <script src="popup.js"></script>
+</body>
+</html>

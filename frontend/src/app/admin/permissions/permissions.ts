@@ -1,11 +1,12 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { Sidebar } from '../../shared/sidebar/sidebar';
 import { AdminService, AdminUser, CatalogApplication } from '../../services/admin.service';
 
 @Component({
   selector: 'app-permissions',
-  imports: [FormsModule],
+  imports: [FormsModule, Sidebar],
   templateUrl: './permissions.html',
   styleUrl: './permissions.scss',
 })

@@ -1,6 +1,7 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { Sidebar } from '../../shared/sidebar/sidebar';
 import { AdminService, ApplicationPayload, ManagedApplication } from '../../services/admin.service';
 
 type FormModel = ApplicationPayload & { id: number | null };
@@ -48,7 +49,7 @@ function emptyForm(): FormModel {
 
 @Component({
   selector: 'app-applications-admin',
-  imports: [FormsModule],
+  imports: [FormsModule, Sidebar],
   templateUrl: './applications.html',
   styleUrl: './applications.scss',
 })

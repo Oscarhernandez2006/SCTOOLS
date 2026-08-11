@@ -12,6 +12,14 @@ export interface AppCardData {
   keywords?: string;
   slug?: string;
   ssoEnabled?: boolean;
+  /** Ícono (Material Symbols) de un botón de acción secundaria en la card. */
+  secondaryActionIcon?: string;
+  /** Tooltip/etiqueta accesible del botón de acción secundaria. */
+  secondaryActionLabel?: string;
+  /** Texto de estado opcional que se muestra como pill en la card. */
+  statusText?: string;
+  /** Marca el pill de estado como "activo" (verde). */
+  statusOn?: boolean;
 }
 
 @Component({
@@ -32,8 +40,14 @@ export interface AppCardData {
 export class AppCard {
   data = input.required<AppCardData>();
   cardClick = output<AppCardData>();
+  secondaryClick = output<AppCardData>();
 
   onClick(): void {
     this.cardClick.emit(this.data());
+  }
+
+  onSecondaryClick(event: MouseEvent): void {
+    event.stopPropagation();
+    this.secondaryClick.emit(this.data());
   }
 }

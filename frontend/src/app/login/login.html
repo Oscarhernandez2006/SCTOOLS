@@ -17,12 +17,11 @@
             <p class="login__tagline-line">un mismo software</p>
             <p class="login__tagline-line login__tagline-line--accent">al alcance de un click</p>
             <div class="login__brand">
-              <span class="login__brand-name">SC TOOLS</span>
-              <span class="material-symbols-outlined login__brand-cursor">arrow_selector_tool</span>
+              <span class="login__brand-name">Santa Cruz Suite</span>
             </div>
-          } @else if (slide.type === 'features') {
-            <!-- Slide con lista de features -->
-            <img class="login__slide-logo" src="logosican.png" alt="SIGCAN Logo" />
+          } @else {
+            <!-- Slide con lista de features del sistema -->
+            <img class="login__slide-logo" [src]="slide.logo" [alt]="slide.title + ' logo'" />
             <h1 class="login__slide-title">{{ slide.title }}</h1>
             <p class="login__slide-subtitle">{{ slide.subtitle }}</p>
             <ul class="login__feat-list">
@@ -33,14 +32,6 @@
                 </li>
               }
             </ul>
-          } @else {
-            <!-- Slide informativo -->
-            <div class="login__slide-icon-ring">
-              <span class="material-symbols-outlined login__slide-icon">{{ slide.icon }}</span>
-            </div>
-            <h1 class="login__slide-title">{{ slide.title }}</h1>
-            <p class="login__slide-subtitle">{{ slide.subtitle }}</p>
-            <p class="login__slide-desc">{{ slide.description }}</p>
           }
         </div>
       }
@@ -65,7 +56,8 @@
     <div class="login__card">
       <div class="login__card-header">
         <div class="login__mobile-brand">
-          <span>SC TOOLS</span>
+          <img class="login__mobile-brand-logo" src="logocarnessantacruz.png" alt="Carnes Santacruz" />
+          <span>Santa Cruz Suite</span>
         </div>
         <h2 class="login__title">Iniciar sesi&#243;n</h2>
         <p class="login__subtitle">Ingresa tus credenciales para continuar</p>

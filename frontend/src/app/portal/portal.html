@@ -44,6 +44,157 @@
           </div>
         </div>
       </div>
+
+      <!-- Cambio de contraseña -->
+      <div class="pwd-section">
+        <button class="pwd-section__toggle" (click)="togglePwdSection()">
+          <span class="material-symbols-outlined">lock_reset</span>
+          <span>Cambiar contrase&#241;a</span>
+          <span class="material-symbols-outlined pwd-section__caret">{{ pwdOpen() ? 'expand_less' : 'expand_more' }}</span>
+        </button>
+
+        @if (pwdOpen()) {
+          <div class="pwd-form">
+            <div class="pwd-field">
+              <label class="pwd-field__label">Contrase&#241;a actual</label>
+              <div class="pwd-field__wrap">
+                <input
+                  class="pwd-field__input"
+                  [type]="showPwdCurrent() ? 'text' : 'password'"
+                  autocomplete="current-password"
+                  placeholder="Tu contrase&#241;a actual"
+                  [(ngModel)]="pwdCurrent"
+                  name="pwdCurrent"
+                />
+                <button type="button" class="pwd-field__toggle" (click)="showPwdCurrent.set(!showPwdCurrent())">
+                  <span class="material-symbols-outlined">{{ showPwdCurrent() ? 'visibility_off' : 'visibility' }}</span>
+                </button>
+              </div>
+            </div>
+
+            <div class="pwd-field">
+              <label class="pwd-field__label">Nueva contrase&#241;a</label>
+              <div class="pwd-field__wrap">
+                <input
+                  class="pwd-field__input"
+                  [type]="showPwdNew() ? 'text' : 'password'"
+                  autocomplete="new-password"
+                  placeholder="M&#237;nimo 6 caracteres"
+                  [(ngModel)]="pwdNew"
+                  name="pwdNew"
+                />
+                <button type="button" class="pwd-field__toggle" (click)="showPwdNew.set(!showPwdNew())">
+                  <span class="material-symbols-outlined">{{ showPwdNew() ? 'visibility_off' : 'visibility' }}</span>
+                </button>
+              </div>
+            </div>
+
+            <div class="pwd-field">
+              <label class="pwd-field__label">Confirmar nueva contrase&#241;a</label>
+              <div class="pwd-field__wrap">
+                <input
+                  class="pwd-field__input"
+                  [type]="showPwdNew() ? 'text' : 'password'"
+                  autocomplete="new-password"
+                  placeholder="Repite la nueva contrase&#241;a"
+                  [(ngModel)]="pwdConfirm"
+                  name="pwdConfirm"
+                />
+              </div>
+            </div>
+
+            @if (pwdError()) {
+              <div class="pwd-msg pwd-msg--error">
+                <span class="material-symbols-outlined">error</span>{{ pwdError() }}
+              </div>
+            }
+            @if (pwdSuccess()) {
+              <div class="pwd-msg pwd-msg--ok">
+                <span class="material-symbols-outlined">check_circle</span>{{ pwdSuccess() }}
+              </div>
+            }
+
+            <button class="pwd-submit" (click)="changePassword()" [disabled]="pwdSaving()">
+              <span class="material-symbols-outlined">{{ pwdSaving() ? 'progress_activity' : 'save' }}</span>
+              {{ pwdSaving() ? 'Guardando...' : 'Actualizar contraseña' }}
+            </button>
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Siesa Modal -->
+@if (siesaModalOpen()) {
+  <div class="profile-overlay" (click)="closeSiesaModal()"></div>
+  <div class="profile-modal siesa-modal">
+    <div class="profile-modal__header">
+      <h2 class="profile-modal__title">Conectar con Siesa</h2>
+      <button class="profile-modal__close" (click)="closeSiesaModal()">
+        <span class="material-symbols-outlined">close</span>
+      </button>
+    </div>
+    <div class="siesa-modal__body">
+      <p class="siesa-modal__hint">
+        Guarda tu usuario y contraseña de Siesa. Se almacenan cifrados y se usan para
+        iniciar sesión automáticamente al abrir Siesa desde la suite.
+      </p>
+
+      <div class="siesa-modal__field">
+        <label class="siesa-modal__label" for="siesa-user">Usuario de Siesa</label>
+        <div class="siesa-modal__input-wrap">
+          <span class="material-symbols-outlined">person</span>
+          <input
+            id="siesa-user"
+            class="siesa-modal__input"
+            type="text"
+            autocomplete="off"
+            placeholder="Tu usuario de Siesa"
+            [(ngModel)]="siesaUsername"
+            name="siesaUsername"
+          />
+        </div>
+      </div>
+
+      <div class="siesa-modal__field">
+        <label class="siesa-modal__label" for="siesa-pass">Contraseña de Siesa</label>
+        <div class="siesa-modal__input-wrap">
+          <span class="material-symbols-outlined">key</span>
+          <input
+            id="siesa-pass"
+            class="siesa-modal__input"
+            [type]="showSiesaPassword() ? 'text' : 'password'"
+            autocomplete="new-password"
+            placeholder="Tu contraseña de Siesa"
+            [(ngModel)]="siesaPassword"
+            name="siesaPassword"
+          />
+          <button type="button" class="siesa-modal__toggle" (click)="toggleSiesaPassword()">
+            <span class="material-symbols-outlined">{{ showSiesaPassword() ? 'visibility_off' : 'visibility' }}</span>
+          </button>
+        </div>
+      </div>
+
+      @if (siesaError()) {
+        <div class="siesa-modal__error">
+          <span class="material-symbols-outlined">error</span>
+          {{ siesaError() }}
+        </div>
+      }
+
+      <div class="siesa-modal__actions">
+        @if (siesaConnected()) {
+          <button class="siesa-btn siesa-btn--danger" (click)="deleteSiesaCredentials()" [disabled]="siesaSaving()">
+            <span class="material-symbols-outlined">delete</span>
+            Eliminar
+          </button>
+        }
+        <button class="siesa-btn siesa-btn--primary" (click)="saveSiesaCredentials()" [disabled]="siesaSaving()">
+          <span class="material-symbols-outlined">{{ siesaSaving() ? 'progress_activity' : 'save' }}</span>
+          {{ siesaSaving() ? 'Guardando...' : 'Guardar credenciales' }}
+        </button>
+      </div>
     </div>
   </div>
 }
@@ -54,9 +205,9 @@
     <button class="topbar__toggle" (click)="toggleSidebar()">
       <span class="material-symbols-outlined">menu</span>
     </button>
+
     <div class="topbar__brand">
-      <span class="topbar__name">SC<span class="topbar__name-accent">TOOLS</span></span>
-      <span class="material-symbols-outlined topbar__cursor">arrow_selector_tool</span>
+      <span class="topbar__name">Santa Cruz&nbsp;<span class="topbar__name-accent">Suite</span></span>
     </div>
   </div>
 
@@ -201,36 +352,52 @@
     </section>
     }
 
-    <!-- Metrics -->
-    @if (activeView() === 'inicio') {
-    <section class="metrics">
-      <div class="metrics__card">
-        <span class="material-symbols-outlined metrics__icon">grid_view</span>
-        <div>
-          <span class="metrics__value">{{ activeModules() }}</span>
-          <span class="metrics__label">Módulos activos</span>
+    <!-- Dashboard de administración (solo admin) -->
+    @if (activeView() === 'inicio' && isAdmin) {
+    <section class="dashboard">
+      <h3 class="section-title">
+        <span class="material-symbols-outlined section-title__icon">insights</span>
+        Panel de administración
+      </h3>
+
+      @if (statsLoading()) {
+        <div class="dashboard__kpis">
+          @for (k of skeletonKpis; track k) {
+            <div class="kpi-skeleton"></div>
+          }
         </div>
-      </div>
-      <div class="metrics__card">
-        <span class="material-symbols-outlined metrics__icon">description</span>
-        <div>
-          <span class="metrics__value">{{ forms().length }}</span>
-          <span class="metrics__label">Formularios</span>
-        </div>
-      </div>
-      <div class="metrics__card">
-        <span class="material-symbols-outlined metrics__icon">calendar_today</span>
-        <div>
-          <span class="metrics__value">{{ currentDate | date:'dd MMM yyyy' }}</span>
-          <span class="metrics__label">Fecha actual</span>
-        </div>
-      </div>
-      @if (weatherTemp() !== null) {
-        <div class="metrics__card">
-          <span class="material-symbols-outlined metrics__icon">{{ weatherIcon() }}</span>
-          <div>
-            <span class="metrics__value">{{ weatherTemp() }}°C — {{ weatherDesc() }}</span>
-            <span class="metrics__label">Clima actual</span>
+      } @else if (stats(); as s) {
+        <!-- KPIs -->
+        <div class="dashboard__kpis">
+          <div class="kpi">
+            <span class="material-symbols-outlined kpi__icon">group</span>
+            <span class="kpi__value">{{ s.summary.users_total }}</span>
+            <span class="kpi__label">Usuarios</span>
+            <span class="kpi__hint">{{ s.summary.users_active }} activos · {{ s.summary.users_admins }} admin</span>
+          </div>
+          <div class="kpi">
+            <span class="material-symbols-outlined kpi__icon">grid_view</span>
+            <span class="kpi__value">{{ s.summary.apps_active }}</span>
+            <span class="kpi__label">Apps activas</span>
+            <span class="kpi__hint">{{ s.summary.apps_total }} en total</span>
+          </div>
+          <div class="kpi">
+            <span class="material-symbols-outlined kpi__icon">key</span>
+            <span class="kpi__value">{{ s.summary.access_grants }}</span>
+            <span class="kpi__label">Accesos otorgados</span>
+            <span class="kpi__hint">usuarios × apps</span>
+          </div>
+          <div class="kpi">
+            <span class="material-symbols-outlined kpi__icon">bolt</span>
+            <span class="kpi__value">{{ s.summary.sso_last_7d }}</span>
+            <span class="kpi__label">Ingresos SSO (7d)</span>
+            <span class="kpi__hint">a apps externas</span>
+          </div>
+          <div class="kpi">
+            <span class="material-symbols-outlined kpi__icon">login</span>
+            <span class="kpi__value">{{ s.summary.logins_last_7d }}</span>
+            <span class="kpi__label">Inicios de sesión (7d)</span>
+            <span class="kpi__hint">{{ s.summary.logins_ok_last_7d }} exitosos</span>
           </div>
         </div>
       }
@@ -266,24 +433,6 @@
       </div>
     </section>
 
-    <!-- Recientes -->
-    @if (activeView() === 'inicio') {
-    <section class="recent">
-      <h3 class="section-title">
-        <span class="material-symbols-outlined section-title__icon">schedule</span>
-        Recientes
-      </h3>
-      <div class="recent__chips">
-        @for (name of recentApps(); track name) {
-          <button class="recent__chip" (click)="searchQuery.set(name)">
-            <span class="material-symbols-outlined recent__chip-icon">history</span>
-            {{ name }}
-          </button>
-        }
-      </div>
-    </section>
-    }
-
     <!-- Grid de apps -->
     <section class="apps-section">
       <h3 class="section-title">
@@ -293,13 +442,19 @@
       </h3>
 
       <div class="apps-grid">
-        @for (app of filteredApps(); track app.name) {
-          <app-card [data]="app" (cardClick)="onAppClick($event)" />
-        } @empty {
-          <div class="apps-grid__empty">
-            <span class="material-symbols-outlined apps-grid__empty-icon">search_off</span>
-            <p>No se encontraron aplicaciones</p>
-          </div>
+        @if (appsLoading()) {
+          @for (s of skeletonItems; track s) {
+            <div class="card-skeleton"></div>
+          }
+        } @else {
+          @for (app of filteredApps(); track app.name) {
+            <app-card [data]="app" (cardClick)="onAppClick($event)" (secondaryClick)="onCardSecondary($event)" />
+          } @empty {
+            <div class="apps-grid__empty">
+              <span class="material-symbols-outlined apps-grid__empty-icon">search_off</span>
+              <p>No se encontraron aplicaciones</p>
+            </div>
+          }
         }
       </div>
     </section>
@@ -313,10 +468,124 @@
       </h3>
 
       <div class="apps-grid">
-        @for (form of filteredForms(); track form.name) {
-          <app-card [data]="form" (cardClick)="onAppClick($event)" />
+        @if (appsLoading()) {
+          @for (s of skeletonItems; track s) {
+            <div class="card-skeleton"></div>
+          }
+        } @else {
+          @for (form of filteredForms(); track form.name) {
+            <app-card [data]="form" (cardClick)="onAppClick($event)" />
+          } @empty {
+            <div class="apps-grid__empty">
+              <span class="material-symbols-outlined apps-grid__empty-icon">description_off</span>
+              <p>No hay formularios disponibles</p>
+            </div>
+          }
         }
       </div>
     </section>
+
+    <!-- Estadísticas detalladas (solo admin) -->
+    @if (activeView() === 'inicio' && isAdmin) {
+      @if (statsLoading()) {
+        <section class="dashboard">
+          <h3 class="section-title">
+            <span class="material-symbols-outlined section-title__icon">monitoring</span>
+            Estadísticas detalladas
+          </h3>
+          <div class="dashboard__grid">
+            @for (k of skeletonKpis; track k) {
+              <div class="panel-skeleton"></div>
+            }
+          </div>
+        </section>
+      } @else if (stats(); as s) {
+        <section class="dashboard">
+          <h3 class="section-title">
+            <span class="material-symbols-outlined section-title__icon">monitoring</span>
+            Estadísticas detalladas
+          </h3>
+          <div class="dashboard__grid">
+            <!-- Accesos por app -->
+            <div class="panel">
+              <h4 class="panel__title">Accesos por aplicación</h4>
+              @for (a of s.access_per_app; track a.id) {
+                <div class="barrow">
+                  <span class="barrow__label">
+                    <span class="material-symbols-outlined barrow__icon" [style.color]="a.color">{{ a.icon }}</span>
+                    {{ a.name }}
+                  </span>
+                  <div class="barrow__track">
+                    <div class="barrow__fill" [style.width.%]="accessBarWidth(a.users_count)" [style.background]="a.color"></div>
+                  </div>
+                  <span class="barrow__value">{{ a.users_count }}</span>
+                </div>
+              }
+            </div>
+
+            <!-- SSO por app -->
+            <div class="panel">
+              <h4 class="panel__title">Ingresos SSO por app (30 días)</h4>
+              @for (a of s.sso_by_app; track a.application) {
+                <div class="barrow">
+                  <span class="barrow__label">{{ a.application }}</span>
+                  <div class="barrow__track">
+                    <div class="barrow__fill barrow__fill--accent" [style.width.%]="ssoBarWidth(a.count)"></div>
+                  </div>
+                  <span class="barrow__value">{{ a.count }}</span>
+                </div>
+              } @empty {
+                <p class="panel__empty">Sin actividad SSO reciente</p>
+              }
+            </div>
+
+            <!-- Tendencia de ingresos -->
+            <div class="panel">
+              <h4 class="panel__title">Inicios de sesión (últimos 7 días)</h4>
+              <div class="trend">
+                @for (t of s.logins_trend; track t.day) {
+                  <div class="trend__col">
+                    <div class="trend__bar" [style.height.%]="trendBarHeight(t.count)">
+                      <span class="trend__count">{{ t.count }}</span>
+                    </div>
+                    <span class="trend__label">{{ trendDayLabel(t.day) }}</span>
+                  </div>
+                }
+              </div>
+            </div>
+
+            <!-- Apps por categoría -->
+            <div class="panel">
+              <h4 class="panel__title">Apps por categoría</h4>
+              @for (c of s.apps_by_category; track c.category) {
+                <div class="tagrow">
+                  <span class="tagrow__name">{{ c.category }}</span>
+                  <span class="tagrow__count">{{ c.count }}</span>
+                </div>
+              }
+            </div>
+
+            <!-- Últimos ingresos -->
+            <div class="panel panel--wide">
+              <h4 class="panel__title">Últimos ingresos</h4>
+              @for (l of s.recent_logins; track $index) {
+                <div class="loginrow">
+                  <span
+                    class="loginrow__dot"
+                    [class.loginrow__dot--ok]="l.status === 'success'"
+                    [class.loginrow__dot--fail]="l.status !== 'success'"
+                  ></span>
+                  <span class="loginrow__user">{{ l.user }}</span>
+                  <span class="loginrow__meta">{{ l.browser || 'Desconocido' }} · {{ l.os || '—' }}</span>
+                  <span class="loginrow__time">{{ l.at | date:'dd MMM, HH:mm' }}</span>
+                </div>
+              } @empty {
+                <p class="panel__empty">Sin ingresos registrados</p>
+              }
+            </div>
+          </div>
+        </section>
+      }
+    }
   </main>
 </div>

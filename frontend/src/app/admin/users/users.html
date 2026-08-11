@@ -1,0 +1,233 @@
+<!-- Toast -->
+@if (toastVisible()) {
+  <div class="toast">
+    <span class="material-symbols-outlined toast__icon">check_circle</span>
+    {{ toastMessage() }}
+  </div>
+}
+
+<!-- Topbar -->
+<header class="topbar">
+  <div class="topbar__left">
+    <button class="topbar__back" (click)="goBack()" title="Volver al portal">
+      <span class="material-symbols-outlined">arrow_back</span>
+    </button>
+    <div class="topbar__brand">
+      <span class="material-symbols-outlined topbar__brand-icon">group</span>
+      <div>
+        <h1 class="topbar__title">Gestión de usuarios</h1>
+        <p class="topbar__subtitle">Crea usuarios, define su rol y sus credenciales de Siesa</p>
+      </div>
+    </div>
+  </div>
+  <button class="btn btn--primary" (click)="openCreate()">
+    <span class="material-symbols-outlined">person_add</span>
+    Nuevo usuario
+  </button>
+</header>
+
+<div class="admin-shell">
+  <app-sidebar></app-sidebar>
+  <main class="admin-shell__main">
+<div class="container">
+  <div class="toolbar">
+    <div class="search">
+      <span class="material-symbols-outlined search__icon">search</span>
+      <input
+        class="search__input"
+        type="text"
+        placeholder="Buscar por nombre, cédula o correo..."
+        [ngModel]="searchQuery()"
+        (ngModelChange)="searchQuery.set($event)"
+      />
+    </div>
+    <span class="toolbar__count">{{ filteredUsers().length }} usuarios</span>
+  </div>
+
+  @if (loading()) {
+    <div class="placeholder">Cargando usuarios...</div>
+  } @else {
+    <div class="cards">
+      @for (user of filteredUsers(); track user.id) {
+        <div class="user-row" [class.user-row--inactive]="!user.is_active">
+          <span class="user-row__avatar" [class.user-row__avatar--admin]="user.is_admin">
+            {{ user.name.charAt(0).toUpperCase() }}
+          </span>
+          <div class="user-row__info">
+            <div class="user-row__head">
+              <span class="user-row__name">{{ user.name }}</span>
+              @if (user.is_admin) {
+                <span class="user-row__badge user-row__badge--admin">Administrador</span>
+              } @else {
+                <span class="user-row__badge">Usuario</span>
+              }
+              @if (!user.is_active) { <span class="user-row__badge user-row__badge--off">Inactivo</span> }
+              @if (user.has_siesa) {
+                <span class="user-row__badge user-row__badge--siesa">
+                  <span class="material-symbols-outlined">cloud_done</span>Siesa
+                </span>
+              }
+            </div>
+            <div class="user-row__meta">
+              <span><span class="material-symbols-outlined">badge</span>{{ user.cedula }}</span>
+              <span><span class="material-symbols-outlined">mail</span>{{ user.email }}</span>
+              <span><span class="material-symbols-outlined">apps</span>{{ user.application_ids.length }} apps</span>
+            </div>
+          </div>
+          <div class="user-row__actions">
+            <button class="icon-btn" (click)="openEdit(user)" title="Editar">
+              <span class="material-symbols-outlined">edit</span>
+            </button>
+            <button class="icon-btn icon-btn--danger" (click)="askDelete(user)" title="Eliminar">
+              <span class="material-symbols-outlined">delete</span>
+            </button>
+          </div>
+        </div>
+      } @empty {
+        <div class="placeholder">
+          <span class="material-symbols-outlined placeholder__icon">group</span>
+          <p>No hay usuarios todavía. Crea el primero con "Nuevo usuario".</p>
+        </div>
+      }
+    </div>
+  }
+</div>
+  </main>
+</div>
+
+<!-- Modal crear/editar -->
+@if (modalOpen()) {
+  <div class="modal-overlay" (click)="closeModal()"></div>
+  <div class="modal">
+    <div class="modal__header">
+      <h2 class="modal__title">{{ editing() ? 'Editar usuario' : 'Nuevo usuario' }}</h2>
+      <button class="modal__close" (click)="closeModal()">
+        <span class="material-symbols-outlined">close</span>
+      </button>
+    </div>
+
+    <div class="modal__body">
+      <div class="field">
+        <label class="field__label">Nombre completo *</label>
+        <input class="field__input" type="text" [ngModel]="form().name" (ngModelChange)="updateField('name', $event)" placeholder="Ej: Juan Pérez" />
+      </div>
+
+      <div class="field-row">
+        <div class="field">
+          <label class="field__label">Cédula *</label>
+          <input class="field__input" type="text" [ngModel]="form().cedula" (ngModelChange)="updateField('cedula', $event)" placeholder="1234567890" />
+          <span class="field__hint">Se usa para iniciar sesión.</span>
+        </div>
+        <div class="field">
+          <label class="field__label">Correo electrónico</label>
+          <input class="field__input" type="email" [ngModel]="form().email" (ngModelChange)="updateField('email', $event)" placeholder="Opcional" />
+        </div>
+      </div>
+
+      <div class="field">
+        <label class="field__label">{{ editing() ? 'Nueva contraseña' : 'Contraseña *' }}</label>
+        <div class="input-wrap">
+          <input class="field__input" [type]="showPassword() ? 'text' : 'password'" [ngModel]="form().password" (ngModelChange)="updateField('password', $event)" autocomplete="new-password" [placeholder]="editing() ? 'Dejar vacío para no cambiar' : 'Mínimo 6 caracteres'" />
+          <button type="button" class="input-wrap__toggle" (click)="togglePassword()">
+            <span class="material-symbols-outlined">{{ showPassword() ? 'visibility_off' : 'visibility' }}</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="divider">
+        <span class="material-symbols-outlined">cloud_sync</span>
+        Credenciales de Siesa
+      </div>
+      <p class="section-hint">
+        Se guardan cifradas y se usan para el inicio de sesión automático en Siesa.
+        @if (editing()) { Déjalas vacías para conservar las actuales. }
+      </p>
+
+      <div class="field-row">
+        <div class="field">
+          <label class="field__label">Usuario de Siesa</label>
+          <input class="field__input" type="text" autocomplete="off" [ngModel]="form().siesa_username" (ngModelChange)="updateField('siesa_username', $event)" placeholder="Usuario de Siesa" />
+        </div>
+        <div class="field">
+          <label class="field__label">Contraseña de Siesa</label>
+          <div class="input-wrap">
+            <input class="field__input" [type]="showSiesaPassword() ? 'text' : 'password'" autocomplete="new-password" [ngModel]="form().siesa_password" (ngModelChange)="updateField('siesa_password', $event)" placeholder="Contraseña de Siesa" />
+            <button type="button" class="input-wrap__toggle" (click)="toggleSiesaPassword()">
+              <span class="material-symbols-outlined">{{ showSiesaPassword() ? 'visibility_off' : 'visibility' }}</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="divider">
+        <span class="material-symbols-outlined">tune</span>
+        Rol y acceso
+      </div>
+
+      <div class="toggles">
+        <label class="toggle">
+          <input type="checkbox" [ngModel]="form().is_admin" (ngModelChange)="updateField('is_admin', $event)" />
+          <span class="toggle__box"></span>
+          <span class="toggle__text">
+            <strong>Administrador</strong>
+            <small>Puede gestionar usuarios, apps y permisos.</small>
+          </span>
+        </label>
+        <label class="toggle">
+          <input type="checkbox" [ngModel]="form().is_active" (ngModelChange)="updateField('is_active', $event)" />
+          <span class="toggle__box"></span>
+          <span class="toggle__text">
+            <strong>Activo</strong>
+            <small>Un usuario inactivo no puede iniciar sesión.</small>
+          </span>
+        </label>
+      </div>
+
+      <div class="field">
+        <label class="field__label">Aplicaciones con acceso</label>
+        <div class="apps-grid">
+          @for (app of catalog(); track app.id) {
+            <label class="app-chip" [class.app-chip--on]="hasApp(app.id)">
+              <input type="checkbox" [checked]="hasApp(app.id)" (change)="toggleApp(app.id)" />
+              <span class="app-chip__icon" [style.color]="app.color || '#3D7A5F'">
+                <span class="material-symbols-outlined">{{ app.icon || 'apps' }}</span>
+              </span>
+              <span class="app-chip__name">{{ app.name }}</span>
+            </label>
+          } @empty {
+            <span class="field__hint">No hay aplicaciones en el catálogo.</span>
+          }
+        </div>
+      </div>
+
+      @if (formError()) {
+        <div class="form-error">
+          <span class="material-symbols-outlined">error</span>
+          {{ formError() }}
+        </div>
+      }
+    </div>
+
+    <div class="modal__footer">
+      <button class="btn btn--ghost" (click)="closeModal()" [disabled]="saving()">Cancelar</button>
+      <button class="btn btn--primary" (click)="save()" [disabled]="saving()">
+        <span class="material-symbols-outlined">{{ saving() ? 'progress_activity' : 'save' }}</span>
+        {{ saving() ? 'Guardando...' : (editing() ? 'Guardar cambios' : 'Crear usuario') }}
+      </button>
+    </div>
+  </div>
+}
+
+<!-- Confirmar eliminación -->
+@if (confirmDelete(); as user) {
+  <div class="modal-overlay" (click)="cancelDelete()"></div>
+  <div class="confirm">
+    <span class="material-symbols-outlined confirm__icon">warning</span>
+    <h3 class="confirm__title">Eliminar usuario</h3>
+    <p class="confirm__text">¿Seguro que deseas eliminar a <strong>{{ user.name }}</strong>? Esta acción no se puede deshacer.</p>
+    <div class="confirm__actions">
+      <button class="btn btn--ghost" (click)="cancelDelete()">Cancelar</button>
+      <button class="btn btn--danger" (click)="doDelete()">Eliminar</button>
+    </div>
+  </div>
+}
