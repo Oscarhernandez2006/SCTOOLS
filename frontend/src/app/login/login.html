@@ -12,16 +12,22 @@
       @for (slide of slides; track $index) {
         <div class="login__slide" [class.login__slide--active]="activeSlide() === $index">
           @if (slide.type === 'tagline') {
-            <!-- Slide tagline con cursor -->
+            <!-- Slide tagline: logo arriba del texto -->
+            <div class="login__brand">
+              <img class="login__brand-logo" src="logo-scs.png" alt="Santa Cruz Suite" />
+            </div>
             <p class="login__tagline-line">Diferentes herramientas</p>
             <p class="login__tagline-line">un mismo software</p>
             <p class="login__tagline-line login__tagline-line--accent">al alcance de un click</p>
-            <div class="login__brand">
-              <span class="login__brand-name">Santa Cruz Suite</span>
-            </div>
           } @else {
             <!-- Slide con lista de features del sistema -->
-            <img class="login__slide-logo" [src]="slide.logo" [alt]="slide.title + ' logo'" />
+            @if (slide.logo) {
+              <img class="login__slide-logo" [src]="slide.logo" [alt]="slide.title + ' logo'" />
+            } @else {
+              <div class="login__slide-icon-ring">
+                <span class="material-symbols-outlined login__slide-icon">{{ slide.icon }}</span>
+              </div>
+            }
             <h1 class="login__slide-title">{{ slide.title }}</h1>
             <p class="login__slide-subtitle">{{ slide.subtitle }}</p>
             <ul class="login__feat-list">
@@ -56,8 +62,7 @@
     <div class="login__card">
       <div class="login__card-header">
         <div class="login__mobile-brand">
-          <img class="login__mobile-brand-logo" src="logocarnessantacruz.png" alt="Carnes Santacruz" />
-          <span>Santa Cruz Suite</span>
+          <img class="login__mobile-brand-logo" src="logo-scs.png" alt="Santa Cruz Suite" />
         </div>
         <h2 class="login__title">Iniciar sesi&#243;n</h2>
         <p class="login__subtitle">Ingresa tus credenciales para continuar</p>

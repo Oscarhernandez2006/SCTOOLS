@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 150 100" role="img" aria-label="EXE Ejecutables">
+  <defs>
+    <linearGradient id="exeGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#6E4573"/>
+      <stop offset="1" stop-color="#2C1B30"/>
+    </linearGradient>
+  </defs>
+
+  <!-- anillo abierto (doble arco), estilo del mark EXE -->
+  <g fill="none" stroke="url(#exeGrad)" stroke-linecap="round">
+    <path d="M88 16 A40 40 0 1 0 88 84" stroke-width="8"/>
+    <path d="M82 15 A34 34 0 1 0 86 86" stroke-width="3.4" opacity="0.85"/>
+  </g>
+
+  <!-- letras EXE -->
+  <text x="45" y="66" font-family="'Arial Black', 'Segoe UI', Arial, sans-serif"
+        font-weight="900" font-size="42" letter-spacing="-1" fill="url(#exeGrad)">EXE</text>
+</svg>
