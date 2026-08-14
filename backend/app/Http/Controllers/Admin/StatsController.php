@@ -27,8 +27,10 @@ class StatsController extends Controller
     {
         $this->authorizeAdmin($request);
 
+        $days = max(1, min(90, (int) $request->query('days', 7)));
+
         $now = Carbon::now();
-        $since7 = $now->copy()->subDays(7);
+        $since7 = $now->copy()->subDays($days);
         $since30 = $now->copy()->subDays(30);
 
         // ---- Resumen general ----
@@ -114,7 +116,7 @@ class StatsController extends Controller
             ->pluck('count', 'day');
 
         $loginsTrend = [];
-        for ($i = 6; $i >= 0; $i--) {
+        for ($i = $days - 1; $i >= 0; $i--) {
             $day = $now->copy()->subDays($i)->format('Y-m-d');
             $loginsTrend[] = [
                 'day' => $day,
@@ -123,6 +125,7 @@ class StatsController extends Controller
         }
 
         return response()->json([
+            'range_days' => $days,
             'summary' => [
                 'users_total' => $totalUsers,
                 'users_active' => $activeUsers,
@@ -141,5 +144,48 @@ class StatsController extends Controller
             'recent_logins' => $recentLogins,
             'logins_trend' => $loginsTrend,
         ]);
+    }
+
+    /**
+     * Export login activity for a date range as CSV.
+     */
+    public function export(Request $request): \Symfony\Component\HttpFoundation\StreamedResponse
+    {
+        $this->authorizeAdmin($request);
+
+        $from = $request->query('from');
+        $to = $request->query('to');
+
+        $query = LoginLog::query()->with('user:id,name')->latest();
+        if ($from) {
+            $query->whereDate('created_at', '>=', $from);
+        }
+        if ($to) {
+            $query->whereDate('created_at', '<=', $to);
+        }
+
+        $filename = 'actividad-ingresos-' . now()->format('Ymd-His') . '.csv';
+
+        return response()->streamDownload(function () use ($query) {
+            $out = fopen('php://output', 'w');
+            // BOM para que Excel respete UTF-8.
+            fwrite($out, "\xEF\xBB\xBF");
+            fputcsv($out, ['Fecha', 'Usuario', 'Cedula', 'Estado', 'Navegador', 'SO', 'Dispositivo', 'IP']);
+            $query->chunk(500, function ($rows) use ($out) {
+                foreach ($rows as $log) {
+                    fputcsv($out, [
+                        $log->created_at?->toDateTimeString(),
+                        $log->user->name ?? '',
+                        $log->cedula,
+                        $log->status,
+                        $log->browser,
+                        $log->os,
+                        $log->device_type,
+                        $log->ip_address,
+                    ]);
+                }
+            });
+            fclose($out);
+        }, $filename, ['Content-Type' => 'text/csv; charset=UTF-8']);
     }
 }

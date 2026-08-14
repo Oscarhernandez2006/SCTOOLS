@@ -2,6 +2,7 @@ import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { Sidebar } from '../../shared/sidebar/sidebar';
+import { TopNav } from '../../shared/top-nav/top-nav';
 import { AdminService, ApplicationPayload, ManagedApplication } from '../../services/admin.service';
 
 type FormModel = ApplicationPayload & { id: number | null };
@@ -37,7 +38,7 @@ function emptyForm(): FormModel {
     icon: 'apps',
     url: '',
     category: '',
-    color: '#3D7A5F',
+    color: '#57AD31',
     logo: '',
     keywords: '',
     type: 'app',
@@ -49,7 +50,7 @@ function emptyForm(): FormModel {
 
 @Component({
   selector: 'app-applications-admin',
-  imports: [FormsModule, Sidebar],
+  imports: [FormsModule, Sidebar, TopNav],
   templateUrl: './applications.html',
   styleUrl: './applications.scss',
 })
@@ -126,7 +127,7 @@ export class ApplicationsAdmin implements OnInit {
       icon: app.icon ?? 'apps',
       url: app.url,
       category: app.category ?? '',
-      color: app.color ?? '#3D7A5F',
+      color: app.color ?? '#57AD31',
       logo: app.logo ?? '',
       keywords: app.keywords ?? '',
       type: app.type,

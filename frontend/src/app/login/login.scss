@@ -34,7 +34,7 @@
       height: 320px;
       top: -80px;
       right: -100px;
-      background: radial-gradient(circle, rgba(107, 174, 138, 0.16) 0%, transparent 70%);
+      background: radial-gradient(circle, rgba(123, 196, 86, 0.16) 0%, transparent 70%);
     }
 
     &--2 {
@@ -42,7 +42,7 @@
       height: 250px;
       bottom: -60px;
       left: -80px;
-      background: radial-gradient(circle, rgba(107, 174, 138, 0.1) 0%, transparent 70%);
+      background: radial-gradient(circle, rgba(123, 196, 86, 0.1) 0%, transparent 70%);
     }
   }
 
@@ -92,13 +92,13 @@
     margin: 0 auto 1.75rem;
     border-radius: 50%;
     background: rgba(255, 255, 255, 0.06);
-    border: 2px solid rgba(107, 174, 138, 0.35);
+    border: 2px solid rgba(123, 196, 86, 0.35);
     display: flex;
     align-items: center;
     justify-content: center;
     box-shadow:
       0 4px 16px rgba(0, 0, 0, 0.25),
-      0 0 0 8px rgba(107, 174, 138, 0.06);
+      0 0 0 8px rgba(123, 196, 86, 0.06);
   }
 
   &__slide-icon {
@@ -213,8 +213,14 @@
     font-family: var(--font-heading);
     font-size: 2.75rem;
     font-weight: 800;
-    letter-spacing: -0.05em;
-    background: linear-gradient(135deg, var(--color-text-primary) 0%, var(--color-accent) 100%);
+    letter-spacing: -0.02em;
+    color: var(--color-white);
+    display: inline-flex;
+    gap: 0.6rem;
+  }
+
+  &__brand-accent {
+    background: linear-gradient(135deg, var(--color-accent-light) 0%, #B2E68C 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -336,7 +342,13 @@
     font-size: 1.25rem;
     color: var(--color-text-primary);
     margin-bottom: 1.5rem;
-    letter-spacing: -0.03em;
+    letter-spacing: -0.01em;
+  }
+
+  &__mobile-brand-text {
+    display: inline-flex;
+    gap: 0.32rem;
+    align-items: baseline;
   }
 
   &__mobile-brand-logo {
@@ -431,7 +443,7 @@
     &:focus {
       border-color: var(--color-accent);
       background: var(--color-white);
-      box-shadow: 0 0 0 3px rgba(61, 122, 95, 0.1);
+      box-shadow: 0 0 0 3px rgba(87, 173, 49, 0.1);
     }
   }
 

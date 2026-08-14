@@ -1,0 +1,139 @@
+<app-top-nav></app-top-nav>
+
+<div class="admin-shell">
+  <app-sidebar></app-sidebar>
+  <main class="admin-shell__main">
+    <div class="page">
+      <div class="page-head">
+        <div class="page-head__info">
+          <span class="material-symbols-outlined page-head__icon">monitoring</span>
+          <div>
+            <h1 class="page-head__title">Panel de la suite</h1>
+            <p class="page-head__subtitle">Estadísticas de acceso y actividad</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Controles -->
+      <div class="page__toolbar">
+        <div class="segmented">
+          @for (d of [7, 14, 30, 90]; track d) {
+            <button class="segmented__btn" [class.segmented__btn--on]="days() === d" (click)="setDays(d)">
+              {{ d }} días
+            </button>
+          }
+        </div>
+        <div class="export">
+          <input type="date" class="export__date" [value]="from()" (change)="from.set($any($event.target).value)" />
+          <span class="export__sep">→</span>
+          <input type="date" class="export__date" [value]="to()" (change)="to.set($any($event.target).value)" />
+          <button class="btn btn--primary" [disabled]="exporting()" (click)="exportCsv()">
+            <span class="material-symbols-outlined">download</span>
+            {{ exporting() ? 'Exportando...' : 'Exportar CSV' }}
+          </button>
+        </div>
+      </div>
+
+      @if (loading()) {
+        <div class="page__loading">Cargando estadísticas...</div>
+      } @else if (stats(); as s) {
+        <!-- Tarjetas resumen -->
+        <div class="kpis">
+          <div class="kpi">
+            <span class="kpi__value">{{ s.summary.users_total }}</span>
+            <span class="kpi__label">Usuarios</span>
+            <span class="kpi__foot">{{ s.summary.users_active }} activos · {{ s.summary.users_admins }} admin</span>
+          </div>
+          <div class="kpi">
+            <span class="kpi__value">{{ s.summary.apps_active }}</span>
+            <span class="kpi__label">Apps activas</span>
+            <span class="kpi__foot">{{ s.summary.apps_total }} en total</span>
+          </div>
+          <div class="kpi">
+            <span class="kpi__value">{{ s.summary.access_grants }}</span>
+            <span class="kpi__label">Accesos otorgados</span>
+            <span class="kpi__foot">usuarios × apps</span>
+          </div>
+          <div class="kpi">
+            <span class="kpi__value">{{ s.summary.sso_last_7d }}</span>
+            <span class="kpi__label">Ingresos SSO</span>
+            <span class="kpi__foot">últimos {{ s.range_days }} días</span>
+          </div>
+          <div class="kpi">
+            <span class="kpi__value">{{ s.summary.logins_ok_last_7d }}</span>
+            <span class="kpi__label">Inicios de sesión</span>
+            <span class="kpi__foot">{{ s.summary.logins_last_7d }} intentos</span>
+          </div>
+        </div>
+
+        <div class="grid">
+          <!-- Tendencia -->
+          <section class="card panel">
+            <h3 class="panel__title">Tendencia de ingresos</h3>
+            <div class="trend">
+              @for (d of s.logins_trend; track d.day) {
+                <div class="trend__col" [title]="d.day + ': ' + d.count">
+                  <div class="trend__bar" [style.height.%]="trendHeight(d.count)"></div>
+                  <span class="trend__label">{{ d.day | date:'dd/MM' }}</span>
+                </div>
+              }
+            </div>
+          </section>
+
+          <!-- Apps por categoría -->
+          <section class="card panel">
+            <h3 class="panel__title">Apps por categoría</h3>
+            <ul class="list">
+              @for (c of s.apps_by_category; track c.category) {
+                <li class="list__row">
+                  <span>{{ c.category }}</span>
+                  <span class="list__badge">{{ c.count }}</span>
+                </li>
+              }
+            </ul>
+          </section>
+
+          <!-- Accesos por app -->
+          <section class="card panel panel--wide">
+            <h3 class="panel__title">Accesos por aplicación</h3>
+            <div class="bars">
+              @for (a of s.access_per_app; track a.id) {
+                <div class="bars__row">
+                  <span class="bars__name">{{ a.name }}</span>
+                  <div class="bars__track">
+                    <div class="bars__fill" [style.width.%]="accessWidth(a.users_count)" [style.background]="a.color || '#57AD31'"></div>
+                  </div>
+                  <span class="bars__count">{{ a.users_count }}</span>
+                </div>
+              }
+            </div>
+          </section>
+
+          <!-- Últimos ingresos -->
+          <section class="card panel panel--wide">
+            <h3 class="panel__title">Últimos ingresos</h3>
+            <table class="table">
+              <thead>
+                <tr><th>Usuario</th><th>Estado</th><th>Navegador</th><th>SO</th><th>IP</th><th>Fecha</th></tr>
+              </thead>
+              <tbody>
+                @for (l of s.recent_logins; track $index) {
+                  <tr>
+                    <td>{{ l.user }}</td>
+                    <td><span class="pill" [class.pill--ok]="l.status === 'success'" [class.pill--bad]="l.status !== 'success'">{{ l.status === 'success' ? 'Exitoso' : 'Fallido' }}</span></td>
+                    <td>{{ l.browser }}</td>
+                    <td>{{ l.os }}</td>
+                    <td>{{ l.ip_address }}</td>
+                    <td>{{ l.at | date:'dd/MM HH:mm' }}</td>
+                  </tr>
+                } @empty {
+                  <tr><td colspan="6" class="table__empty">Sin registros</td></tr>
+                }
+              </tbody>
+            </table>
+          </section>
+        </div>
+      }
+    </div>
+  </main>
+</div>

@@ -1,0 +1,55 @@
+<app-top-nav></app-top-nav>
+
+<div class="admin-shell">
+  <app-sidebar></app-sidebar>
+  <main class="admin-shell__main">
+    <div class="page">
+      <div class="page-head">
+        <div class="page-head__info">
+          <span class="material-symbols-outlined page-head__icon">devices</span>
+          <div>
+            <h1 class="page-head__title">Sesiones activas</h1>
+            <p class="page-head__subtitle">Tokens de acceso vigentes en la suite</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="filters">
+        <input class="filters__input" type="text" placeholder="Buscar por usuario..." [ngModel]="search()" (ngModelChange)="search.set($event)" />
+        <button class="btn btn--ghost" (click)="load()">
+          <span class="material-symbols-outlined">refresh</span> Actualizar
+        </button>
+      </div>
+
+      <div class="card">
+        @if (loading()) {
+          <div class="page__loading">Cargando sesiones...</div>
+        } @else {
+          <table class="table">
+            <thead>
+              <tr><th>Usuario</th><th>Dispositivo / token</th><th>Último uso</th><th>Iniciada</th><th></th></tr>
+            </thead>
+            <tbody>
+              @for (s of filtered(); track s.id) {
+                <tr>
+                  <td>{{ s.user }}</td>
+                  <td class="table__mono">{{ s.name }}</td>
+                  <td class="table__mono">{{ s.last_used_at ? (s.last_used_at | date:'dd/MM/yyyy HH:mm') : 'Nunca' }}</td>
+                  <td class="table__mono">{{ s.created_at | date:'dd/MM/yyyy HH:mm' }}</td>
+                  <td>
+                    <button class="btn-revoke" [disabled]="revoking() === s.id" (click)="revoke(s)">
+                      <span class="material-symbols-outlined">logout</span>
+                      {{ revoking() === s.id ? '...' : 'Revocar' }}
+                    </button>
+                  </td>
+                </tr>
+              } @empty {
+                <tr><td colspan="5" class="table__empty">No hay sesiones activas</td></tr>
+              }
+            </tbody>
+          </table>
+        }
+      </div>
+    </div>
+  </main>
+</div>

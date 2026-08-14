@@ -6,30 +6,28 @@
   </div>
 }
 
-<!-- Topbar -->
-<header class="topbar">
-  <div class="topbar__left">
-    <button class="topbar__back" (click)="goBack()" title="Volver al portal">
-      <span class="material-symbols-outlined">arrow_back</span>
-    </button>
-    <div class="topbar__brand">
-      <span class="material-symbols-outlined topbar__brand-icon">group</span>
-      <div>
-        <h1 class="topbar__title">Gestión de usuarios</h1>
-        <p class="topbar__subtitle">Crea usuarios, define su rol y sus credenciales de Siesa</p>
-      </div>
-    </div>
-  </div>
-  <button class="btn btn--primary" (click)="openCreate()">
-    <span class="material-symbols-outlined">person_add</span>
-    Nuevo usuario
-  </button>
-</header>
+<app-top-nav></app-top-nav>
 
 <div class="admin-shell">
   <app-sidebar></app-sidebar>
   <main class="admin-shell__main">
 <div class="container">
+  <div class="page-head">
+    <div class="page-head__info">
+      <span class="material-symbols-outlined page-head__icon">group</span>
+      <div>
+        <h1 class="page-head__title">Gestión de usuarios</h1>
+        <p class="page-head__subtitle">Crea usuarios, define su rol y sus credenciales de Siesa</p>
+      </div>
+    </div>
+    <div class="page-head__actions">
+      <button class="btn btn--primary" (click)="openCreate()">
+        <span class="material-symbols-outlined">person_add</span>
+        Nuevo usuario
+      </button>
+    </div>
+  </div>
+
   <div class="toolbar">
     <div class="search">
       <span class="material-symbols-outlined search__icon">search</span>
@@ -164,6 +162,16 @@
         Rol y acceso
       </div>
 
+      <div class="field">
+        <label class="field__label">Rol (aplica su preset de acceso al crear)</label>
+        <select class="field__input" [ngModel]="form().role_id" (ngModelChange)="updateField('role_id', $event ? +$event : null)">
+          <option [ngValue]="null">Sin rol</option>
+          @for (role of roles(); track role.id) {
+            <option [ngValue]="role.id">{{ role.name }}</option>
+          }
+        </select>
+      </div>
+
       <div class="toggles">
         <label class="toggle">
           <input type="checkbox" [ngModel]="form().is_admin" (ngModelChange)="updateField('is_admin', $event)" />
@@ -189,7 +197,7 @@
           @for (app of catalog(); track app.id) {
             <label class="app-chip" [class.app-chip--on]="hasApp(app.id)">
               <input type="checkbox" [checked]="hasApp(app.id)" (change)="toggleApp(app.id)" />
-              <span class="app-chip__icon" [style.color]="app.color || '#3D7A5F'">
+              <span class="app-chip__icon" [style.color]="app.color || '#57AD31'">
                 <span class="material-symbols-outlined">{{ app.icon || 'apps' }}</span>
               </span>
               <span class="app-chip__name">{{ app.name }}</span>

@@ -12,9 +12,9 @@
       @for (slide of slides; track $index) {
         <div class="login__slide" [class.login__slide--active]="activeSlide() === $index">
           @if (slide.type === 'tagline') {
-            <!-- Slide tagline: logo arriba del texto -->
+            <!-- Slide tagline: marca arriba del texto -->
             <div class="login__brand">
-              <img class="login__brand-logo" src="logo-scs.png" alt="Santa Cruz Suite" />
+              <span class="login__brand-name"><span>SantaCruz</span><span class="login__brand-accent">Suite</span></span>
             </div>
             <p class="login__tagline-line">Diferentes herramientas</p>
             <p class="login__tagline-line">un mismo software</p>
@@ -62,7 +62,7 @@
     <div class="login__card">
       <div class="login__card-header">
         <div class="login__mobile-brand">
-          <img class="login__mobile-brand-logo" src="logo-scs.png" alt="Santa Cruz Suite" />
+          <span class="login__mobile-brand-text"><span>SantaCruz</span><span class="login__brand-accent">Suite</span></span>
         </div>
         <h2 class="login__title">Iniciar sesi&#243;n</h2>
         <p class="login__subtitle">Ingresa tus credenciales para continuar</p>

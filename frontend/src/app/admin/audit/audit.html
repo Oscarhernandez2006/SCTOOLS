@@ -1,0 +1,68 @@
+<app-top-nav></app-top-nav>
+
+<div class="admin-shell">
+  <app-sidebar></app-sidebar>
+  <main class="admin-shell__main">
+    <div class="page">
+      <div class="page-head">
+        <div class="page-head__info">
+          <span class="material-symbols-outlined page-head__icon">history</span>
+          <div>
+            <h1 class="page-head__title">Bitácora de auditoría</h1>
+            <p class="page-head__subtitle">Registro de acciones administrativas de la suite</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Filtros -->
+      <div class="filters">
+        <select class="filters__input" [ngModel]="filterAction()" (ngModelChange)="filterAction.set($event)">
+          <option value="">Todas las acciones</option>
+          @for (a of actions(); track a) {
+            <option [value]="a">{{ actionLabel(a) }}</option>
+          }
+        </select>
+        <input class="filters__input" type="text" placeholder="Buscar..." [ngModel]="search()" (ngModelChange)="search.set($event)" (keyup.enter)="applyFilters()" />
+        <input class="filters__input" type="date" [ngModel]="from()" (ngModelChange)="from.set($event)" />
+        <input class="filters__input" type="date" [ngModel]="to()" (ngModelChange)="to.set($event)" />
+        <button class="btn btn--primary" (click)="applyFilters()">
+          <span class="material-symbols-outlined">filter_alt</span> Filtrar
+        </button>
+        <button class="btn btn--ghost" (click)="clearFilters()">Limpiar</button>
+      </div>
+
+      <div class="card">
+        @if (loading()) {
+          <div class="page__loading">Cargando bitácora...</div>
+        } @else if (page(); as p) {
+          <table class="table">
+            <thead>
+              <tr><th>Fecha</th><th>Usuario</th><th>Acción</th><th>Detalle</th><th>IP</th></tr>
+            </thead>
+            <tbody>
+              @for (log of p.data; track log.id) {
+                <tr>
+                  <td class="table__mono">{{ log.at | date:'dd/MM/yyyy HH:mm' }}</td>
+                  <td>{{ log.actor }}</td>
+                  <td><span class="tag">{{ actionLabel(log.action) }}</span></td>
+                  <td>{{ log.description }}</td>
+                  <td class="table__mono">{{ log.ip_address }}</td>
+                </tr>
+              } @empty {
+                <tr><td colspan="5" class="table__empty">Sin registros</td></tr>
+              }
+            </tbody>
+          </table>
+
+          @if (p.last_page > 1) {
+            <div class="pager">
+              <button class="btn btn--ghost" [disabled]="p.current_page <= 1" (click)="load(p.current_page - 1)">Anterior</button>
+              <span class="pager__info">Página {{ p.current_page }} de {{ p.last_page }} · {{ p.total }} registros</span>
+              <button class="btn btn--ghost" [disabled]="p.current_page >= p.last_page" (click)="load(p.current_page + 1)">Siguiente</button>
+            </div>
+          }
+        }
+      </div>
+    </div>
+  </main>
+</div>

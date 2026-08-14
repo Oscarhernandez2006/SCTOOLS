@@ -7,6 +7,8 @@ import { AppCard, AppCardData } from '../shared/app-card/app-card';
 import { AuthService } from '../services/auth.service';
 import { Application, ApplicationsService } from '../services/applications.service';
 import { DashboardStats, StatsService } from '../services/stats.service';
+import { AdminService, ServiceHealth } from '../services/admin.service';
+import { PresenceService } from '../services/presence.service';
 import { SiesaService } from '../services/siesa.service';
 
 @Component({
@@ -19,6 +21,8 @@ export class Portal implements OnInit, OnDestroy {
   private authService = inject(AuthService);
   private applicationsService = inject(ApplicationsService);
   private statsService = inject(StatsService);
+  private adminService = inject(AdminService);
+  readonly presence = inject(PresenceService);
   private siesaService = inject(SiesaService);
   private http = inject(HttpClient);
   private clockInterval: ReturnType<typeof setInterval> | null = null;
@@ -33,6 +37,8 @@ export class Portal implements OnInit, OnDestroy {
     this.loadApplications();
     this.authService.refreshUser();
     this.loadStats();
+    this.loadHealth();
+    this.presence.init();
   }
 
   ngOnDestroy(): void {
@@ -306,9 +312,14 @@ export class Portal implements OnInit, OnDestroy {
       { icon: 'grid_view', label: 'Aplicaciones', view: 'aplicaciones' },
     ];
     if (this.isAdmin) {
+      links.push({ icon: 'monitoring', label: 'Panel', view: 'inicio', route: '/admin/panel', adminOnly: true });
       links.push({ icon: 'tune', label: 'Gestionar apps', view: 'inicio', route: '/admin/aplicaciones', adminOnly: true });
       links.push({ icon: 'group', label: 'Usuarios', view: 'inicio', route: '/admin/usuarios', adminOnly: true });
+      links.push({ icon: 'badge', label: 'Roles', view: 'inicio', route: '/admin/roles', adminOnly: true });
       links.push({ icon: 'admin_panel_settings', label: 'Permisos', view: 'inicio', route: '/admin/permisos', adminOnly: true });
+      links.push({ icon: 'history', label: 'Auditoría', view: 'inicio', route: '/admin/auditoria', adminOnly: true });
+      links.push({ icon: 'devices', label: 'Sesiones', view: 'inicio', route: '/admin/sesiones', adminOnly: true });
+      links.push({ icon: 'timer', label: 'Presencia', view: 'inicio', route: '/admin/presencia', adminOnly: true });
     }
     return links;
   });
@@ -388,6 +399,30 @@ export class Portal implements OnInit, OnDestroy {
   // ---- Dashboard de estadísticas (solo admin) ----
   readonly stats = signal<DashboardStats | null>(null);
   readonly statsLoading = signal<boolean>(false);
+
+  // ---- Estado de servicios (health checks) ----
+  readonly servicesHealth = signal<ServiceHealth[]>([]);
+  readonly healthLoading = signal<boolean>(false);
+
+  loadHealth(): void {
+    if (!this.isAdmin) return;
+    this.healthLoading.set(true);
+    this.adminService.getServicesHealth().subscribe({
+      next: (res) => {
+        this.servicesHealth.set(res.services);
+        this.healthLoading.set(false);
+      },
+      error: () => this.healthLoading.set(false),
+    });
+  }
+
+  /** Formatea segundos a "Xh Ym". */
+  fmtDuration(totalSeconds: number): string {
+    const h = Math.floor(totalSeconds / 3600);
+    const m = Math.floor((totalSeconds % 3600) / 60);
+    if (h > 0) return `${h}h ${m}m`;
+    return `${m}m`;
+  }
 
   private loadStats(): void {
     if (!this.isAdmin) return;

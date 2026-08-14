@@ -1,11 +1,17 @@
 <?php
 
 use App\Http\Controllers\Admin\ApplicationController as AdminApplicationController;
+use App\Http\Controllers\Admin\AuditController;
+use App\Http\Controllers\Admin\PresenceController as AdminPresenceController;
+use App\Http\Controllers\Admin\RoleController;
+use App\Http\Controllers\Admin\ServiceHealthController;
+use App\Http\Controllers\Admin\SessionController;
 use App\Http\Controllers\Admin\StatsController;
 use App\Http\Controllers\Admin\UserAccessController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\ApplicationController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\PresenceController;
 use App\Http\Controllers\SiesaCredentialController;
 use App\Http\Controllers\SsoController;
 use Illuminate\Http\Request;
@@ -27,6 +33,13 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/auth/me', [AuthController::class, 'me']);
     // El usuario puede cambiar su propia contraseña.
     Route::put('/auth/password', [AuthController::class, 'updatePassword']);
+    // Sesiones activas del propio usuario.
+    Route::get('/auth/sessions', [SessionController::class, 'mine']);
+
+    // Presencia (monitoreo propio, con consentimiento).
+    Route::get('/presence/me', [PresenceController::class, 'me']);
+    Route::post('/presence/heartbeat', [PresenceController::class, 'heartbeat']);
+    Route::post('/presence/consent', [PresenceController::class, 'consent']);
 
     // Catálogo de aplicaciones a las que el usuario tiene acceso
     Route::get('/applications', [ApplicationController::class, 'index']);
@@ -47,6 +60,30 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::prefix('admin')->group(function () {
         // Dashboard de estadísticas de la suite (solo admin)
         Route::get('/stats', [StatsController::class, 'index']);
+        Route::get('/stats/export', [StatsController::class, 'export']);
+
+        // Bitácora de auditoría
+        Route::get('/audit', [AuditController::class, 'index']);
+        Route::get('/audit/actions', [AuditController::class, 'actions']);
+
+        // Sesiones activas (tokens Sanctum)
+        Route::get('/sessions', [SessionController::class, 'index']);
+        Route::get('/users/{user}/sessions', [SessionController::class, 'forUser']);
+        Route::delete('/sessions/{token}', [SessionController::class, 'revoke']);
+
+        // Estado de servicios (health checks de las apps)
+        Route::get('/services/health', [ServiceHealthController::class, 'index']);
+
+        // Presencia (tablero de administración)
+        Route::get('/presence', [AdminPresenceController::class, 'index']);
+        Route::get('/presence/monthly', [AdminPresenceController::class, 'monthly']);
+        Route::get('/presence/export', [AdminPresenceController::class, 'export']);
+
+        // Roles / grupos
+        Route::get('/roles', [RoleController::class, 'index']);
+        Route::post('/roles', [RoleController::class, 'store']);
+        Route::put('/roles/{role}', [RoleController::class, 'update']);
+        Route::delete('/roles/{role}', [RoleController::class, 'destroy']);
 
         Route::get('/users', [UserAccessController::class, 'users']);
         Route::get('/applications', [UserAccessController::class, 'applications']);

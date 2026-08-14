@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Application;
 use App\Models\User;
+use App\Support\AuditLogger;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -45,40 +46,88 @@ class UserAccessController extends Controller
             ->orderBy('name')
             ->get(['id', 'slug', 'name', 'description', 'icon', 'category', 'color', 'type', 'is_active']);
 
-        return response()->json($applications);
+        return response()->json([
+            'applications' => $applications,
+            'abilities' => Application::ABILITIES,
+        ]);
     }
 
     /**
-     * Return the application ids a given user has access to.
+     * Return the applications a given user has access to, with granular abilities.
      */
     public function show(Request $request, User $user): JsonResponse
     {
         $this->authorizeAdmin($request);
 
+        $access = $user->applications()->get()->map(fn ($app) => [
+            'application_id' => $app->id,
+            'abilities' => $this->decodeAbilities($app->pivot->abilities),
+        ]);
+
         return response()->json([
             'user_id' => $user->id,
-            'application_ids' => $user->applications()->pluck('applications.id'),
+            'application_ids' => $access->pluck('application_id'),
+            'access' => $access->values(),
         ]);
     }
 
     /**
-     * Replace the set of applications a given user can access.
+     * Replace the set of applications (and per-app abilities) a user can access.
+     * Accepts either `access` (granular) or `application_ids` (simple, defaults to view).
      */
     public function update(Request $request, User $user): JsonResponse
     {
         $this->authorizeAdmin($request);
 
         $validated = $request->validate([
-            'application_ids' => 'present|array',
+            'application_ids' => 'sometimes|array',
             'application_ids.*' => 'integer|exists:applications,id',
+            'access' => 'sometimes|array',
+            'access.*.application_id' => 'required|integer|exists:applications,id',
+            'access.*.abilities' => 'nullable|array',
         ]);
 
-        $user->applications()->sync($validated['application_ids']);
+        $sync = [];
 
-        return response()->json([
-            'message' => 'Permisos actualizados',
-            'user_id' => $user->id,
-            'application_ids' => $user->applications()->pluck('applications.id'),
-        ]);
+        if (array_key_exists('access', $validated)) {
+            foreach ($validated['access'] as $entry) {
+                $abilities = array_values(array_intersect(
+                    (array) ($entry['abilities'] ?? []),
+                    Application::ABILITIES
+                ));
+                // Todo acceso implica al menos "view".
+                if (!in_array('view', $abilities, true)) {
+                    array_unshift($abilities, 'view');
+                }
+                $sync[(int) $entry['application_id']] = ['abilities' => json_encode($abilities)];
+            }
+        } else {
+            foreach ($validated['application_ids'] ?? [] as $appId) {
+                $sync[(int) $appId] = ['abilities' => json_encode(['view'])];
+            }
+        }
+
+        $user->applications()->sync($sync);
+
+        AuditLogger::record(
+            $request,
+            'permissions.updated',
+            'user',
+            $user->id,
+            "Permisos actualizados para {$user->name}",
+            ['apps' => array_keys($sync)]
+        );
+
+        return $this->show($request, $user->fresh());
+    }
+
+    private function decodeAbilities(mixed $raw): array
+    {
+        if (is_array($raw)) {
+            return $raw;
+        }
+        $decoded = json_decode((string) $raw, true);
+
+        return is_array($decoded) ? $decoded : ['view'];
     }
 }

@@ -207,11 +207,19 @@
     </button>
 
     <div class="topbar__brand">
-      <img class="topbar__logo" src="logo-scs.png" alt="Santa Cruz Suite" />
+      <span class="topbar__name"><span>SantaCruz</span><span class="topbar__name-accent">Suite</span></span>
     </div>
   </div>
 
   <div class="topbar__right">
+    <!-- Indicador de monitoreo de presencia -->
+    @if (presence.cameraOn()) {
+      <div class="topbar__monitor" [class.topbar__monitor--live]="presence.faceDetected()" title="Monitoreo de presencia activo (solo cámara, no se graba video)">
+        <span class="material-symbols-outlined topbar__monitor-icon">videocam</span>
+        <span class="topbar__monitor-text">Monitoreado</span>
+      </div>
+    }
+
     <!-- Reloj -->
     <div class="topbar__clock">
       <span class="material-symbols-outlined topbar__clock-icon">schedule</span>
@@ -399,6 +407,42 @@
             <span class="kpi__label">Inicios de sesión (7d)</span>
             <span class="kpi__hint">{{ s.summary.logins_ok_last_7d }} exitosos</span>
           </div>
+        </div>
+      }
+    </section>
+
+    <!-- Estado de servicios -->
+    <section class="dashboard services">
+      <h3 class="section-title">
+        <span class="material-symbols-outlined section-title__icon">dns</span>
+        Estado de servicios
+        <button class="services__refresh" (click)="loadHealth()" title="Actualizar">
+          <span class="material-symbols-outlined">refresh</span>
+        </button>
+      </h3>
+
+      @if (healthLoading()) {
+        <div class="services__grid">
+          @for (k of skeletonKpis; track k) {
+            <div class="kpi-skeleton"></div>
+          }
+        </div>
+      } @else {
+        <div class="services__grid">
+          @for (svc of servicesHealth(); track svc.id) {
+            <div class="svc" [class.svc--down]="svc.status === 'down'" [class.svc--degraded]="svc.status === 'degraded'">
+              <span class="svc__dot"></span>
+              <div class="svc__info">
+                <span class="svc__name">{{ svc.name }}</span>
+                <span class="svc__meta">
+                  {{ svc.status === 'up' ? 'En línea' : svc.status === 'degraded' ? 'Degradado' : 'Caído' }}
+                  · {{ svc.latency_ms }} ms
+                </span>
+              </div>
+            </div>
+          } @empty {
+            <p class="services__empty">Sin servicios para monitorear.</p>
+          }
         </div>
       }
     </section>

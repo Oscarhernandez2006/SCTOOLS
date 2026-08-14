@@ -1,0 +1,107 @@
+<header class="tn">
+  <button class="tn__brand" (click)="goHome()" title="Ir al inicio">
+    <span class="tn__name"><span>SantaCruz</span><span class="tn__name-accent">Suite</span></span>
+  </button>
+
+  <div class="tn__right">
+    <!-- Indicador de monitoreo de presencia -->
+    @if (presence.cameraOn()) {
+      <div class="tn__monitor" [class.tn__monitor--live]="presence.faceDetected()" title="Monitoreo de presencia activo (solo cámara, no se graba video)">
+        <span class="material-symbols-outlined tn__monitor-icon">videocam</span>
+        <span class="tn__monitor-text">Monitoreado</span>
+      </div>
+    }
+
+    <!-- Reloj -->
+    <div class="tn__clock">
+      <span class="material-symbols-outlined tn__clock-icon">schedule</span>
+      <span>{{ currentTime() | date:'h:mm:ss a' }}</span>
+    </div>
+
+    <!-- Clima -->
+    @if (weatherTemp() !== null) {
+      <div class="tn__weather">
+        <span class="material-symbols-outlined tn__weather-icon">{{ weatherIcon() }}</span>
+        <span>{{ weatherTemp() }}°C</span>
+      </div>
+    }
+
+    <!-- Calendario -->
+    <div class="tn__calendar-wrapper">
+      <button class="tn__icon-btn" (click)="calendarOpen.set(!calendarOpen())" title="Calendario">
+        <span class="material-symbols-outlined">calendar_month</span>
+      </button>
+
+      @if (calendarOpen()) {
+        <div class="calendar-popover">
+          <div class="calendar">
+            <div class="calendar__header">
+              <button class="calendar__nav" (click)="changeMonth(-1)"><span class="material-symbols-outlined">chevron_left</span></button>
+              <span class="calendar__month">{{ calendarMonth }}</span>
+              <button class="calendar__nav" (click)="changeMonth(1)"><span class="material-symbols-outlined">chevron_right</span></button>
+            </div>
+            <div class="calendar__weekdays">
+              @for (d of ['Do','Lu','Ma','Mi','Ju','Vi','Sa']; track d) {
+                <span class="calendar__weekday">{{ d }}</span>
+              }
+            </div>
+            <div class="calendar__grid">
+              @for (day of calendarDays; track $index) {
+                @if (day) {
+                  <button
+                    class="calendar__day"
+                    [class.calendar__day--today]="isToday(day)"
+                    [class.calendar__day--event]="hasEvent(day)"
+                    [class.calendar__day--selected]="selectedDay() === day"
+                    (click)="selectDay(day)"
+                  >{{ day }}</button>
+                } @else {
+                  <span class="calendar__day calendar__day--blank"></span>
+                }
+              }
+            </div>
+            @if (selectedDay() && hasEvent(selectedDay()!)) {
+              <div class="calendar__events">
+                @for (ev of getEventsForDay(selectedDay()!); track ev) {
+                  <div class="calendar__event">
+                    <span class="material-symbols-outlined calendar__event-icon">event</span>
+                    {{ ev }}
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        </div>
+      }
+    </div>
+
+    <!-- Usuario -->
+    <div class="tn__user" (click)="userMenuOpen.set(!userMenuOpen())">
+      <div class="tn__avatar">{{ currentUserInitials }}</div>
+      <div class="tn__user-info">
+        <span class="tn__user-name">{{ currentUserName }}</span>
+        <span class="tn__user-role">{{ isAdmin ? 'Administrador' : 'Usuario' }}</span>
+      </div>
+      <span class="material-symbols-outlined tn__chevron" [class.tn__chevron--open]="userMenuOpen()">expand_more</span>
+
+      @if (userMenuOpen()) {
+        <div class="tn__dropdown">
+          <button class="tn__dropdown-item" (click)="goHome()">
+            <span class="material-symbols-outlined">home</span>
+            Inicio
+          </button>
+          @if (isAdmin) {
+            <button class="tn__dropdown-item" (click)="goToPermissions()">
+              <span class="material-symbols-outlined">admin_panel_settings</span>
+              Administrar permisos
+            </button>
+          }
+          <button class="tn__dropdown-item tn__dropdown-item--danger" (click)="logout()">
+            <span class="material-symbols-outlined">logout</span>
+            Cerrar sesión
+          </button>
+        </div>
+      }
+    </div>
+  </div>
+</header>

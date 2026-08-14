@@ -1,0 +1,224 @@
+<app-top-nav></app-top-nav>
+
+<div class="admin-shell">
+  <app-sidebar></app-sidebar>
+  <main class="admin-shell__main">
+    <div class="page">
+      <div class="page-head">
+        <div class="page-head__info">
+          <span class="material-symbols-outlined page-head__icon">timer</span>
+          <div>
+            <h1 class="page-head__title">Presencia</h1>
+            <p class="page-head__subtitle">Tiempo frente a cámara por usuario (meta 8h/día)</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Conmutador de vista -->
+      <div class="view-tabs">
+        <button class="view-tab" [class.view-tab--on]="view() === 'mensual'" (click)="setView('mensual')">
+          <span class="material-symbols-outlined">emoji_events</span> Ranking mensual
+        </button>
+        <button class="view-tab" [class.view-tab--on]="view() === 'diario'" (click)="setView('diario')">
+          <span class="material-symbols-outlined">calendar_view_day</span> Detalle diario
+        </button>
+      </div>
+
+      @if (view() === 'mensual') {
+        <div class="filters">
+          <label class="filters__field">
+            <span>Mes</span>
+            <input class="filters__input" type="month" [value]="month()" (change)="month.set($any($event.target).value)" />
+          </label>
+          <button class="btn btn--primary" (click)="loadMonthly()">
+            <span class="material-symbols-outlined">search</span> Consultar
+          </button>
+        </div>
+
+        @if (monthLoading()) {
+          <div class="page__loading">Cargando ranking...</div>
+        } @else if (monthly(); as m) {
+          @if (m.ranking.length) {
+            <!-- Estadísticas del equipo -->
+            <div class="stat-cards">
+              <div class="stat-card">
+                <span class="material-symbols-outlined stat-card__icon">group</span>
+                <div class="stat-card__body">
+                  <span class="stat-card__value">{{ m.summary.users }}</span>
+                  <span class="stat-card__label">Personas monitoreadas</span>
+                </div>
+              </div>
+              <div class="stat-card">
+                <span class="material-symbols-outlined stat-card__icon">schedule</span>
+                <div class="stat-card__body">
+                  <span class="stat-card__value">{{ fmtHours(m.summary.avg_daily_hours) }}</span>
+                  <span class="stat-card__label">Promedio/día · meta {{ m.target_daily_hours }}h</span>
+                </div>
+              </div>
+              <div class="stat-card">
+                <span class="material-symbols-outlined stat-card__icon">task_alt</span>
+                <div class="stat-card__body">
+                  <span class="stat-card__value">{{ m.summary.avg_compliance }}%</span>
+                  <span class="stat-card__label">Cumplimiento promedio</span>
+                </div>
+              </div>
+              <div class="stat-card">
+                <span class="material-symbols-outlined stat-card__icon">insights</span>
+                <div class="stat-card__body">
+                  <span class="stat-card__value">{{ m.summary.avg_consistency }}%</span>
+                  <span class="stat-card__label">Consistencia promedio</span>
+                </div>
+              </div>
+              <div class="stat-card">
+                <span class="material-symbols-outlined stat-card__icon">timelapse</span>
+                <div class="stat-card__body">
+                  <span class="stat-card__value">{{ fmtHours(m.summary.total_hours) }}</span>
+                  <span class="stat-card__label">Horas totales del equipo</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Podio top 3 -->
+            <section class="podium">
+              @for (p of podiumOrdered(); track p.row.user_id) {
+                <div class="podium__card"
+                  [class.podium__card--winner]="p.place === 0"
+                  [class.podium__card--second]="p.place === 1"
+                  [class.podium__card--third]="p.place === 2">
+                  <div class="podium__medal">{{ medal(p.place) }}</div>
+                  <div class="podium__avatar">{{ initials(p.row.user) }}</div>
+                  <div class="podium__name">{{ p.row.user }}</div>
+                  <div class="podium__score">{{ p.row.score }}<small>pts</small></div>
+                  <div class="podium__tags">
+                    <span class="podium__tag"><b>{{ p.row.compliance_pct }}%</b> cumpl.</span>
+                    <span class="podium__tag"><b>{{ p.row.consistency_pct }}%</b> estable</span>
+                  </div>
+                  <div class="podium__hours">{{ fmtHours(p.row.present_hours) }} · {{ p.row.days }} día(s)</div>
+                </div>
+              }
+            </section>
+
+            <!-- Ranking completo -->
+            <section class="card">
+              <h3 class="card__title">Ranking de {{ monthLabel() }} · meta {{ m.target_daily_hours }}h/día</h3>
+              <table class="table rank">
+                <thead>
+                  <tr>
+                    <th>#</th><th>Usuario</th><th>Días</th><th>Horas</th><th>Prom/día</th>
+                    <th>Cumplimiento</th><th>Consistencia</th><th>Puntaje</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (u of m.ranking; track u.user_id; let i = $index) {
+                    <tr [class.rank__top]="i < 3">
+                      <td class="rank__pos">{{ i < 3 ? medal(i) : (i + 1) }}</td>
+                      <td>
+                        <div class="rank__user"><span class="rank__avatar">{{ initials(u.user) }}</span>{{ u.user }}</div>
+                      </td>
+                      <td class="table__mono">{{ u.days }}</td>
+                      <td class="table__mono">{{ fmtHours(u.present_hours) }}</td>
+                      <td class="table__mono">{{ fmtHours(u.avg_daily_hours) }}</td>
+                      <td>
+                        <div class="meter">
+                          <div class="meter__track"><div class="meter__bar meter__bar--{{ complianceClass(u.compliance_pct) }}" [style.width.%]="u.compliance_pct"></div></div>
+                          <span class="meter__val">{{ u.compliance_pct }}%</span>
+                        </div>
+                      </td>
+                      <td>
+                        <div class="meter">
+                          <div class="meter__track"><div class="meter__bar meter__bar--{{ complianceClass(u.consistency_pct) }}" [style.width.%]="u.consistency_pct"></div></div>
+                          <span class="meter__val">{{ u.consistency_pct }}%</span>
+                        </div>
+                      </td>
+                      <td><span class="score-pill">{{ u.score }}</span></td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </section>
+          } @else {
+            <div class="empty-state">
+              <span class="material-symbols-outlined empty-state__icon">timer</span>
+              <h3 class="empty-state__title">Sin datos de presencia</h3>
+              <p class="empty-state__text">Aún no hay registros en {{ monthLabel() }}. El monitoreo por cámara irá acumulando el tiempo automáticamente a medida que las personas usan la suite.</p>
+            </div>
+          }
+        }
+      } @else {
+        <div class="filters">
+          <label class="filters__field">
+            <span>Desde</span>
+            <input class="filters__input" type="date" [value]="from()" (change)="from.set($any($event.target).value)" />
+          </label>
+          <label class="filters__field">
+            <span>Hasta</span>
+            <input class="filters__input" type="date" [value]="to()" (change)="to.set($any($event.target).value)" />
+          </label>
+          <button class="btn btn--primary" (click)="load()">
+            <span class="material-symbols-outlined">search</span> Consultar
+          </button>
+          <button class="btn btn--ghost" [disabled]="exporting()" (click)="exportCsv()">
+            <span class="material-symbols-outlined">download</span>
+            {{ exporting() ? 'Exportando...' : 'Exportar CSV' }}
+          </button>
+        </div>
+
+        @if (loading()) {
+          <div class="page__loading">Cargando presencia...</div>
+        } @else if (report(); as r) {
+          <!-- Resumen por usuario -->
+          <section class="card">
+            <h3 class="card__title">Total por usuario en el rango</h3>
+            @if (r.by_user.length) {
+              <div class="totals">
+                @for (u of r.by_user; track u.user_id) {
+                  <div class="total">
+                    <div class="total__head">
+                      <span class="total__name">{{ u.user }}</span>
+                      <span class="total__pct">{{ pct(u.present_seconds, u.absent_seconds) }}%</span>
+                    </div>
+                    <div class="total__bar">
+                      <div class="total__fill" [style.width.%]="pct(u.present_seconds, u.absent_seconds)"></div>
+                    </div>
+                    <span class="total__meta">{{ fmt(u.present_seconds) }} presente · {{ u.days }} día(s)</span>
+                  </div>
+                }
+              </div>
+            } @else {
+              <p class="page__empty">Sin registros de presencia en el rango seleccionado.</p>
+            }
+          </section>
+
+          <!-- Detalle por día -->
+          <section class="card">
+            <h3 class="card__title">Detalle diario</h3>
+            <table class="table">
+              <thead>
+                <tr><th>Fecha</th><th>Usuario</th><th>Presente</th><th>Ausente</th><th>%</th><th>Primer registro</th><th>Último</th></tr>
+              </thead>
+              <tbody>
+                @for (row of r.rows; track row.id) {
+                  <tr>
+                    <td class="table__mono">{{ row.date }}</td>
+                    <td>{{ row.user }}</td>
+                    <td>{{ fmt(row.present_seconds) }}</td>
+                    <td>{{ fmt(row.absent_seconds) }}</td>
+                    <td>
+                      <span class="pill" [class.pill--ok]="pct(row.present_seconds, row.absent_seconds) >= 50">
+                        {{ pct(row.present_seconds, row.absent_seconds) }}%
+                      </span>
+                    </td>
+                    <td class="table__mono">{{ row.first_seen_at ? (row.first_seen_at | date:'HH:mm') : '—' }}</td>
+                    <td class="table__mono">{{ row.last_seen_at ? (row.last_seen_at | date:'HH:mm') : '—' }}</td>
+                  </tr>
+                } @empty {
+                  <tr><td colspan="7" class="table__empty">Sin registros</td></tr>
+                }
+              </tbody>
+            </table>
+          </section>
+        }
+      }
+    </div>
+  </main>
+</div>

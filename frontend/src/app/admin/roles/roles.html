@@ -1,0 +1,128 @@
+<app-top-nav></app-top-nav>
+
+<div class="admin-shell">
+  <app-sidebar></app-sidebar>
+  <main class="admin-shell__main">
+    <div class="page">
+      <div class="page-head">
+        <div class="page-head__info">
+          <span class="material-symbols-outlined page-head__icon">badge</span>
+          <div>
+            <h1 class="page-head__title">Roles y grupos</h1>
+            <p class="page-head__subtitle">Presets de acceso y permisos para onboarding rápido</p>
+          </div>
+        </div>
+        <div class="page-head__actions">
+          <button class="btn btn--primary" (click)="openCreate()">
+            <span class="material-symbols-outlined">add</span> Nuevo rol
+          </button>
+        </div>
+      </div>
+
+      @if (loading()) {
+        <div class="page__loading">Cargando roles...</div>
+      } @else if (!roles().length) {
+        <div class="empty-state">
+          <span class="material-symbols-outlined empty-state__icon">badge</span>
+          <h3 class="empty-state__title">Aún no hay roles</h3>
+          <p class="empty-state__text">Crea un rol para agrupar accesos y permisos, y agilizar el onboarding de nuevos usuarios.</p>
+          <button class="btn btn--primary" (click)="openCreate()">
+            <span class="material-symbols-outlined">add</span> Crear primer rol
+          </button>
+        </div>
+      } @else {
+        <div class="roles-grid">
+          @for (role of roles(); track role.id) {
+            <div class="role-card" [style.--role-color]="role.color || '#57AD31'">
+              <div class="role-card__head">
+                <span class="role-card__dot"></span>
+                <h3 class="role-card__name">{{ role.name }}</h3>
+                @if (role.is_admin) { <span class="role-card__admin">Admin</span> }
+              </div>
+              <p class="role-card__desc">{{ role.description || 'Sin descripción' }}</p>
+              <div class="role-card__apps">
+                @for (id of role.app_ids; track id) {
+                  <span class="role-card__chip">{{ appName(id) }}</span>
+                } @empty {
+                  <span class="role-card__empty">Sin apps asignadas</span>
+                }
+              </div>
+              <div class="role-card__foot">
+                <span class="role-card__count">{{ role.users_count }} usuario(s)</span>
+                <div class="role-card__actions">
+                  <button class="icon-btn" title="Editar" (click)="openEdit(role)"><span class="material-symbols-outlined">edit</span></button>
+                  <button class="icon-btn icon-btn--danger" title="Eliminar" (click)="remove(role)"><span class="material-symbols-outlined">delete</span></button>
+                </div>
+              </div>
+            </div>
+          }
+        </div>
+      }
+    </div>
+  </main>
+</div>
+
+<!-- Modal -->
+@if (modalOpen()) {
+  <div class="modal-backdrop" (click)="closeModal()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal__head">
+        <h2 class="modal__title">{{ modalTitle() }}</h2>
+        <button class="icon-btn" (click)="closeModal()"><span class="material-symbols-outlined">close</span></button>
+      </div>
+
+      <div class="modal__body">
+        <div class="field-row">
+          <label class="field">
+            <span class="field__label">Nombre</span>
+            <input class="field__input" type="text" [ngModel]="fName()" (ngModelChange)="fName.set($event)" placeholder="Ej. Vendedor" />
+          </label>
+          <label class="field field--color">
+            <span class="field__label">Color</span>
+            <input class="field__color" type="color" [ngModel]="fColor()" (ngModelChange)="fColor.set($event)" />
+          </label>
+        </div>
+
+        <label class="field">
+          <span class="field__label">Descripción</span>
+          <input class="field__input" type="text" [ngModel]="fDescription()" (ngModelChange)="fDescription.set($event)" placeholder="Breve descripción del rol" />
+        </label>
+
+        <label class="check">
+          <input type="checkbox" [ngModel]="fIsAdmin()" (ngModelChange)="fIsAdmin.set($event)" />
+          <span>Rol de administrador (acceso total)</span>
+        </label>
+
+        <div class="field__label field__label--section">Aplicaciones y permisos</div>
+        <div class="apps">
+          @for (app of applications(); track app.id) {
+            <div class="app-item" [class.app-item--on]="isAppOn(app.id)">
+              <label class="app-item__head">
+                <input type="checkbox" [checked]="isAppOn(app.id)" (change)="toggleApp(app.id)" />
+                <span class="app-item__name">{{ app.name }}</span>
+                <span class="app-item__cat">{{ app.category }}</span>
+              </label>
+              @if (isAppOn(app.id)) {
+                <div class="app-item__chips">
+                  @for (a of abilities(); track a) {
+                    <button type="button" class="chip" [class.chip--on]="hasAbility(app.id, a)" [class.chip--locked]="a === 'view'" (click)="toggleAbility(app.id, a)">
+                      {{ abilityLabel(a) }}
+                    </button>
+                  }
+                </div>
+              }
+            </div>
+          }
+        </div>
+      </div>
+
+      <div class="modal__foot">
+        <button class="btn btn--ghost" (click)="closeModal()">Cancelar</button>
+        <button class="btn btn--primary" [disabled]="!fName().trim() || saving()" (click)="save()">
+          <span class="material-symbols-outlined">save</span>
+          {{ saving() ? 'Guardando...' : 'Guardar rol' }}
+        </button>
+      </div>
+    </div>
+  </div>
+}

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Application;
+use App\Support\AuditLogger;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -44,6 +45,8 @@ class ApplicationController extends Controller
         $data = $this->validateData($request);
         $application = Application::create($data);
 
+        AuditLogger::record($request, 'app.created', 'application', $application->id, "App creada: {$application->name}");
+
         return response()->json($application, Response::HTTP_CREATED);
     }
 
@@ -57,6 +60,8 @@ class ApplicationController extends Controller
         $data = $this->validateData($request, $application->id);
         $application->update($data);
 
+        AuditLogger::record($request, 'app.updated', 'application', $application->id, "App actualizada: {$application->name}");
+
         return response()->json($application);
     }
 
@@ -68,6 +73,8 @@ class ApplicationController extends Controller
         $this->authorizeAdmin($request);
 
         $application->delete();
+
+        AuditLogger::record($request, 'app.deleted', 'application', $application->id, "App eliminada: {$application->name}");
 
         return response()->json(['message' => 'Aplicación eliminada']);
     }

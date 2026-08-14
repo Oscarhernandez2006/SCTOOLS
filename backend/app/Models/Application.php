@@ -23,6 +23,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 ])]
 class Application extends Model
 {
+    /** Habilidades granulares que se pueden otorgar por usuario y aplicación. */
+    public const ABILITIES = ['view', 'create', 'edit', 'delete', 'export', 'manage'];
+
     protected function casts(): array
     {
         return [
@@ -34,6 +37,6 @@ class Application extends Model
 
     public function users(): BelongsToMany
     {
-        return $this->belongsToMany(User::class);
+        return $this->belongsToMany(User::class)->withPivot('abilities')->withTimestamps();
     }
 }

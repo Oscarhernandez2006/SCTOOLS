@@ -5,8 +5,8 @@
 :root {
   --color-primary: #12191F;
   --color-primary-mid: #1E2D2F;
-  --color-accent: #3D7A5F;
-  --color-accent-light: #6BAE8A;
+  --color-accent: #57AD31;
+  --color-accent-light: #7BC456;
   --color-surface: #F0F4F2;
   --color-canvas: #FAFCFB;
   --color-alert: #E8734A;
@@ -108,7 +108,7 @@ input, button, textarea {
   color: var(--color-white);
 
   &:hover {
-    background: #357052;
+    background: #468C27;
     box-shadow: var(--shadow-md);
   }
 }
@@ -121,7 +121,7 @@ input, button, textarea {
   &:hover {
     border-color: var(--color-accent);
     color: var(--color-accent);
-    background: rgba(61, 122, 95, 0.04);
+    background: rgba(87, 173, 49, 0.04);
   }
 }
 
@@ -131,7 +131,7 @@ input, button, textarea {
 
   &:hover {
     color: var(--color-accent);
-    background: rgba(61, 122, 95, 0.06);
+    background: rgba(87, 173, 49, 0.06);
   }
 }
 
@@ -161,3 +161,88 @@ input, button, textarea {
   background: var(--color-text-muted);
   border-radius: 3px;
 }
+
+/* ---- Encabezado de página (admin) ---- */
+.page-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+
+  &__info {
+    display: flex;
+    align-items: center;
+    gap: 0.875rem;
+  }
+
+  &__icon {
+    font-size: 30px;
+    color: var(--color-accent);
+    background: rgba(87, 173, 49, 0.08);
+    padding: 0.6rem;
+    border-radius: var(--radius-md);
+  }
+
+  &__title {
+    font-family: var(--font-heading);
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--color-text-primary);
+    margin: 0;
+    letter-spacing: -0.02em;
+  }
+
+  &__subtitle {
+    font-size: 0.85rem;
+    color: var(--color-text-muted);
+    margin: 0.15rem 0 0;
+  }
+
+  &__actions {
+    display: flex;
+    gap: 0.6rem;
+    align-items: center;
+  }
+}
+
+/* ---- Estado vacío (centrado con ícono) ---- */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 0.5rem;
+  padding: 3.5rem 1.5rem;
+  background: var(--color-white);
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-lg);
+
+  &__icon {
+    font-size: 40px;
+    color: var(--color-accent);
+    background: rgba(87, 173, 49, 0.1);
+    padding: 0.9rem;
+    border-radius: 50%;
+    margin-bottom: 0.35rem;
+  }
+
+  &__title {
+    font-family: var(--font-heading);
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--color-text-primary);
+    margin: 0;
+  }
+
+  &__text {
+    font-size: 0.875rem;
+    color: var(--color-text-muted);
+    max-width: 420px;
+    margin: 0 0 0.75rem;
+    line-height: 1.5;
+  }
+}
+

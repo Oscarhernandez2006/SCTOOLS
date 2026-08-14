@@ -6,25 +6,20 @@
   </div>
 }
 
-<!-- Topbar -->
-<header class="topbar">
-  <div class="topbar__left">
-    <button class="topbar__back" (click)="goBack()" title="Volver al portal">
-      <span class="material-symbols-outlined">arrow_back</span>
-    </button>
-    <div class="topbar__brand">
-      <span class="material-symbols-outlined topbar__brand-icon">admin_panel_settings</span>
-      <div>
-        <h1 class="topbar__title">Administración de permisos</h1>
-        <p class="topbar__subtitle">Define a qué aplicaciones puede acceder cada empleado</p>
-      </div>
-    </div>
-  </div>
-</header>
+<app-top-nav></app-top-nav>
 
 <div class="admin-shell">
   <app-sidebar></app-sidebar>
   <main class="admin-shell__main">
+<div class="perm-head">
+  <div class="page-head__info">
+    <span class="material-symbols-outlined page-head__icon">admin_panel_settings</span>
+    <div>
+      <h1 class="page-head__title">Administración de permisos</h1>
+      <p class="page-head__subtitle">Define a qué aplicaciones puede acceder cada empleado</p>
+    </div>
+  </div>
+</div>
 <div class="layout">
   <!-- Lista de usuarios -->
   <aside class="users">
@@ -93,32 +88,53 @@
       } @else {
         <div class="access__grid">
           @for (app of applications(); track app.id) {
-            <label
+            <div
               class="perm-card"
               [class.perm-card--on]="isGranted(app.id)"
               [class.perm-card--disabled]="!app.is_active"
             >
-              <span class="perm-card__icon" [style.background]="app.color + '22'" [style.color]="app.color">
-                <span class="material-symbols-outlined">{{ app.icon }}</span>
-              </span>
-              <span class="perm-card__info">
-                <span class="perm-card__name">
-                  {{ app.name }}
-                  @if (!app.is_active) { <em class="perm-card__off">(deshabilitada)</em> }
+              <div class="perm-card__head">
+                <span class="perm-card__icon" [style.background]="app.color + '22'" [style.color]="app.color">
+                  <span class="material-symbols-outlined">{{ app.icon }}</span>
                 </span>
-                <span class="perm-card__desc">{{ app.description }}</span>
-                <span class="perm-card__tag">{{ app.category }} · {{ app.type === 'app' ? 'Aplicación' : 'Formulario' }}</span>
-              </span>
-              <span class="switch" [class.switch--on]="isGranted(app.id)">
-                <input
-                  type="checkbox"
-                  class="switch__input"
-                  [checked]="isGranted(app.id)"
-                  (change)="toggleApp(app.id)"
-                />
-                <span class="switch__track"><span class="switch__thumb"></span></span>
-              </span>
-            </label>
+                <span class="perm-card__info">
+                  <span class="perm-card__name">
+                    {{ app.name }}
+                    @if (!app.is_active) { <em class="perm-card__off">(deshabilitada)</em> }
+                  </span>
+                  <span class="perm-card__desc">{{ app.description }}</span>
+                  <span class="perm-card__tag">{{ app.category }} · {{ app.type === 'app' ? 'Aplicación' : 'Formulario' }}</span>
+                </span>
+                <span class="switch" [class.switch--on]="isGranted(app.id)">
+                  <input
+                    type="checkbox"
+                    class="switch__input"
+                    [checked]="isGranted(app.id)"
+                    (change)="toggleApp(app.id)"
+                  />
+                  <span class="switch__track"><span class="switch__thumb"></span></span>
+                </span>
+              </div>
+
+              @if (isGranted(app.id)) {
+                <div class="perm-card__abilities">
+                  <span class="perm-card__abilities-label">Qué puede hacer:</span>
+                  <div class="perm-card__chips">
+                    @for (ability of abilities(); track ability) {
+                      <button
+                        type="button"
+                        class="ability-chip"
+                        [class.ability-chip--on]="hasAbility(app.id, ability)"
+                        [class.ability-chip--locked]="ability === 'view'"
+                        (click)="toggleAbility(app.id, ability)"
+                      >
+                        {{ abilityLabel(ability) }}
+                      </button>
+                    }
+                  </div>
+                </div>
+              }
+            </div>
           }
         </div>
 

@@ -2,10 +2,12 @@ import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { Sidebar } from '../../shared/sidebar/sidebar';
+import { TopNav } from '../../shared/top-nav/top-nav';
 import {
   AdminService,
   CatalogApplication,
   ManagedUser,
+  Role,
   UserPayload,
 } from '../../services/admin.service';
 
@@ -17,6 +19,7 @@ interface UserFormModel {
   password: string;
   is_admin: boolean;
   is_active: boolean;
+  role_id: number | null;
   application_ids: number[];
   siesa_username: string;
   siesa_password: string;
@@ -31,6 +34,7 @@ function emptyForm(): UserFormModel {
     password: '',
     is_admin: false,
     is_active: true,
+    role_id: null,
     application_ids: [],
     siesa_username: '',
     siesa_password: '',
@@ -39,7 +43,7 @@ function emptyForm(): UserFormModel {
 
 @Component({
   selector: 'app-users-admin',
-  imports: [FormsModule, Sidebar],
+  imports: [FormsModule, Sidebar, TopNav],
   templateUrl: './users.html',
   styleUrl: './users.scss',
 })
@@ -49,6 +53,7 @@ export class UsersAdmin implements OnInit {
 
   readonly users = signal<ManagedUser[]>([]);
   readonly catalog = signal<CatalogApplication[]>([]);
+  readonly roles = signal<Role[]>([]);
   readonly loading = signal(true);
   readonly saving = signal(false);
 
@@ -94,6 +99,10 @@ export class UsersAdmin implements OnInit {
       next: (apps) => this.catalog.set(apps),
       error: () => this.catalog.set([]),
     });
+    this.adminService.getRoles().subscribe({
+      next: (roles) => this.roles.set(roles),
+      error: () => this.roles.set([]),
+    });
   }
 
   openCreate(): void {
@@ -114,6 +123,7 @@ export class UsersAdmin implements OnInit {
       password: '',
       is_admin: user.is_admin,
       is_active: user.is_active,
+      role_id: user.role_id,
       application_ids: [...user.application_ids],
       siesa_username: '',
       siesa_password: '',
@@ -178,6 +188,7 @@ export class UsersAdmin implements OnInit {
       email: email || null,
       is_admin: f.is_admin,
       is_active: f.is_active,
+      role_id: f.role_id,
       application_ids: f.application_ids,
     };
     if (f.password.trim()) payload.password = f.password;

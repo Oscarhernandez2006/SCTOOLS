@@ -6,30 +6,28 @@
   </div>
 }
 
-<!-- Topbar -->
-<header class="topbar">
-  <div class="topbar__left">
-    <button class="topbar__back" (click)="goBack()" title="Volver al portal">
-      <span class="material-symbols-outlined">arrow_back</span>
-    </button>
-    <div class="topbar__brand">
-      <span class="material-symbols-outlined topbar__brand-icon">grid_view</span>
-      <div>
-        <h1 class="topbar__title">Administrar aplicaciones</h1>
-        <p class="topbar__subtitle">Crea, edita y publica las herramientas del portal</p>
-      </div>
-    </div>
-  </div>
-  <button class="btn btn--primary" (click)="openCreate()">
-    <span class="material-symbols-outlined">add</span>
-    Nueva aplicación
-  </button>
-</header>
+<app-top-nav></app-top-nav>
 
 <div class="admin-shell">
   <app-sidebar></app-sidebar>
   <main class="admin-shell__main">
 <div class="container">
+  <div class="page-head">
+    <div class="page-head__info">
+      <span class="material-symbols-outlined page-head__icon">grid_view</span>
+      <div>
+        <h1 class="page-head__title">Administrar aplicaciones</h1>
+        <p class="page-head__subtitle">Crea, edita y publica las herramientas del portal</p>
+      </div>
+    </div>
+    <div class="page-head__actions">
+      <button class="btn btn--primary" (click)="openCreate()">
+        <span class="material-symbols-outlined">add</span>
+        Nueva aplicación
+      </button>
+    </div>
+  </div>
+
   <div class="toolbar">
     <div class="search">
       <span class="material-symbols-outlined search__icon">search</span>
@@ -50,7 +48,7 @@
     <div class="cards">
       @for (app of filteredApps(); track app.id) {
         <div class="app-row" [class.app-row--inactive]="!app.is_active">
-          <span class="app-row__icon" [style.background]="(app.color || '#3D7A5F') + '22'" [style.color]="app.color || '#3D7A5F'">
+          <span class="app-row__icon" [style.background]="(app.color || '#57AD31') + '22'" [style.color]="app.color || '#57AD31'">
             <span class="material-symbols-outlined">{{ app.icon || 'apps' }}</span>
           </span>
           <div class="app-row__info">
@@ -101,12 +99,12 @@
       <!-- Previsualización en vivo (como se verá en el portal) -->
       <div class="live-preview">
         <span class="live-preview__label">Vista previa</span>
-        <div class="prev-card" [style.--prev-accent]="form().color || '#3D7A5F'">
-          <div class="prev-card__icon-wrap" [style.background]="(form().color || '#3D7A5F') + '14'">
+        <div class="prev-card" [style.--prev-accent]="form().color || '#57AD31'">
+          <div class="prev-card__icon-wrap" [style.background]="(form().color || '#57AD31') + '14'">
             @if (form().logo) {
               <img class="prev-card__logo" [src]="form().logo" [alt]="form().name" />
             } @else {
-              <span class="material-symbols-outlined prev-card__icon" [style.color]="form().color || '#3D7A5F'">{{ form().icon || 'apps' }}</span>
+              <span class="material-symbols-outlined prev-card__icon" [style.color]="form().color || '#57AD31'">{{ form().icon || 'apps' }}</span>
             }
           </div>
           <div class="prev-card__body">
@@ -152,7 +150,7 @@
         <label class="field__label">Ícono</label>
         <div class="icon-select">
           <button type="button" class="icon-select__trigger" (click)="toggleIconPicker()">
-            <span class="icon-select__chosen" [style.color]="form().color || '#3D7A5F'">
+            <span class="icon-select__chosen" [style.color]="form().color || '#57AD31'">
               <span class="material-symbols-outlined">{{ form().icon || 'apps' }}</span>
             </span>
             <span class="icon-select__text">{{ form().icon || 'apps' }}</span>
@@ -194,7 +192,7 @@
         <label class="field__label">Color</label>
         <div class="color-field">
           <input class="color-field__picker" type="color" [ngModel]="form().color" (ngModelChange)="updateField('color', $event)" />
-          <input class="field__input" type="text" [ngModel]="form().color" (ngModelChange)="updateField('color', $event)" placeholder="#3D7A5F" />
+          <input class="field__input" type="text" [ngModel]="form().color" (ngModelChange)="updateField('color', $event)" placeholder="#57AD31" />
         </div>
       </div>
 

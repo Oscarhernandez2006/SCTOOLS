@@ -3,8 +3,10 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Role;
 use App\Models\SiesaCredential;
 use App\Models\User;
+use App\Support\AuditLogger;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -30,9 +32,9 @@ class UserController extends Controller
         $siesaUserIds = SiesaCredential::query()->pluck('user_id')->all();
 
         $users = User::query()
-            ->with(['applications:id'])
+            ->with(['applications:id', 'role:id,name,color'])
             ->orderBy('name')
-            ->get(['id', 'name', 'cedula', 'email', 'is_active', 'is_admin'])
+            ->get(['id', 'name', 'cedula', 'email', 'is_active', 'is_admin', 'role_id'])
             ->map(fn (User $user) => [
                 'id' => $user->id,
                 'name' => $user->name,
@@ -40,6 +42,8 @@ class UserController extends Controller
                 'email' => $user->email,
                 'is_active' => (bool) $user->is_active,
                 'is_admin' => (bool) $user->is_admin,
+                'role_id' => $user->role_id,
+                'role_name' => $user->role->name ?? null,
                 'has_siesa' => in_array($user->id, $siesaUserIds, true),
                 'application_ids' => $user->applications->pluck('id')->values(),
             ]);
@@ -61,6 +65,7 @@ class UserController extends Controller
             'password' => 'required|string|min:6|max:190',
             'is_admin' => 'boolean',
             'is_active' => 'boolean',
+            'role_id' => 'nullable|integer|exists:roles,id',
             'application_ids' => 'nullable|array',
             'application_ids.*' => 'integer|exists:applications,id',
             'siesa_username' => 'nullable|string|max:190',
@@ -68,16 +73,21 @@ class UserController extends Controller
             'siesa_domain' => 'nullable|string|max:190',
         ]);
 
+        $role = !empty($validated['role_id']) ? Role::find($validated['role_id']) : null;
+
         $user = User::create([
             'name' => $validated['name'],
             'cedula' => $validated['cedula'],
             'email' => $validated['email'] ?? null,
             'password' => $validated['password'],
-            'is_admin' => $validated['is_admin'] ?? false,
+            'is_admin' => $validated['is_admin'] ?? ($role?->is_admin ?? false),
             'is_active' => $validated['is_active'] ?? true,
+            'role_id' => $validated['role_id'] ?? null,
         ]);
 
-        $user->applications()->sync($validated['application_ids'] ?? []);
+        // Onboarding: si no se especifican apps pero hay rol, aplica su preset.
+        $sync = $this->buildAccessSync($validated['application_ids'] ?? null, $role);
+        $user->applications()->sync($sync);
 
         // El acceso es por cédula; las credenciales Siesa son opcionales.
         if (!empty($validated['siesa_username'])) {
@@ -90,6 +100,8 @@ class UserController extends Controller
                 ]
             );
         }
+
+        AuditLogger::record($request, 'user.created', 'user', $user->id, "Usuario creado: {$user->name}");
 
         return response()->json($this->present($user), Response::HTTP_CREATED);
     }
@@ -108,6 +120,7 @@ class UserController extends Controller
             'password' => 'nullable|string|min:6|max:190',
             'is_admin' => 'boolean',
             'is_active' => 'boolean',
+            'role_id' => 'nullable|integer|exists:roles,id',
             'application_ids' => 'nullable|array',
             'application_ids.*' => 'integer|exists:applications,id',
             'siesa_username' => 'nullable|string|max:190',
@@ -137,10 +150,21 @@ class UserController extends Controller
         if (array_key_exists('is_active', $validated)) {
             $user->is_active = $validated['is_active'];
         }
+        if (array_key_exists('role_id', $validated)) {
+            $user->role_id = $validated['role_id'];
+        }
         $user->save();
 
         if (array_key_exists('application_ids', $validated)) {
-            $user->applications()->sync($validated['application_ids'] ?? []);
+            // Conserva las habilidades ya otorgadas; agrega "view" a las nuevas.
+            $existing = $user->applications()->get()
+                ->mapWithKeys(fn ($a) => [$a->id => ['abilities' => $a->pivot->abilities ?? json_encode(['view'])]]);
+            $sync = [];
+            foreach ($validated['application_ids'] ?? [] as $appId) {
+                $appId = (int) $appId;
+                $sync[$appId] = $existing[$appId] ?? ['abilities' => json_encode(['view'])];
+            }
+            $user->applications()->sync($sync);
         }
 
         // Solo se actualizan las credenciales de Siesa si vienen ambas.
@@ -154,6 +178,8 @@ class UserController extends Controller
                 ]
             );
         }
+
+        AuditLogger::record($request, 'user.updated', 'user', $user->id, "Usuario actualizado: {$user->name}");
 
         return response()->json($this->present($user->fresh()));
     }
@@ -172,6 +198,8 @@ class UserController extends Controller
         $user->tokens()->delete();
         $user->delete();
 
+        AuditLogger::record($request, 'user.deleted', 'user', $user->id, "Usuario eliminado: {$user->name}");
+
         return response()->json(['message' => 'Usuario eliminado']);
     }
 
@@ -180,6 +208,8 @@ class UserController extends Controller
      */
     private function present(User $user): array
     {
+        $user->loadMissing('role:id,name,color');
+
         return [
             'id' => $user->id,
             'name' => $user->name,
@@ -187,8 +217,41 @@ class UserController extends Controller
             'email' => $user->email,
             'is_active' => (bool) $user->is_active,
             'is_admin' => (bool) $user->is_admin,
+            'role_id' => $user->role_id,
+            'role_name' => $user->role->name ?? null,
             'has_siesa' => SiesaCredential::where('user_id', $user->id)->exists(),
             'application_ids' => $user->applications()->pluck('applications.id')->values(),
         ];
+    }
+
+    /**
+     * Build the applications sync payload, applying a role preset when no
+     * explicit apps are provided (onboarding).
+     *
+     * @param  array<int>|null  $applicationIds
+     */
+    private function buildAccessSync(?array $applicationIds, ?Role $role): array
+    {
+        $sync = [];
+
+        if ($applicationIds !== null && count($applicationIds) > 0) {
+            foreach ($applicationIds as $appId) {
+                $sync[(int) $appId] = ['abilities' => json_encode(['view'])];
+            }
+
+            return $sync;
+        }
+
+        // Sin apps explícitas: usa el preset del rol si existe.
+        if ($role) {
+            $roleAbilities = $role->abilities ?? [];
+            foreach ($role->app_ids ?? [] as $appId) {
+                $appId = (int) $appId;
+                $abilities = $roleAbilities[$appId] ?? $roleAbilities[(string) $appId] ?? ['view'];
+                $sync[$appId] = ['abilities' => json_encode(array_values($abilities))];
+            }
+        }
+
+        return $sync;
     }
 }
