@@ -35,7 +35,11 @@
       </div>
 
       @if (loading()) {
-        <div class="page__loading">Cargando estadísticas...</div>
+        <div class="kpis">
+          @for (k of [1,2,3,4,5]; track k) {
+            <div class="kpi kpi--skeleton"></div>
+          }
+        </div>
       } @else if (stats(); as s) {
         <!-- Tarjetas resumen -->
         <div class="kpis">
@@ -65,53 +69,61 @@
             <span class="kpi__foot">{{ s.summary.logins_last_7d }} intentos</span>
           </div>
         </div>
+      }
 
-        <div class="grid">
-          <!-- Tendencia -->
-          <section class="card panel">
-            <h3 class="panel__title">Tendencia de ingresos</h3>
-            <div class="trend">
-              @for (d of s.logins_trend; track d.day) {
-                <div class="trend__col" [title]="d.day + ': ' + d.count">
-                  <div class="trend__bar" [style.height.%]="trendHeight(d.count)"></div>
-                  <span class="trend__label">{{ d.day | date:'dd/MM' }}</span>
-                </div>
-              }
-            </div>
-          </section>
+      <div class="grid">
+        <!-- Tendencia de ingresos -->
+        <sc-chart-card
+          class="grid__cell"
+          title="Tendencia de ingresos"
+          [subtitle]="'Inicios de sesión · últimos ' + days() + ' días'"
+          [state]="cardState(trendPoints().length > 0)"
+          [bodyHeight]="220"
+          (retry)="load()"
+        >
+          <sc-line-chart
+            [points]="trendPoints()"
+            title="Ingresos"
+            [color]="accentColor"
+            [height]="200"
+            ariaLabel="Tendencia de inicios de sesión"
+          />
+        </sc-chart-card>
 
-          <!-- Apps por categoría -->
-          <section class="card panel">
-            <h3 class="panel__title">Apps por categoría</h3>
-            <ul class="list">
-              @for (c of s.apps_by_category; track c.category) {
-                <li class="list__row">
-                  <span>{{ c.category }}</span>
-                  <span class="list__badge">{{ c.count }}</span>
-                </li>
-              }
-            </ul>
-          </section>
+        <!-- Apps por categoría -->
+        <sc-chart-card
+          class="grid__cell"
+          title="Apps por categoría"
+          subtitle="Distribución del catálogo"
+          [state]="cardState(categoryDonut().length > 0)"
+          [bodyHeight]="220"
+          (retry)="load()"
+        >
+          <sc-donut-chart [data]="categoryDonut()" centerLabel="Apps" ariaLabel="Aplicaciones por categoría" />
+        </sc-chart-card>
 
-          <!-- Accesos por app -->
-          <section class="card panel panel--wide">
-            <h3 class="panel__title">Accesos por aplicación</h3>
-            <div class="bars">
-              @for (a of s.access_per_app; track a.id) {
-                <div class="bars__row">
-                  <span class="bars__name">{{ a.name }}</span>
-                  <div class="bars__track">
-                    <div class="bars__fill" [style.width.%]="accessWidth(a.users_count)" [style.background]="a.color || '#57AD31'"></div>
-                  </div>
-                  <span class="bars__count">{{ a.users_count }}</span>
-                </div>
-              }
-            </div>
-          </section>
+        <!-- Accesos por app -->
+        <sc-chart-card
+          class="grid__cell grid__cell--wide"
+          title="Accesos por aplicación"
+          subtitle="Usuarios con acceso a cada app"
+          [state]="cardState(accessBars().length > 0)"
+          [bodyHeight]="200"
+          (retry)="load()"
+        >
+          <sc-bar-chart [data]="accessBars()" />
+        </sc-chart-card>
 
-          <!-- Últimos ingresos -->
-          <section class="card panel panel--wide">
-            <h3 class="panel__title">Últimos ingresos</h3>
+        <!-- Últimos ingresos -->
+        <sc-chart-card
+          class="grid__cell grid__cell--wide"
+          title="Últimos ingresos"
+          subtitle="Actividad de inicio de sesión reciente"
+          [state]="cardState((stats()?.recent_logins?.length ?? 0) > 0)"
+          [bodyHeight]="160"
+          (retry)="load()"
+        >
+          @if (stats(); as s) {
             <table class="table">
               <thead>
                 <tr><th>Usuario</th><th>Estado</th><th>Navegador</th><th>SO</th><th>IP</th><th>Fecha</th></tr>
@@ -126,14 +138,12 @@
                     <td>{{ l.ip_address }}</td>
                     <td>{{ l.at | date:'dd/MM HH:mm' }}</td>
                   </tr>
-                } @empty {
-                  <tr><td colspan="6" class="table__empty">Sin registros</td></tr>
                 }
               </tbody>
             </table>
-          </section>
-        </div>
-      }
+          }
+        </sc-chart-card>
+      </div>
     </div>
   </main>
 </div>

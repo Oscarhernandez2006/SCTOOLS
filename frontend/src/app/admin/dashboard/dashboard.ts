@@ -4,10 +4,21 @@ import { Router } from '@angular/router';
 import { Sidebar } from '../../shared/sidebar/sidebar';
 import { TopNav } from '../../shared/top-nav/top-nav';
 import { AdminService, SuiteStats } from '../../services/admin.service';
+import {
+  BarChart,
+  BarDatum,
+  ChartCard,
+  ChartCardState,
+  DonutChart,
+  DonutDatum,
+  LineChart,
+  LinePoint,
+  CHART_SEMANTIC,
+} from '../../shared/charts';
 
 @Component({
   selector: 'app-dashboard',
-  imports: [Sidebar, DatePipe, TopNav],
+  imports: [Sidebar, DatePipe, TopNav, ChartCard, LineChart, BarChart, DonutChart],
   templateUrl: './dashboard.html',
   styleUrl: './dashboard.scss',
 })
@@ -17,18 +28,33 @@ export class Dashboard implements OnInit {
 
   readonly stats = signal<SuiteStats | null>(null);
   readonly loading = signal(true);
+  readonly error = signal(false);
   readonly days = signal(7);
   readonly exporting = signal(false);
 
   readonly from = signal('');
   readonly to = signal('');
 
-  readonly maxTrend = computed(() =>
-    Math.max(1, ...(this.stats()?.logins_trend ?? []).map((d) => d.count))
+  readonly accentColor = CHART_SEMANTIC.primary;
+
+  /** Tendencia de ingresos como serie temporal para la gráfica de líneas. */
+  readonly trendPoints = computed<LinePoint[]>(() =>
+    (this.stats()?.logins_trend ?? []).map((d) => ({ x: d.day, y: d.count }))
   );
 
-  readonly maxAccess = computed(() =>
-    Math.max(1, ...(this.stats()?.access_per_app ?? []).map((a) => a.users_count))
+  /** Accesos por aplicación como barras horizontales (conserva color/icono). */
+  readonly accessBars = computed<BarDatum[]>(() =>
+    (this.stats()?.access_per_app ?? []).map((a) => ({
+      label: a.name,
+      value: a.users_count,
+      color: a.color || CHART_SEMANTIC.primary,
+      icon: a.icon,
+    }))
+  );
+
+  /** Distribución de apps por categoría como proporciones (dona). */
+  readonly categoryDonut = computed<DonutDatum[]>(() =>
+    (this.stats()?.apps_by_category ?? []).map((c) => ({ label: c.category, value: c.count }))
   );
 
   ngOnInit(): void {
@@ -37,13 +63,24 @@ export class Dashboard implements OnInit {
 
   load(): void {
     this.loading.set(true);
+    this.error.set(false);
     this.adminService.getStats(this.days()).subscribe({
       next: (s) => {
         this.stats.set(s);
         this.loading.set(false);
       },
-      error: () => this.loading.set(false),
+      error: () => {
+        this.error.set(true);
+        this.loading.set(false);
+      },
     });
+  }
+
+  /** Estado a mostrar en cada tarjeta de gráfica. */
+  cardState(hasData: boolean): ChartCardState {
+    if (this.loading()) return 'loading';
+    if (this.error()) return 'error';
+    return hasData ? 'ready' : 'empty';
   }
 
   setDays(d: number): void {
@@ -65,14 +102,6 @@ export class Dashboard implements OnInit {
       },
       error: () => this.exporting.set(false),
     });
-  }
-
-  trendHeight(count: number): number {
-    return Math.round((count / this.maxTrend()) * 100);
-  }
-
-  accessWidth(count: number): number {
-    return Math.round((count / this.maxAccess()) * 100);
   }
 
   goBack(): void {

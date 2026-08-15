@@ -1,4 +1,4 @@
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -29,15 +29,6 @@ export class PresenceAdmin implements OnInit {
   readonly monthly = signal<PresenceMonthly | null>(null);
   readonly monthLoading = signal(false);
   readonly month = signal(new Date().toISOString().slice(0, 7));
-
-  readonly podium = computed(() => (this.monthly()?.ranking ?? []).slice(0, 3));
-  readonly rest = computed(() => (this.monthly()?.ranking ?? []).slice(3));
-
-  // Podio en orden visual 2·1·3 (el ganador al centro y elevado).
-  readonly podiumOrdered = computed(() => {
-    const top = (this.monthly()?.ranking ?? []).slice(0, 3).map((row, i) => ({ row, place: i }));
-    return top.length === 3 ? [top[1], top[0], top[2]] : top;
-  });
 
   ngOnInit(): void {
     this.loadMonthly();

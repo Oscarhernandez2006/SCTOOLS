@@ -10,10 +10,21 @@ import { DashboardStats, StatsService } from '../services/stats.service';
 import { AdminService, ServiceHealth } from '../services/admin.service';
 import { PresenceService } from '../services/presence.service';
 import { SiesaService } from '../services/siesa.service';
+import {
+  BarChart,
+  BarDatum,
+  ChartCard,
+  ChartCardState,
+  DonutChart,
+  DonutDatum,
+  LineChart,
+  LinePoint,
+  CHART_SEMANTIC,
+} from '../shared/charts';
 
 @Component({
   selector: 'app-portal',
-  imports: [FormsModule, DatePipe, AppCard],
+  imports: [FormsModule, DatePipe, AppCard, ChartCard, LineChart, BarChart, DonutChart],
   templateUrl: './portal.html',
   styleUrl: './portal.scss',
 })
@@ -399,6 +410,7 @@ export class Portal implements OnInit, OnDestroy {
   // ---- Dashboard de estadísticas (solo admin) ----
   readonly stats = signal<DashboardStats | null>(null);
   readonly statsLoading = signal<boolean>(false);
+  readonly statsError = signal<boolean>(false);
 
   // ---- Estado de servicios (health checks) ----
   readonly servicesHealth = signal<ServiceHealth[]>([]);
@@ -424,9 +436,10 @@ export class Portal implements OnInit, OnDestroy {
     return `${m}m`;
   }
 
-  private loadStats(): void {
+  loadStats(): void {
     if (!this.isAdmin) return;
     this.statsLoading.set(true);
+    this.statsError.set(false);
     this.statsService.getStats().subscribe({
       next: (data) => {
         this.stats.set(data);
@@ -434,33 +447,49 @@ export class Portal implements OnInit, OnDestroy {
       },
       error: () => {
         this.stats.set(null);
+        this.statsError.set(true);
         this.statsLoading.set(false);
       },
     });
   }
 
-  /** Ancho (%) de la barra de accesos por app relativo al máximo. */
-  accessBarWidth(count: number): number {
-    const max = Math.max(1, ...(this.stats()?.access_per_app ?? []).map((a) => a.users_count));
-    return Math.round((count / max) * 100);
-  }
+  readonly accentColor = CHART_SEMANTIC.primary;
+  readonly infoColor = CHART_SEMANTIC.info;
 
-  /** Ancho (%) de la barra de SSO por app relativo al máximo. */
-  ssoBarWidth(count: number): number {
-    const max = Math.max(1, ...(this.stats()?.sso_by_app ?? []).map((a) => a.count));
-    return Math.round((count / max) * 100);
-  }
+  /** Accesos por aplicación → barras horizontales (conserva color/icono). */
+  readonly accessBars = computed<BarDatum[]>(() =>
+    (this.stats()?.access_per_app ?? []).map((a) => ({
+      label: a.name,
+      value: a.users_count,
+      color: a.color || CHART_SEMANTIC.primary,
+      icon: a.icon,
+    }))
+  );
 
-  /** Altura (%) de la columna de la tendencia de ingresos. */
-  trendBarHeight(count: number): number {
-    const max = Math.max(1, ...(this.stats()?.logins_trend ?? []).map((t) => t.count));
-    return Math.max(6, Math.round((count / max) * 100));
-  }
+  /** Ingresos SSO por app → barras horizontales. */
+  readonly ssoBars = computed<BarDatum[]>(() =>
+    (this.stats()?.sso_by_app ?? []).map((a) => ({
+      label: a.application,
+      value: a.count,
+      color: CHART_SEMANTIC.info,
+    }))
+  );
 
-  /** Etiqueta corta (día de la semana) para la tendencia. */
-  trendDayLabel(day: string): string {
-    const d = new Date(day + 'T00:00:00');
-    return d.toLocaleDateString('es-CO', { weekday: 'short' }).replace('.', '');
+  /** Tendencia de ingresos → serie temporal para la gráfica de líneas. */
+  readonly trendPoints = computed<LinePoint[]>(() =>
+    (this.stats()?.logins_trend ?? []).map((t) => ({ x: t.day, y: t.count }))
+  );
+
+  /** Apps por categoría → proporciones (dona). */
+  readonly categoryDonut = computed<DonutDatum[]>(() =>
+    (this.stats()?.apps_by_category ?? []).map((c) => ({ label: c.category, value: c.count }))
+  );
+
+  /** Estado para cada tarjeta de gráfica (loading / error / empty / ready). */
+  cardState(hasData: boolean): ChartCardState {
+    if (this.statsLoading()) return 'loading';
+    if (this.statsError()) return 'error';
+    return hasData ? 'ready' : 'empty';
   }
 
   // ---- Integración Siesa ----

@@ -14,27 +14,49 @@
         </div>
       </div>
 
-      <!-- Conmutador de vista -->
-      <div class="view-tabs">
-        <button class="view-tab" [class.view-tab--on]="view() === 'mensual'" (click)="setView('mensual')">
-          <span class="material-symbols-outlined">emoji_events</span> Ranking mensual
-        </button>
-        <button class="view-tab" [class.view-tab--on]="view() === 'diario'" (click)="setView('diario')">
-          <span class="material-symbols-outlined">calendar_view_day</span> Detalle diario
-        </button>
-      </div>
-
-      @if (view() === 'mensual') {
-        <div class="filters">
-          <label class="filters__field">
-            <span>Mes</span>
-            <input class="filters__input" type="month" [value]="month()" (change)="month.set($any($event.target).value)" />
-          </label>
-          <button class="btn btn--primary" (click)="loadMonthly()">
-            <span class="material-symbols-outlined">search</span> Consultar
+      <!-- Conmutador de vista + filtros -->
+      <div class="ptoolbar">
+        <div class="view-tabs">
+          <button class="view-tab" [class.view-tab--on]="view() === 'mensual'" (click)="setView('mensual')">
+            <span class="material-symbols-outlined">emoji_events</span> Ranking mensual
+          </button>
+          <button class="view-tab" [class.view-tab--on]="view() === 'diario'" (click)="setView('diario')">
+            <span class="material-symbols-outlined">calendar_view_day</span> Detalle diario
           </button>
         </div>
 
+        @if (view() === 'mensual') {
+          <div class="filters">
+            <label class="filters__field">
+              <span>Mes</span>
+              <input class="filters__input" type="month" [value]="month()" (change)="month.set($any($event.target).value)" />
+            </label>
+            <button class="btn btn--primary" (click)="loadMonthly()">
+              <span class="material-symbols-outlined">search</span> Consultar
+            </button>
+          </div>
+        } @else {
+          <div class="filters">
+            <label class="filters__field">
+              <span>Desde</span>
+              <input class="filters__input" type="date" [value]="from()" (change)="from.set($any($event.target).value)" />
+            </label>
+            <label class="filters__field">
+              <span>Hasta</span>
+              <input class="filters__input" type="date" [value]="to()" (change)="to.set($any($event.target).value)" />
+            </label>
+            <button class="btn btn--primary" (click)="load()">
+              <span class="material-symbols-outlined">search</span> Consultar
+            </button>
+            <button class="btn btn--ghost" [disabled]="exporting()" (click)="exportCsv()">
+              <span class="material-symbols-outlined">download</span>
+              {{ exporting() ? 'Exportando...' : 'Exportar CSV' }}
+            </button>
+          </div>
+        }
+      </div>
+
+      @if (view() === 'mensual') {
         @if (monthLoading()) {
           <div class="page__loading">Cargando ranking...</div>
         } @else if (monthly(); as m) {
@@ -77,26 +99,6 @@
                 </div>
               </div>
             </div>
-
-            <!-- Podio top 3 -->
-            <section class="podium">
-              @for (p of podiumOrdered(); track p.row.user_id) {
-                <div class="podium__card"
-                  [class.podium__card--winner]="p.place === 0"
-                  [class.podium__card--second]="p.place === 1"
-                  [class.podium__card--third]="p.place === 2">
-                  <div class="podium__medal">{{ medal(p.place) }}</div>
-                  <div class="podium__avatar">{{ initials(p.row.user) }}</div>
-                  <div class="podium__name">{{ p.row.user }}</div>
-                  <div class="podium__score">{{ p.row.score }}<small>pts</small></div>
-                  <div class="podium__tags">
-                    <span class="podium__tag"><b>{{ p.row.compliance_pct }}%</b> cumpl.</span>
-                    <span class="podium__tag"><b>{{ p.row.consistency_pct }}%</b> estable</span>
-                  </div>
-                  <div class="podium__hours">{{ fmtHours(p.row.present_hours) }} · {{ p.row.days }} día(s)</div>
-                </div>
-              }
-            </section>
 
             <!-- Ranking completo -->
             <section class="card">
@@ -145,24 +147,6 @@
           }
         }
       } @else {
-        <div class="filters">
-          <label class="filters__field">
-            <span>Desde</span>
-            <input class="filters__input" type="date" [value]="from()" (change)="from.set($any($event.target).value)" />
-          </label>
-          <label class="filters__field">
-            <span>Hasta</span>
-            <input class="filters__input" type="date" [value]="to()" (change)="to.set($any($event.target).value)" />
-          </label>
-          <button class="btn btn--primary" (click)="load()">
-            <span class="material-symbols-outlined">search</span> Consultar
-          </button>
-          <button class="btn btn--ghost" [disabled]="exporting()" (click)="exportCsv()">
-            <span class="material-symbols-outlined">download</span>
-            {{ exporting() ? 'Exportando...' : 'Exportar CSV' }}
-          </button>
-        </div>
-
         @if (loading()) {
           <div class="page__loading">Cargando presencia...</div>
         } @else if (report(); as r) {
