@@ -21,9 +21,14 @@ interface LoginRequest {
 
 interface LoginResponse {
   message: string;
-  token: string;
-  user: AuthUser;
-  siesa: SiesaStatus;
+  token?: string;
+  user?: AuthUser;
+  siesa?: SiesaStatus;
+  // Segundo factor facial: cuando el backend lo exige, no envía token.
+  face_required?: boolean;
+  challenge?: string;
+  user_name?: string;
+  face_status?: string;
 }
 
 interface MeResponse extends AuthUser {
@@ -55,11 +60,11 @@ export class AuthService {
 
         this.http.post<LoginResponse>('/api/auth/login', body).subscribe({
           next: (res) => {
-            localStorage.setItem(this.TOKEN_KEY, res.token);
-            localStorage.setItem(this.USER_KEY, JSON.stringify(res.user));
-            this.currentUser.set(res.user);
-            this.isAuthenticated.set(true);
-            this.setSiesaStatus(res.siesa ?? null);
+            // Solo se persiste la sesión cuando el backend devuelve token.
+            // Si exige verificación facial, el token llega en el 2º paso.
+            if (res.token && res.user) {
+              this.persistSession(res.token, res.user, res.siesa ?? null);
+            }
             observer.next(res);
             observer.complete();
           },
@@ -67,6 +72,44 @@ export class AuthService {
         });
       });
     });
+  }
+
+  /**
+   * Segundo paso del login: envía el descriptor facial capturado en vivo junto
+   * con el reto emitido en el primer paso. Si el rostro coincide, persiste la
+   * sesión.
+   */
+  loginFace(challenge: string, descriptor: number[]): Observable<LoginResponse> {
+    return new Observable<LoginResponse>((observer) => {
+      this.getGeolocation().then((coords) => {
+        const body = {
+          challenge,
+          descriptor,
+          latitude: coords?.latitude ?? null,
+          longitude: coords?.longitude ?? null,
+        };
+
+        this.http.post<LoginResponse>('/api/auth/login/face', body).subscribe({
+          next: (res) => {
+            if (res.token && res.user) {
+              this.persistSession(res.token, res.user, res.siesa ?? null);
+            }
+            observer.next(res);
+            observer.complete();
+          },
+          error: (err) => observer.error(err),
+        });
+      });
+    });
+  }
+
+  /** Persiste token + usuario + estado Siesa en memoria y localStorage. */
+  private persistSession(token: string, user: AuthUser, siesa: SiesaStatus | null): void {
+    localStorage.setItem(this.TOKEN_KEY, token);
+    localStorage.setItem(this.USER_KEY, JSON.stringify(user));
+    this.currentUser.set(user);
+    this.isAuthenticated.set(true);
+    this.setSiesaStatus(siesa);
   }
 
   logout(): void {

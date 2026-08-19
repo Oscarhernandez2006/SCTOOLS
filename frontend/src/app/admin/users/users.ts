@@ -1,8 +1,10 @@
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, ElementRef, OnInit, computed, inject, signal, viewChild } from '@angular/core';
+import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { Sidebar } from '../../shared/sidebar/sidebar';
 import { TopNav } from '../../shared/top-nav/top-nav';
+import { FaceService } from '../../services/face.service';
 import {
   AdminService,
   CatalogApplication,
@@ -43,12 +45,13 @@ function emptyForm(): UserFormModel {
 
 @Component({
   selector: 'app-users-admin',
-  imports: [FormsModule, Sidebar, TopNav],
+  imports: [FormsModule, DatePipe, Sidebar, TopNav],
   templateUrl: './users.html',
   styleUrl: './users.scss',
 })
 export class UsersAdmin implements OnInit {
   private adminService = inject(AdminService);
+  private faceService = inject(FaceService);
   private router = inject(Router);
 
   readonly users = signal<ManagedUser[]>([]);
@@ -70,6 +73,18 @@ export class UsersAdmin implements OnInit {
   readonly toastVisible = signal(false);
 
   readonly searchQuery = signal('');
+
+  // --- Biometría facial (enrolamiento y bypass) ---
+  readonly faceModalUser = signal<ManagedUser | null>(null);
+  readonly faceSamples = signal<number[][]>([]);
+  readonly faceCapturing = signal(false);
+  readonly faceSaving = signal(false);
+  readonly faceModelsLoading = signal(false);
+  readonly faceMessage = signal('');
+  readonly faceError = signal('');
+  bypassMinutes = 60;
+  private faceStream: MediaStream | null = null;
+  readonly enrollVideo = viewChild<ElementRef<HTMLVideoElement>>('enrollVideo');
 
   readonly filteredUsers = computed(() => {
     const q = this.searchQuery().trim().toLowerCase();
@@ -251,6 +266,121 @@ export class UsersAdmin implements OnInit {
 
   goBack(): void {
     this.router.navigate(['/portal']);
+  }
+
+  // ============================================================
+  // Biometría facial
+  // ============================================================
+
+  /** ¿El usuario tiene un bypass facial vigente? */
+  isBypassActive(user: ManagedUser): boolean {
+    return !!user.face_bypass_until && new Date(user.face_bypass_until).getTime() > Date.now();
+  }
+
+  /** Abre el modal de enrolamiento y enciende la cámara. */
+  async openFaceModal(user: ManagedUser): Promise<void> {
+    this.faceModalUser.set(user);
+    this.faceSamples.set([]);
+    this.faceError.set('');
+    this.faceMessage.set('Preparando la c\u00e1mara...');
+    this.faceModelsLoading.set(true);
+    try {
+      await this.faceService.loadModels();
+      await new Promise((r) => setTimeout(r, 0));
+      const video = this.enrollVideo()?.nativeElement;
+      if (!video) throw new Error('sin cámara');
+      this.faceStream = await this.faceService.startCamera(video);
+      this.faceModelsLoading.set(false);
+      this.faceMessage.set('Captura 3 tomas del rostro desde distintos \u00e1ngulos.');
+    } catch {
+      this.faceModelsLoading.set(false);
+      this.faceError.set('No se pudo acceder a la c\u00e1mara o a los modelos.');
+    }
+  }
+
+  /** Captura una muestra (descriptor) del rostro en vivo. */
+  async captureSample(): Promise<void> {
+    const video = this.enrollVideo()?.nativeElement;
+    if (!video || this.faceCapturing()) return;
+    this.faceCapturing.set(true);
+    this.faceError.set('');
+    try {
+      const descriptor = await this.faceService.detectDescriptor(video);
+      if (!descriptor) {
+        this.faceError.set('No se detect\u00f3 un rostro claro. Intenta de nuevo.');
+      } else {
+        this.faceSamples.set([...this.faceSamples(), this.faceService.toArray(descriptor)]);
+        this.faceMessage.set(`Tomas capturadas: ${this.faceSamples().length} / 3`);
+      }
+    } catch {
+      this.faceError.set('Error al analizar el rostro.');
+    } finally {
+      this.faceCapturing.set(false);
+    }
+  }
+
+  /** Guarda el enrolamiento (envía los descriptores al backend). */
+  saveFace(): void {
+    const user = this.faceModalUser();
+    if (!user || this.faceSaving() || this.faceSamples().length === 0) return;
+    this.faceSaving.set(true);
+    this.adminService.enrollFace(user.id, this.faceSamples()).subscribe({
+      next: () => {
+        this.faceSaving.set(false);
+        this.closeFaceModal();
+        this.showToast('Rostro enrolado correctamente');
+        this.load();
+      },
+      error: (err) => {
+        this.faceSaving.set(false);
+        this.faceError.set(err?.error?.message || 'No se pudo guardar el rostro.');
+      },
+    });
+  }
+
+  /** Elimina el rostro enrolado de un usuario. */
+  removeFace(user: ManagedUser): void {
+    this.adminService.removeFace(user.id).subscribe({
+      next: () => {
+        this.showToast('Rostro eliminado');
+        this.load();
+      },
+      error: (err) => this.showToast(err?.error?.message || 'No se pudo eliminar el rostro'),
+    });
+  }
+
+  /** Otorga un bypass temporal del factor facial. */
+  grantBypass(user: ManagedUser): void {
+    const minutes = Number(this.bypassMinutes) || 60;
+    this.adminService.grantFaceBypass(user.id, minutes).subscribe({
+      next: () => {
+        this.showToast(`Bypass otorgado por ${minutes} min`);
+        this.load();
+      },
+      error: (err) => this.showToast(err?.error?.message || 'No se pudo otorgar el bypass'),
+    });
+  }
+
+  /** Revoca el bypass temporal del factor facial. */
+  revokeBypass(user: ManagedUser): void {
+    this.adminService.revokeFaceBypass(user.id).subscribe({
+      next: () => {
+        this.showToast('Bypass revocado');
+        this.load();
+      },
+      error: (err) => this.showToast(err?.error?.message || 'No se pudo revocar el bypass'),
+    });
+  }
+
+  /** Cierra el modal de enrolamiento y apaga la cámara. */
+  closeFaceModal(): void {
+    if (this.faceSaving()) return;
+    this.faceService.stopCamera(this.enrollVideo()?.nativeElement ?? null, this.faceStream);
+    this.faceStream = null;
+    this.faceModalUser.set(null);
+    this.faceSamples.set([]);
+    this.faceMessage.set('');
+    this.faceError.set('');
   }
 
   private showToast(message: string): void {

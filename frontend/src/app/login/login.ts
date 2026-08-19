@@ -1,7 +1,8 @@
-import { Component, OnDestroy, OnInit, signal } from '@angular/core';
+import { Component, ElementRef, OnDestroy, OnInit, signal, viewChild } from '@angular/core';
 import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../services/auth.service';
+import { FaceService } from '../services/face.service';
 
 @Component({
   selector: 'app-login',
@@ -16,6 +17,17 @@ export class Login implements OnInit, OnDestroy {
   errorMessage = signal('');
   loading = signal(false);
   shakeError = signal(false);
+
+  // --- Segundo factor facial ---
+  faceStep = signal(false);
+  faceUserName = signal('');
+  faceMessage = signal('');
+  faceError = signal('');
+  faceBusy = signal(false);
+  faceModelsLoading = signal(false);
+  private challenge = '';
+  private stream: MediaStream | null = null;
+  readonly faceVideo = viewChild<ElementRef<HTMLVideoElement>>('faceVideo');
 
   activeSlide = signal(0);
   private intervalId: ReturnType<typeof setInterval> | null = null;
@@ -91,7 +103,7 @@ export class Login implements OnInit, OnDestroy {
     },
   ];
 
-  constructor(private router: Router, private authService: AuthService) {}
+  constructor(private router: Router, private authService: AuthService, private faceService: FaceService) {}
 
   ngOnInit(): void {
     this.intervalId = setInterval(() => {
@@ -101,6 +113,7 @@ export class Login implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     if (this.intervalId) clearInterval(this.intervalId);
+    this.stopFaceCamera();
   }
 
   goToSlide(index: number): void {
@@ -118,8 +131,15 @@ export class Login implements OnInit, OnDestroy {
     this.errorMessage.set('');
 
     this.authService.login(this.cedula, this.password).subscribe({
-      next: () => {
+      next: (res) => {
         this.loading.set(false);
+        // El backend exige verificación facial: pasamos al segundo paso.
+        if (res.face_required && res.challenge) {
+          this.challenge = res.challenge;
+          this.faceUserName.set(res.user_name ?? '');
+          this.startFaceStep();
+          return;
+        }
         this.router.navigate(['/portal']);
       },
       error: (err) => {
@@ -128,6 +148,78 @@ export class Login implements OnInit, OnDestroy {
         this.triggerShake();
       },
     });
+  }
+
+  /** Muestra el paso facial, carga los modelos y enciende la cámara. */
+  private async startFaceStep(): Promise<void> {
+    this.faceStep.set(true);
+    this.faceError.set('');
+    this.faceMessage.set('Preparando la c\u00e1mara...');
+    this.faceModelsLoading.set(true);
+    try {
+      await this.faceService.loadModels();
+      // Espera a que el <video> del paso facial esté en el DOM.
+      await new Promise((r) => setTimeout(r, 0));
+      const video = this.faceVideo()?.nativeElement;
+      if (!video) throw new Error('No se encontr\u00f3 la c\u00e1mara');
+      this.stream = await this.faceService.startCamera(video);
+      this.faceModelsLoading.set(false);
+      this.faceMessage.set('Cent\u00e9ra tu rostro y presiona Verificar.');
+    } catch {
+      this.faceModelsLoading.set(false);
+      this.faceError.set('No se pudo acceder a la c\u00e1mara o a los modelos. Verifica permisos o contacta al administrador.');
+    }
+  }
+
+  /** Captura el rostro en vivo y lo envía al backend para verificar. */
+  async verifyFace(): Promise<void> {
+    const video = this.faceVideo()?.nativeElement;
+    if (!video || this.faceBusy()) return;
+
+    this.faceBusy.set(true);
+    this.faceError.set('');
+    this.faceMessage.set('Analizando rostro...');
+
+    try {
+      const descriptor = await this.faceService.detectDescriptor(video);
+      if (!descriptor) {
+        this.faceBusy.set(false);
+        this.faceMessage.set('');
+        this.faceError.set('No detectamos un rostro claro. Ac\u00e9rcate y aseg\u00farate de tener buena luz.');
+        return;
+      }
+
+      this.authService.loginFace(this.challenge, this.faceService.toArray(descriptor)).subscribe({
+        next: () => {
+          this.faceBusy.set(false);
+          this.stopFaceCamera();
+          this.router.navigate(['/portal']);
+        },
+        error: (err) => {
+          this.faceBusy.set(false);
+          this.faceMessage.set('');
+          this.faceError.set(err.error?.message || 'No pudimos verificar tu rostro. Intenta de nuevo.');
+        },
+      });
+    } catch {
+      this.faceBusy.set(false);
+      this.faceMessage.set('');
+      this.faceError.set('Ocurri\u00f3 un error al analizar el rostro. Intenta de nuevo.');
+    }
+  }
+
+  /** Cancela el paso facial y vuelve al formulario de credenciales. */
+  cancelFace(): void {
+    this.stopFaceCamera();
+    this.faceStep.set(false);
+    this.challenge = '';
+    this.faceError.set('');
+    this.faceMessage.set('');
+  }
+
+  private stopFaceCamera(): void {
+    this.faceService.stopCamera(this.faceVideo()?.nativeElement ?? null, this.stream);
+    this.stream = null;
   }
 
   togglePassword(): void {

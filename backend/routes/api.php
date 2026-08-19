@@ -19,6 +19,8 @@ use Illuminate\Support\Facades\Route;
 
 // Public
 Route::post('/auth/login', [AuthController::class, 'login']);
+// Segundo paso del login: verificación facial (biometría 2FA).
+Route::post('/auth/login/face', [AuthController::class, 'loginFace']);
 
 Route::get('/health', function () {
     return response()->json(['status' => 'ok', 'message' => 'Santa Cruz Suite API running']);
@@ -95,6 +97,12 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/manage/users', [AdminUserController::class, 'store']);
         Route::put('/manage/users/{user}', [AdminUserController::class, 'update']);
         Route::delete('/manage/users/{user}', [AdminUserController::class, 'destroy']);
+
+        // Biometría facial (2FA) por usuario (solo admin)
+        Route::post('/manage/users/{user}/face', [AdminUserController::class, 'enrollFace']);
+        Route::delete('/manage/users/{user}/face', [AdminUserController::class, 'removeFace']);
+        Route::post('/manage/users/{user}/face-bypass', [AdminUserController::class, 'grantFaceBypass']);
+        Route::delete('/manage/users/{user}/face-bypass', [AdminUserController::class, 'revokeFaceBypass']);
 
         // Gestión del catálogo de aplicaciones (CRUD, solo admin)
         Route::get('/manage/applications', [AdminApplicationController::class, 'index']);

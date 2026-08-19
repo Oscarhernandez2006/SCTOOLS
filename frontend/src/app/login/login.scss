@@ -637,3 +637,159 @@
     }
   }
 }
+
+/* ============================================================ */
+/* Segundo factor facial (overlay)                              */
+/* ============================================================ */
+.face2fa {
+  &__overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+    background: rgba(18, 25, 31, 0.72);
+    backdrop-filter: blur(4px);
+    animation: errorFadeIn 200ms ease-out;
+  }
+
+  &__card {
+    width: 100%;
+    max-width: 420px;
+    background: var(--color-white);
+    border-radius: 20px;
+    padding: 1.75rem;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+    border: 1px solid var(--color-border);
+  }
+
+  &__header {
+    display: flex;
+    align-items: center;
+    gap: 0.875rem;
+    margin-bottom: 1.25rem;
+  }
+
+  &__icon {
+    font-size: 32px;
+    color: var(--color-accent);
+    flex-shrink: 0;
+  }
+
+  &__title {
+    font-family: var(--font-heading);
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--color-text-primary);
+    letter-spacing: -0.02em;
+    margin: 0;
+  }
+
+  &__subtitle {
+    font-family: var(--font-body);
+    font-size: 0.8125rem;
+    color: var(--color-text-secondary);
+    margin: 0.15rem 0 0;
+    line-height: 1.4;
+  }
+
+  &__video-wrap {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    border-radius: 16px;
+    overflow: hidden;
+    background: #0f1518;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  &__video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transform: scaleX(-1); // efecto espejo
+  }
+
+  &__video-loading {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    color: #fff;
+    font-family: var(--font-body);
+    font-size: 0.8125rem;
+    background: rgba(15, 21, 24, 0.85);
+
+    .login__spinner {
+      border-color: rgba(255, 255, 255, 0.3);
+      border-top-color: #fff;
+    }
+  }
+
+  &__ring {
+    position: absolute;
+    width: 62%;
+    aspect-ratio: 1;
+    border: 3px dashed rgba(123, 196, 86, 0.7);
+    border-radius: 50%;
+    pointer-events: none;
+  }
+
+  &__message {
+    font-family: var(--font-body);
+    font-size: 0.8125rem;
+    color: var(--color-text-secondary);
+    text-align: center;
+    margin: 0.9rem 0 0;
+  }
+
+  &__actions {
+    display: flex;
+    gap: 0.75rem;
+    margin-top: 1.1rem;
+
+    .btn {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      padding: 0.8125rem;
+      border-radius: var(--radius-md);
+      font-family: var(--font-heading);
+      font-weight: 600;
+      font-size: 0.9rem;
+
+      &:disabled {
+        opacity: 0.7;
+        cursor: not-allowed;
+      }
+    }
+
+    .btn--ghost {
+      background: var(--color-surface);
+      border: 1.5px solid var(--color-border);
+      color: var(--color-text-secondary);
+
+      &:hover:not(:disabled) {
+        background: var(--color-border);
+      }
+    }
+  }
+
+  &__help {
+    font-family: var(--font-body);
+    font-size: 0.75rem;
+    color: var(--color-text-muted);
+    text-align: center;
+    margin: 0.9rem 0 0;
+  }
+}
+

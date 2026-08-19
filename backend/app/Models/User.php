@@ -13,8 +13,8 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 
-#[Fillable(['name', 'cedula', 'email', 'password', 'is_active', 'is_admin', 'role_id', 'presence_consent_at'])]
-#[Hidden(['password', 'remember_token'])]
+#[Fillable(['name', 'cedula', 'email', 'password', 'is_active', 'is_admin', 'role_id', 'presence_consent_at', 'face_descriptor', 'face_enrolled_at', 'face_bypass_until'])]
+#[Hidden(['password', 'remember_token', 'face_descriptor'])]
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
@@ -48,6 +48,9 @@ class User extends Authenticatable
             'is_active' => 'boolean',
             'is_admin' => 'boolean',
             'presence_consent_at' => 'datetime',
+            'face_descriptor' => 'array',
+            'face_enrolled_at' => 'datetime',
+            'face_bypass_until' => 'datetime',
         ];
     }
 }

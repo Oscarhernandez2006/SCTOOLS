@@ -206,6 +206,9 @@ export interface ManagedUser {
   role_name: string | null;
   has_siesa: boolean;
   application_ids: number[];
+  has_face?: boolean;
+  face_enrolled_at?: string | null;
+  face_bypass_until?: string | null;
 }
 
 export interface UserPayload {
@@ -360,5 +363,23 @@ export class AdminService {
 
   deleteUser(id: number): Observable<{ message: string }> {
     return this.http.delete<{ message: string }>(`/api/admin/manage/users/${id}`);
+  }
+
+  // ---- Biometría facial (2FA) ----
+
+  enrollFace(userId: number, descriptors: number[][]): Observable<ManagedUser> {
+    return this.http.post<ManagedUser>(`/api/admin/manage/users/${userId}/face`, { descriptors });
+  }
+
+  removeFace(userId: number): Observable<ManagedUser> {
+    return this.http.delete<ManagedUser>(`/api/admin/manage/users/${userId}/face`);
+  }
+
+  grantFaceBypass(userId: number, minutes: number): Observable<ManagedUser> {
+    return this.http.post<ManagedUser>(`/api/admin/manage/users/${userId}/face-bypass`, { minutes });
+  }
+
+  revokeFaceBypass(userId: number): Observable<ManagedUser> {
+    return this.http.delete<ManagedUser>(`/api/admin/manage/users/${userId}/face-bypass`);
   }
 }

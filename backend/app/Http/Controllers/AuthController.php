@@ -8,6 +8,7 @@ use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Hash;
 
 class AuthController extends Controller
@@ -64,10 +65,117 @@ class AuthController extends Controller
             ], 403);
         }
 
-        // Success
+        // Password correcto. Determina si se exige el segundo factor facial.
+        // Regla actual: se exige a todos los usuarios NO administradores que no
+        // tengan un bypass temporal vigente.
+        if (!$user->is_admin && !$this->hasActiveBypass($user)) {
+            if (empty($user->face_descriptor)) {
+                // No hay rostro enrolado ni bypass: no puede continuar.
+                LoginLog::create([
+                    'user_id' => $user->id,
+                    'cedula' => $request->cedula,
+                    'status' => 'failed',
+                    'ip_address' => $request->ip(),
+                    'user_agent' => $request->userAgent(),
+                    'browser' => $clientInfo['browser'],
+                    'device_type' => $clientInfo['device_type'],
+                    'os' => $clientInfo['os'],
+                    'latitude' => $request->latitude,
+                    'longitude' => $request->longitude,
+                ]);
+
+                return response()->json([
+                    'message' => 'Tu rostro aún no está registrado. Contacta al administrador para activar tu acceso.',
+                    'face_status' => 'not_enrolled',
+                ], 403);
+            }
+
+            // Reto de verificación de corta duración. NO se emite el token de
+            // acceso todavía: el cliente debe superar el paso facial.
+            $challenge = Crypt::encryptString(json_encode([
+                'uid' => $user->id,
+                'exp' => now()->addMinutes(5)->timestamp,
+            ]));
+
+            return response()->json([
+                'message' => 'Verificación facial requerida',
+                'face_required' => true,
+                'challenge' => $challenge,
+                'user_name' => $user->name,
+            ]);
+        }
+
+        // Admin o con bypass vigente: acceso directo.
+        return $this->issueToken($user, $request, $clientInfo);
+    }
+
+    /**
+     * Segundo paso del login: verifica el rostro capturado en vivo contra el
+     * descriptor enrolado del usuario y, si coincide, emite el token.
+     */
+    public function loginFace(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'challenge' => 'required|string',
+            'descriptor' => 'required|array|size:128',
+            'descriptor.*' => 'numeric',
+            'latitude' => 'nullable|numeric',
+            'longitude' => 'nullable|numeric',
+        ]);
+
+        try {
+            $payload = json_decode(Crypt::decryptString($validated['challenge']), true);
+        } catch (\Throwable $e) {
+            return response()->json(['message' => 'Sesión de verificación inválida. Vuelve a iniciar sesión.'], 422);
+        }
+
+        if (!is_array($payload) || ($payload['exp'] ?? 0) < now()->timestamp) {
+            return response()->json(['message' => 'La verificación expiró. Vuelve a iniciar sesión.'], 422);
+        }
+
+        $user = User::find($payload['uid'] ?? null);
+        if (!$user || !$user->is_active) {
+            return response()->json(['message' => 'Usuario no válido.'], 401);
+        }
+
+        $clientInfo = $this->extractClientInfo($request);
+        $distance = $this->minFaceDistance($user->face_descriptor, $validated['descriptor']);
+
+        // Umbral típico de face-api.js: <0.6 coincide; usamos 0.5 (más estricto).
+        $threshold = (float) env('FACE_MATCH_THRESHOLD', 0.5);
+
+        if ($distance === null || $distance > $threshold) {
+            LoginLog::create([
+                'user_id' => $user->id,
+                'cedula' => $user->cedula,
+                'status' => 'failed',
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->userAgent(),
+                'browser' => $clientInfo['browser'],
+                'device_type' => $clientInfo['device_type'],
+                'os' => $clientInfo['os'],
+                'latitude' => $validated['latitude'] ?? null,
+                'longitude' => $validated['longitude'] ?? null,
+            ]);
+
+            return response()->json([
+                'message' => 'No pudimos verificar tu rostro. Intenta de nuevo.',
+                'face_status' => 'no_match',
+            ], 401);
+        }
+
+        return $this->issueToken($user, $request, $clientInfo);
+    }
+
+    /**
+     * Emite el token de acceso y registra el login exitoso. Compartido por el
+     * login directo (admin/bypass) y por la verificación facial.
+     */
+    private function issueToken(User $user, Request $request, array $clientInfo): JsonResponse
+    {
         LoginLog::create([
             'user_id' => $user->id,
-            'cedula' => $request->cedula,
+            'cedula' => $user->cedula,
             'status' => 'success',
             'ip_address' => $request->ip(),
             'user_agent' => $request->userAgent(),
@@ -95,6 +203,49 @@ class AuthController extends Controller
             // Se envía el estado de Siesa aquí para evitar una petición extra al cargar el portal.
             'siesa' => $this->siesaStatus($user),
         ]);
+    }
+
+    /**
+     * ¿El usuario tiene un bypass temporal del factor facial vigente?
+     */
+    private function hasActiveBypass(User $user): bool
+    {
+        return $user->face_bypass_until !== null && $user->face_bypass_until->isFuture();
+    }
+
+    /**
+     * Menor distancia euclidiana entre el descriptor en vivo y los enrolados.
+     * `$stored` puede ser un vector (128) o una lista de vectores.
+     *
+     * @param  array<int, float>|array<int, array<int, float>>|null  $stored
+     * @param  array<int, float>  $live
+     */
+    private function minFaceDistance(?array $stored, array $live): ?float
+    {
+        if (empty($stored)) {
+            return null;
+        }
+
+        // Normaliza a lista de muestras.
+        $muestras = isset($stored[0]) && is_array($stored[0]) ? $stored : [$stored];
+
+        $min = null;
+        foreach ($muestras as $muestra) {
+            if (!is_array($muestra) || count($muestra) !== count($live)) {
+                continue;
+            }
+            $suma = 0.0;
+            foreach ($live as $i => $v) {
+                $d = ((float) $v) - ((float) $muestra[$i]);
+                $suma += $d * $d;
+            }
+            $dist = sqrt($suma);
+            if ($min === null || $dist < $min) {
+                $min = $dist;
+            }
+        }
+
+        return $min;
     }
 
     public function logout(Request $request): JsonResponse

@@ -141,4 +141,66 @@
       </form>
     </div>
   </main>
+
+  @if (faceStep()) {
+    <div class="face2fa__overlay">
+      <div class="face2fa__card">
+        <div class="face2fa__header">
+          <span class="material-symbols-outlined face2fa__icon">face</span>
+          <div>
+            <h3 class="face2fa__title">Verificaci&#243;n facial</h3>
+            <p class="face2fa__subtitle">
+              @if (faceUserName()) { Hola, {{ faceUserName() }}. } Confirma tu identidad para continuar.
+            </p>
+          </div>
+        </div>
+
+        <div class="face2fa__video-wrap">
+          <video #faceVideo class="face2fa__video" autoplay muted playsinline></video>
+          @if (faceModelsLoading()) {
+            <div class="face2fa__video-loading">
+              <span class="login__spinner"></span>
+              Preparando c&#225;mara...
+            </div>
+          }
+          <div class="face2fa__ring"></div>
+        </div>
+
+        @if (faceMessage()) {
+          <p class="face2fa__message">{{ faceMessage() }}</p>
+        }
+        @if (faceError()) {
+          <div class="login__error">
+            <span class="material-symbols-outlined login__error-icon">error</span>
+            {{ faceError() }}
+          </div>
+        }
+
+        <div class="face2fa__actions">
+          <button type="button" class="btn btn--ghost" (click)="cancelFace()" [disabled]="faceBusy()">
+            Cancelar
+          </button>
+          <button
+            type="button"
+            class="btn btn--primary"
+            (click)="verifyFace()"
+            [disabled]="faceBusy() || faceModelsLoading()"
+          >
+            @if (faceBusy()) {
+              <span class="login__spinner"></span>
+              Verificando...
+            } @else {
+              <span class="material-symbols-outlined">verified_user</span>
+              Verificar
+            }
+          </button>
+        </div>
+
+        <p class="face2fa__help">
+          &#191;Problemas con la c&#225;mara? Contacta al administrador para un acceso temporal.
+        </p>
+      </div>
+    </div>
+  }
 </div>
+

@@ -34,7 +34,7 @@ class UserController extends Controller
         $users = User::query()
             ->with(['applications:id', 'role:id,name,color'])
             ->orderBy('name')
-            ->get(['id', 'name', 'cedula', 'email', 'is_active', 'is_admin', 'role_id'])
+            ->get(['id', 'name', 'cedula', 'email', 'is_active', 'is_admin', 'role_id', 'face_descriptor', 'face_enrolled_at', 'face_bypass_until'])
             ->map(fn (User $user) => [
                 'id' => $user->id,
                 'name' => $user->name,
@@ -46,6 +46,9 @@ class UserController extends Controller
                 'role_name' => $user->role->name ?? null,
                 'has_siesa' => in_array($user->id, $siesaUserIds, true),
                 'application_ids' => $user->applications->pluck('id')->values(),
+                'has_face' => !empty($user->face_descriptor),
+                'face_enrolled_at' => $user->face_enrolled_at?->toIso8601String(),
+                'face_bypass_until' => $user->face_bypass_until?->toIso8601String(),
             ]);
 
         return response()->json($users);
@@ -204,6 +207,80 @@ class UserController extends Controller
     }
 
     /**
+     * Enrola (o reemplaza) el rostro de un usuario. Se reciben una o varias
+     * muestras de descriptores (128 floats cada una) calculadas en el navegador.
+     */
+    public function enrollFace(Request $request, User $user): JsonResponse
+    {
+        $this->authorizeAdmin($request);
+
+        $validated = $request->validate([
+            'descriptors' => 'required|array|min:1|max:5',
+            'descriptors.*' => 'array|size:128',
+            'descriptors.*.*' => 'numeric',
+        ]);
+
+        $user->face_descriptor = array_values($validated['descriptors']);
+        $user->setAttribute('face_enrolled_at', now());
+        $user->save();
+
+        AuditLogger::record($request, 'user.face_enrolled', 'user', $user->id, "Rostro enrolado: {$user->name}");
+
+        return response()->json($this->present($user->fresh()));
+    }
+
+    /**
+     * Elimina el rostro enrolado de un usuario.
+     */
+    public function removeFace(Request $request, User $user): JsonResponse
+    {
+        $this->authorizeAdmin($request);
+
+        $user->face_descriptor = null;
+        $user->face_enrolled_at = null;
+        $user->save();
+
+        AuditLogger::record($request, 'user.face_removed', 'user', $user->id, "Rostro eliminado: {$user->name}");
+
+        return response()->json($this->present($user->fresh()));
+    }
+
+    /**
+     * Otorga un bypass temporal del factor facial (p. ej. si la cámara falla o
+     * el usuario aún no está enrolado). Duración en minutos.
+     */
+    public function grantFaceBypass(Request $request, User $user): JsonResponse
+    {
+        $this->authorizeAdmin($request);
+
+        $validated = $request->validate([
+            'minutes' => 'required|integer|min:5|max:10080',
+        ]);
+
+        $user->setAttribute('face_bypass_until', now()->addMinutes($validated['minutes']));
+        $user->save();
+
+        AuditLogger::record($request, 'user.face_bypass_granted', 'user', $user->id, "Bypass facial por {$validated['minutes']} min: {$user->name}");
+
+        return response()->json($this->present($user->fresh()));
+    }
+
+    /**
+     * Revoca el bypass temporal del factor facial.
+     */
+    public function revokeFaceBypass(Request $request, User $user): JsonResponse
+    {
+        $this->authorizeAdmin($request);
+
+        $user->face_bypass_until = null;
+        $user->save();
+
+        AuditLogger::record($request, 'user.face_bypass_revoked', 'user', $user->id, "Bypass facial revocado: {$user->name}");
+
+        return response()->json($this->present($user->fresh()));
+    }
+
+    /**
      * Shape a user for the API response.
      */
     private function present(User $user): array
@@ -221,6 +298,9 @@ class UserController extends Controller
             'role_name' => $user->role->name ?? null,
             'has_siesa' => SiesaCredential::where('user_id', $user->id)->exists(),
             'application_ids' => $user->applications()->pluck('applications.id')->values(),
+            'has_face' => !empty($user->face_descriptor),
+            'face_enrolled_at' => $user->face_enrolled_at?->toIso8601String(),
+            'face_bypass_until' => $user->face_bypass_until?->toIso8601String(),
         ];
     }
 

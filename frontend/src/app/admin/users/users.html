@@ -65,6 +65,22 @@
                   <span class="material-symbols-outlined">cloud_done</span>Siesa
                 </span>
               }
+              @if (!user.is_admin) {
+                @if (user.has_face) {
+                  <span class="user-row__badge user-row__badge--face">
+                    <span class="material-symbols-outlined">face</span>Rostro
+                  </span>
+                } @else {
+                  <span class="user-row__badge user-row__badge--noface">
+                    <span class="material-symbols-outlined">no_accounts</span>Sin rostro
+                  </span>
+                }
+                @if (isBypassActive(user)) {
+                  <span class="user-row__badge user-row__badge--bypass">
+                    <span class="material-symbols-outlined">key</span>Bypass
+                  </span>
+                }
+              }
             </div>
             <div class="user-row__meta">
               <span><span class="material-symbols-outlined">badge</span>{{ user.cedula }}</span>
@@ -73,6 +89,11 @@
             </div>
           </div>
           <div class="user-row__actions">
+            @if (!user.is_admin) {
+              <button class="icon-btn" (click)="openFaceModal(user)" title="Gestionar rostro (2FA)">
+                <span class="material-symbols-outlined">face</span>
+              </button>
+            }
             <button class="icon-btn" (click)="openEdit(user)" title="Editar">
               <span class="material-symbols-outlined">edit</span>
             </button>
@@ -239,3 +260,80 @@
     </div>
   </div>
 }
+
+<!-- Gestión de rostro (2FA) -->
+@if (faceModalUser(); as user) {
+  <div class="modal-overlay" (click)="closeFaceModal()"></div>
+  <div class="facemodal">
+    <div class="facemodal__header">
+      <span class="material-symbols-outlined facemodal__icon">face</span>
+      <div>
+        <h3 class="facemodal__title">Rostro de {{ user.name }}</h3>
+        <p class="facemodal__subtitle">
+          @if (user.has_face) { Rostro registrado. Puedes reemplazarlo capturando de nuevo. }
+          @else { Aún no tiene rostro registrado. Captura 3 tomas para activar el 2FA. }
+        </p>
+      </div>
+    </div>
+
+    <div class="facemodal__video-wrap">
+      <video #enrollVideo class="facemodal__video" autoplay muted playsinline></video>
+      @if (faceModelsLoading()) {
+        <div class="facemodal__video-loading">
+          <span class="spinner"></span> Preparando cámara...
+        </div>
+      }
+      <div class="facemodal__ring"></div>
+    </div>
+
+    <div class="facemodal__samples">
+      @for (s of [0,1,2]; track s) {
+        <span class="facemodal__dot" [class.facemodal__dot--on]="faceSamples().length > s"></span>
+      }
+      <span class="facemodal__samples-label">{{ faceSamples().length }} / 3 tomas</span>
+    </div>
+
+    @if (faceMessage()) { <p class="facemodal__message">{{ faceMessage() }}</p> }
+    @if (faceError()) {
+      <div class="facemodal__error">
+        <span class="material-symbols-outlined">error</span>{{ faceError() }}
+      </div>
+    }
+
+    <div class="facemodal__actions">
+      <button class="btn btn--ghost" (click)="captureSample()" [disabled]="faceCapturing() || faceModelsLoading() || faceSamples().length >= 3">
+        <span class="material-symbols-outlined">photo_camera</span>
+        Capturar toma
+      </button>
+      <button class="btn btn--primary" (click)="saveFace()" [disabled]="faceSaving() || faceSamples().length === 0">
+        @if (faceSaving()) { <span class="spinner"></span> Guardando... }
+        @else { <span class="material-symbols-outlined">save</span> Guardar rostro }
+      </button>
+    </div>
+
+    <!-- Acciones rápidas: bypass temporal y eliminación -->
+    <div class="facemodal__quick">
+      <div class="facemodal__bypass">
+        <label class="facemodal__bypass-label">Bypass temporal (min)</label>
+        <div class="facemodal__bypass-row">
+          <input type="number" min="5" max="10080" [(ngModel)]="bypassMinutes" class="facemodal__bypass-input" />
+          <button class="btn btn--ghost btn--sm" (click)="grantBypass(user)">Otorgar</button>
+          @if (isBypassActive(user)) {
+            <button class="btn btn--ghost btn--sm" (click)="revokeBypass(user)">Revocar</button>
+          }
+        </div>
+        @if (isBypassActive(user)) {
+          <p class="facemodal__bypass-note">Bypass vigente hasta {{ user.face_bypass_until | date: 'short' }}</p>
+        }
+      </div>
+      @if (user.has_face) {
+        <button class="btn btn--danger btn--sm" (click)="removeFace(user)">
+          <span class="material-symbols-outlined">delete</span> Eliminar rostro
+        </button>
+      }
+    </div>
+
+    <button class="facemodal__close" (click)="closeFaceModal()" [disabled]="faceSaving()">Cerrar</button>
+  </div>
+}
+
