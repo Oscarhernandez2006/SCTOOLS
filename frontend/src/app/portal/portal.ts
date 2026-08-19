@@ -366,6 +366,9 @@ export class Portal implements OnInit, OnDestroy {
       keywords: app.keywords ?? undefined,
       slug: app.slug,
       ssoEnabled: app.sso_enabled,
+      // Badge por defecto: SSO para las apps con inicio automático, Disponible para el resto.
+      statusText: app.sso_enabled ? 'SSO' : 'Disponible',
+      statusOn: app.sso_enabled,
     };
   }
 

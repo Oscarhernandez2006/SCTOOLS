@@ -453,7 +453,7 @@
       <span class="material-symbols-outlined page-head__icon">apps</span>
       <div>
         <h2 class="page-head__title">Aplicaciones disponibles</h2>
-        <p class="page-head__subtitle">Estas son las herramientas y formularios a los que tienes acceso</p>
+        <p class="page-head__subtitle">Estas son las herramientas a las que tienes acceso</p>
       </div>
     </section>
     }
@@ -465,7 +465,7 @@
         <input
           class="search__input"
           type="text"
-          placeholder="Buscar aplicaciones y formularios..."
+          placeholder="Buscar aplicaciones..."
           [ngModel]="searchQuery()"
           (ngModelChange)="searchQuery.set($event)"
         />
@@ -497,32 +497,6 @@
             <div class="apps-grid__empty">
               <span class="material-symbols-outlined apps-grid__empty-icon">search_off</span>
               <p>No se encontraron aplicaciones</p>
-            </div>
-          }
-        }
-      </div>
-    </section>
-
-    <!-- Formularios -->
-    <section class="apps-section">
-      <h3 class="section-title">
-        <span class="material-symbols-outlined section-title__icon">description</span>
-        Formularios
-        <span class="section-title__count">{{ filteredForms().length }}</span>
-      </h3>
-
-      <div class="apps-grid">
-        @if (appsLoading()) {
-          @for (s of skeletonItems; track s) {
-            <div class="card-skeleton"></div>
-          }
-        } @else {
-          @for (form of filteredForms(); track form.name) {
-            <app-card [data]="form" (cardClick)="onAppClick($event)" />
-          } @empty {
-            <div class="apps-grid__empty">
-              <span class="material-symbols-outlined apps-grid__empty-icon">description_off</span>
-              <p>No hay formularios disponibles</p>
             </div>
           }
         }
