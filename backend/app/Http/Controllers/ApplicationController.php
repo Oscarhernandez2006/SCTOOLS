@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Application;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -9,12 +10,18 @@ class ApplicationController extends Controller
 {
     /**
      * List the active applications the authenticated user has access to.
+     * Los administradores ven TODAS las apps activas del catálogo (así las
+     * apps recién creadas aparecen sin necesidad de asignarlas manualmente).
      */
     public function index(Request $request): JsonResponse
     {
-        $applications = $request->user()
-            ->applications()
-            ->where('is_active', true)
+        $user = $request->user();
+
+        $query = $user->is_admin
+            ? Application::query()->where('is_active', true)
+            : $user->applications()->where('is_active', true);
+
+        $applications = $query
             ->orderBy('sort_order')
             ->orderBy('name')
             ->get()
