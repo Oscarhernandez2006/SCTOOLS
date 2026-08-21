@@ -160,7 +160,42 @@
                         </select>
                       </div>
 
-                      @if (cat.groups.length) {
+                      @if (isMultiCompany(app.id)) {
+                        <!-- Sigcom: módulos POR compañía (pestañas) -->
+                        <div class="company-tabs">
+                          @for (co of companiesFor(app.id); track co.id) {
+                            <button
+                              type="button"
+                              class="company-tab"
+                              [class.company-tab--on]="activeCompanyId(app.id) === co.id"
+                              (click)="setActiveCompany(app.id, co.id)"
+                            >
+                              {{ co.name }}
+                            </button>
+                          }
+                        </div>
+                        <span class="perm-card__abilities-label">Módulos en esta compañía:</span>
+                        @for (group of cat.groups; track group.label) {
+                          <div class="perm-card__module-group">
+                            <span class="perm-card__module-group-label">{{ group.label }}</span>
+                            <div class="perm-card__modules">
+                              @for (mod of group.modules; track mod.key) {
+                                <label class="module-check">
+                                  <input
+                                    type="checkbox"
+                                    [checked]="appCompanyHasPerm(app.id, activeCompanyId(app.id), mod.key)"
+                                    (change)="toggleAppCompanyPerm(app.id, activeCompanyId(app.id), mod.key)"
+                                  />
+                                  <span>{{ mod.label }}</span>
+                                </label>
+                              }
+                            </div>
+                          </div>
+                        }
+                        <p class="perm-card__hint">
+                          Sin módulos marcados en una compañía, el usuario verá los de su rol allí.
+                        </p>
+                      } @else if (cat.groups.length) {
                         <span class="perm-card__abilities-label">Módulos habilitados en {{ app.name }}:</span>
                         @for (group of cat.groups; track group.label) {
                           <div class="perm-card__module-group">

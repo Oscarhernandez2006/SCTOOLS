@@ -3,7 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { Sidebar } from '../../shared/sidebar/sidebar';
 import { TopNav } from '../../shared/top-nav/top-nav';
-import { AdminService, AdminUser, AppProvisioningCatalog, CatalogApplication } from '../../services/admin.service';
+import { AdminService, AdminUser, AppAccess, AppProvisioningCatalog, CatalogApplication } from '../../services/admin.service';
 
 /** Etiquetas legibles para cada habilidad granular. */
 const ABILITY_LABELS: Record<string, string> = {
@@ -36,6 +36,11 @@ export class Permissions implements OnInit {
   readonly appRoles = signal<Map<number, string>>(new Map());
   // Módulos por app externa: appId -> set de claves de módulo.
   readonly appPerms = signal<Map<number, Set<string>>>(new Map());
+  // Módulos por compañía (apps multi-compañía como Sigcom):
+  // appId -> (companyId -> set de módulos).
+  readonly appCompanyPerms = signal<Map<number, Map<string, Set<string>>>>(new Map());
+  // Pestaña de compañía activa por app: appId -> companyId.
+  readonly activeCompany = signal<Map<number, string>>(new Map());
   // Catálogo de roles/módulos por app externa (cargado bajo demanda).
   readonly catalogs = signal<Map<number, AppProvisioningCatalog>>(new Map());
   readonly loadingCatalog = signal<Set<number>>(new Set());
@@ -107,6 +112,7 @@ export class Permissions implements OnInit {
     this.granted.set(new Map());
     this.appRoles.set(new Map());
     this.appPerms.set(new Map());
+    this.appCompanyPerms.set(new Map());
     // Refresca contra las apps externas al abrir el detalle: refleja el rol y
     // permisos actuales (por si cambiaron directamente en la app).
     this.adminService.refreshUserApplications(user.id).subscribe({
@@ -114,20 +120,31 @@ export class Permissions implements OnInit {
         const map = new Map<number, Set<string>>();
         const roles = new Map<number, string>();
         const perms = new Map<number, Set<string>>();
+        const companyPerms = new Map<number, Map<string, Set<string>>>();
         const access = res.access ?? res.application_ids.map((id) => ({
           application_id: id,
           abilities: ['view'],
           role: null as string | null,
           permissions: [] as string[],
+          companyPermissions: {} as Record<string, string[]>,
         }));
         for (const entry of access) {
           map.set(entry.application_id, new Set(entry.abilities.length ? entry.abilities : ['view']));
           if (entry.role) roles.set(entry.application_id, entry.role);
           if (entry.permissions?.length) perms.set(entry.application_id, new Set(entry.permissions));
+          const cp = entry.companyPermissions;
+          if (cp && Object.keys(cp).length) {
+            const byCompany = new Map<string, Set<string>>();
+            for (const [cid, list] of Object.entries(cp)) {
+              byCompany.set(cid, new Set(list ?? []));
+            }
+            companyPerms.set(entry.application_id, byCompany);
+          }
         }
         this.granted.set(map);
         this.appRoles.set(roles);
         this.appPerms.set(perms);
+        this.appCompanyPerms.set(companyPerms);
         this.original = this.serialize(map);
         this.loadingAccess.set(false);
         // Precarga los catálogos de las apps aprovisionables ya otorgadas.
@@ -139,6 +156,44 @@ export class Permissions implements OnInit {
       },
       error: () => this.loadingAccess.set(false),
     });
+  }
+
+  /** ¿La app maneja módulos por compañía (Sigcom)? */
+  isMultiCompany(appId: number): boolean {
+    return (this.catalogFor(appId)?.companies.length ?? 0) > 0;
+  }
+
+  companiesFor(appId: number): { id: string; name: string }[] {
+    return this.catalogFor(appId)?.companies ?? [];
+  }
+
+  activeCompanyId(appId: number): string {
+    return this.activeCompany().get(appId) ?? this.companiesFor(appId)[0]?.id ?? '';
+  }
+
+  setActiveCompany(appId: number, companyId: string): void {
+    const next = new Map(this.activeCompany());
+    next.set(appId, companyId);
+    this.activeCompany.set(next);
+  }
+
+  appCompanyHasPerm(appId: number, companyId: string, key: string): boolean {
+    return this.appCompanyPerms().get(appId)?.get(companyId)?.has(key) ?? false;
+  }
+
+  toggleAppCompanyPerm(appId: number, companyId: string, key: string): void {
+    if (!this.isGranted(appId)) return;
+    const next = new Map(this.appCompanyPerms());
+    const byCompany = new Map(next.get(appId) ?? new Map<string, Set<string>>());
+    const set = new Set(byCompany.get(companyId) ?? []);
+    if (set.has(key)) {
+      set.delete(key);
+    } else {
+      set.add(key);
+    }
+    byCompany.set(companyId, set);
+    next.set(appId, byCompany);
+    this.appCompanyPerms.set(next);
   }
 
   /** ¿La app admite rol/módulos por aplicación (SIGCOM/SIGCOMPRO)? */
@@ -272,12 +327,24 @@ export class Permissions implements OnInit {
     const user = this.selectedUser();
     if (!user || this.saving()) return;
     this.saving.set(true);
-    const access = Array.from(this.granted().entries()).map(([application_id, set]) => ({
-      application_id,
-      abilities: Array.from(set),
-      role: this.appRoles().get(application_id) ?? null,
-      permissions: Array.from(this.appPerms().get(application_id) ?? []),
-    }));
+    const access = Array.from(this.granted().entries()).map(([application_id, set]) => {
+      const entry: AppAccess = {
+        application_id,
+        abilities: Array.from(set),
+        role: this.appRoles().get(application_id) ?? null,
+      };
+      if (this.isMultiCompany(application_id)) {
+        const byCompany: Record<string, string[]> = {};
+        const m = this.appCompanyPerms().get(application_id);
+        if (m) {
+          for (const [cid, s] of m) byCompany[cid] = Array.from(s);
+        }
+        entry.companyPermissions = byCompany;
+      } else {
+        entry.permissions = Array.from(this.appPerms().get(application_id) ?? []);
+      }
+      return entry;
+    });
     this.adminService.updateUserAccess(user.id, access).subscribe({
       next: () => {
         this.original = this.serialize(this.granted());
@@ -312,7 +379,17 @@ export class Permissions implements OnInit {
       .map(([id, set]) => `${id}#${Array.from(set).sort().join(',')}`)
       .sort()
       .join('|');
-    return `${abilities}||${roles}||${perms}`;
+    const companyPerms = Array.from(this.appCompanyPerms().entries())
+      .map(([id, byCompany]) => {
+        const inner = Array.from(byCompany.entries())
+          .map(([cid, set]) => `${cid}:${Array.from(set).sort().join(',')}`)
+          .sort()
+          .join(';');
+        return `${id}{${inner}}`;
+      })
+      .sort()
+      .join('|');
+    return `${abilities}||${roles}||${perms}||${companyPerms}`;
   }
 
   userInitials(user: AdminUser): string {

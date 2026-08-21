@@ -38,17 +38,20 @@ class UserProvisioner
         return $result;
     }
 
-    /** Refleja un usuario en una sola app (upsert + estado). */
+    /** Refleja un usuario en una sola app (upsert + estado + permisos). */
     public function syncApp(User $user, Application $application, ?string $plainPassword = null): bool
     {
         $active = (bool) $user->is_active;
+        $perms = $this->pivotPermissions($application);
 
         $payload = array_filter([
             'cedula' => $user->cedula,
             'nombre' => $user->name,
             'email' => $user->email,
             'rol' => $this->appRole($application),
-            'permisos' => $this->appPermissions($application),
+            // Solo se manda la lista global cuando NO es por compañía (evita
+            // pisar los módulos por compañía en apps multi-compañía como Sigcom).
+            'permisos' => $perms['type'] === 'array' ? $perms['perms'] : null,
             'activo' => $active,
             'password' => $plainPassword,
         ], fn ($v) => $v !== null);
@@ -57,6 +60,18 @@ class UserProvisioner
 
         // El flag "bloqueado por la suite" es explícito: se activa al desactivar.
         $ok = $this->client->setEstado($application, $user->cedula, $active, ! $active) && $ok;
+
+        // Apps multi-compañía: empuja los módulos de cada compañía.
+        if ($perms['type'] === 'byCompany') {
+            foreach ($perms['companies'] as $companyId => $lista) {
+                $ok = $this->client->setCompanyPermisos(
+                    $application,
+                    $user->cedula,
+                    (string) $companyId,
+                    $lista,
+                ) && $ok;
+            }
+        }
 
         return $ok;
     }
@@ -298,18 +313,30 @@ class UserProvisioner
 
     /**
      * Adjunta/actualiza el pivote reflejando el rol y permisos ACTUALES de la
-     * app (la app es fuente de verdad de lo que hay hoy allá). Conserva las
-     * habilidades granulares de la suite.
+     * app. Si la app trae compañías (Sigcom), guarda los módulos por compañía;
+     * si no, una lista plana. Conserva las habilidades granulares de la suite.
      *
      * @param  array<string,mixed>  $remote
      */
     private function writePivotFromRemote(User $user, Application $application, array $remote, $existingPivot = null): void
     {
+        $companies = $remote['companies'] ?? [];
+
+        if (! empty($companies) && is_array($companies)) {
+            $byCompany = [];
+            foreach ($companies as $c) {
+                $byCompany[(string) ($c['companyId'] ?? '')] = array_values((array) ($c['permisos'] ?? []));
+            }
+            $appPermissions = json_encode(['byCompany' => $byCompany]);
+        } else {
+            $appPermissions = json_encode(array_values((array) ($remote['permisos'] ?? [])));
+        }
+
         $user->applications()->syncWithoutDetaching([
             $application->id => [
                 'abilities' => $existingPivot?->abilities ?? json_encode(['view']),
                 'app_role' => ($remote['rol'] ?? null) ?: null,
-                'app_permissions' => json_encode(array_values((array) ($remote['permisos'] ?? []))),
+                'app_permissions' => $appPermissions,
             ],
         ]);
     }
@@ -334,5 +361,31 @@ class UserProvisioner
         }
 
         return array_values($value);
+    }
+
+    /**
+     * Interpreta el pivote app_permissions: lista plana (Sigcompro) o por
+     * compañía (Sigcom, forma {"byCompany": {"3": [...], "8": [...]}}).
+     *
+     * @return array{type:string, perms?:array<int,string>|null, companies?:array<string,array<int,string>>}
+     */
+    private function pivotPermissions(Application $application): array
+    {
+        $raw = $application->pivot->app_permissions ?? null;
+        $value = is_array($raw) ? $raw : json_decode((string) $raw, true);
+
+        if (is_array($value) && array_key_exists('byCompany', $value)) {
+            $companies = [];
+            foreach ((array) $value['byCompany'] as $companyId => $perms) {
+                $companies[(string) $companyId] = array_values((array) $perms);
+            }
+
+            return ['type' => 'byCompany', 'companies' => $companies];
+        }
+
+        $arr = is_array($value) ? array_values($value) : [];
+
+        // Lista vacía => null: no se pisan los módulos existentes de la app.
+        return ['type' => 'array', 'perms' => count($arr) ? $arr : null];
     }
 }

@@ -92,6 +92,7 @@ class ProvisioningClient
             'rol' => $json['rol'] ?? $json['role'] ?? null,
             'activo' => $json['activo'] ?? $json['active'] ?? true,
             'permisos' => $json['permisos'] ?? $json['permissions'] ?? [],
+            'companies' => $json['companies'] ?? [],
         ];
     }
 
@@ -125,6 +126,15 @@ class ProvisioningClient
             'rol' => $rol,
             'permisos' => $permisos,
         ], fn ($v) => $v !== null));
+    }
+
+    /** Define los módulos del usuario en una compañía específica (apps multi-compañía). */
+    public function setCompanyPermisos(Application $application, string $cedula, string $companyId, array $permisos): bool
+    {
+        return $this->send($application, 'patch', '/usuarios/' . rawurlencode($cedula) . '/company-permisos', [
+            'companyId' => $companyId,
+            'permisos' => $permisos,
+        ]);
     }
 
     /** Ejecuta una petición y registra fallos sin lanzar (no debe romper la suite). */

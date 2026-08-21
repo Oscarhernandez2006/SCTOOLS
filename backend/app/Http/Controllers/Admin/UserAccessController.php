@@ -72,12 +72,17 @@ class UserAccessController extends Controller
     {
         $this->authorizeAdmin($request);
 
-        $access = $user->applications()->get()->map(fn ($app) => [
-            'application_id' => $app->id,
-            'abilities' => $this->decodeAbilities($app->pivot->abilities),
-            'role' => $app->pivot->app_role,
-            'permissions' => $this->decodePermissions($app->pivot->app_permissions),
-        ]);
+        $access = $user->applications()->get()->map(function ($app) {
+            $perms = $this->decodeAppPermissions($app->pivot->app_permissions);
+
+            return [
+                'application_id' => $app->id,
+                'abilities' => $this->decodeAbilities($app->pivot->abilities),
+                'role' => $app->pivot->app_role,
+                'permissions' => $perms['permissions'],
+                'companyPermissions' => $perms['companyPermissions'],
+            ];
+        });
 
         return response()->json([
             'user_id' => $user->id,
@@ -160,6 +165,7 @@ class UserAccessController extends Controller
             'access.*.role' => 'nullable|string|max:190',
             'access.*.permissions' => 'nullable|array',
             'access.*.permissions.*' => 'string',
+            'access.*.companyPermissions' => 'nullable|array',
         ]);
 
         $previousAppIds = $user->applications()->pluck('applications.id')->all();
@@ -177,11 +183,13 @@ class UserAccessController extends Controller
                     array_unshift($abilities, 'view');
                 }
                 $role = $entry['role'] ?? null;
-                $permissions = array_values(array_unique(array_map('strval', (array) ($entry['permissions'] ?? []))));
                 $sync[(int) $entry['application_id']] = [
                     'abilities' => json_encode($abilities),
                     'app_role' => $role !== null && $role !== '' ? (string) $role : null,
-                    'app_permissions' => json_encode($permissions),
+                    'app_permissions' => $this->encodeAppPermissions(
+                        $entry['permissions'] ?? [],
+                        $entry['companyPermissions'] ?? null
+                    ),
                 ];
             }
         } else {
@@ -232,5 +240,52 @@ class UserAccessController extends Controller
         $decoded = json_decode((string) $raw, true);
 
         return is_array($decoded) ? array_values($decoded) : [];
+    }
+
+    /**
+     * Interpreta app_permissions del pivote y separa lista plana (Sigcompro) y
+     * módulos por compañía (Sigcom).
+     *
+     * @return array{permissions:array<int,string>, companyPermissions:array<string,array<int,string>>}
+     */
+    private function decodeAppPermissions(mixed $raw): array
+    {
+        $value = is_array($raw) ? $raw : json_decode((string) ($raw ?? ''), true);
+
+        if (is_array($value) && array_key_exists('byCompany', $value)) {
+            $byCompany = [];
+            foreach ((array) $value['byCompany'] as $companyId => $perms) {
+                $byCompany[(string) $companyId] = array_values((array) $perms);
+            }
+
+            return ['permissions' => [], 'companyPermissions' => $byCompany];
+        }
+
+        return [
+            'permissions' => is_array($value) ? array_values($value) : [],
+            'companyPermissions' => [],
+        ];
+    }
+
+    /**
+     * Construye el JSON de app_permissions: por compañía si se envía
+     * companyPermissions, o lista plana en caso contrario.
+     */
+    private function encodeAppPermissions(mixed $permissions, mixed $companyPermissions): string
+    {
+        if (is_array($companyPermissions) && count($companyPermissions) > 0) {
+            $byCompany = [];
+            foreach ($companyPermissions as $companyId => $perms) {
+                $byCompany[(string) $companyId] = array_values(array_unique(
+                    array_map('strval', (array) $perms)
+                ));
+            }
+
+            return json_encode(['byCompany' => $byCompany]);
+        }
+
+        return json_encode(array_values(array_unique(
+            array_map('strval', (array) $permissions)
+        )));
     }
 }

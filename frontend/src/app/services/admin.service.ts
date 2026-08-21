@@ -56,6 +56,7 @@ interface UserApplicationsResponse {
     abilities: string[];
     role?: string | null;
     permissions?: string[];
+    companyPermissions?: Record<string, string[]>;
   }[];
 }
 
@@ -64,6 +65,7 @@ export interface AppAccess {
   abilities: string[];
   role?: string | null;
   permissions?: string[];
+  companyPermissions?: Record<string, string[]>;
 }
 
 /** Catálogo de roles y módulos que expone una app externa (SIGCOM/SIGCOMPRO). */
@@ -77,9 +79,15 @@ export interface AppModuleGroup {
   modules: AppModule[];
 }
 
+export interface AppCompany {
+  id: string;
+  name: string;
+}
+
 export interface AppProvisioningCatalog {
   roles: string[];
   groups: AppModuleGroup[];
+  companies: AppCompany[];
 }
 
 export interface Role {
@@ -322,6 +330,7 @@ export class AdminService {
         roles?: string[];
         grupos?: { label: string; modules: { key: string; label: string }[] }[];
         permisos?: { label: string; modulos: { key: string; label: string }[] }[];
+        companies?: { id: string; name: string }[];
       }>(`/api/admin/applications/${applicationId}/catalog`)
       .pipe(
         map((res) => {
@@ -331,7 +340,7 @@ export class AdminService {
                 label: a.label,
                 modules: (a.modulos ?? []).map((m) => ({ key: m.key, label: m.label })),
               }));
-          return { roles: res.roles ?? [], groups };
+          return { roles: res.roles ?? [], groups, companies: res.companies ?? [] };
         })
       );
   }
