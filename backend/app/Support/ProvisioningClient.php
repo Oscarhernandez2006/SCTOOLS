@@ -137,6 +137,21 @@ class ProvisioningClient
         ]);
     }
 
+    /** Asigna/actualiza el acceso a una compañía con su código de vendedor. */
+    public function assignCompany(Application $application, string $cedula, string $companyId, ?string $sellerCode): bool
+    {
+        return $this->send($application, 'patch', '/usuarios/' . rawurlencode($cedula) . '/company', array_filter([
+            'companyId' => $companyId,
+            'siesaSellerCode' => $sellerCode,
+        ], fn ($v) => $v !== null));
+    }
+
+    /** Quita el acceso del usuario a una compañía. */
+    public function removeCompany(Application $application, string $cedula, string $companyId): bool
+    {
+        return $this->send($application, 'delete', '/usuarios/' . rawurlencode($cedula) . '/company/' . rawurlencode($companyId), []);
+    }
+
     /** Ejecuta una petición y registra fallos sin lanzar (no debe romper la suite). */
     private function send(Application $application, string $method, string $path, array $body): bool
     {

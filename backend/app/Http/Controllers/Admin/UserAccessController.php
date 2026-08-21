@@ -81,6 +81,8 @@ class UserAccessController extends Controller
                 'role' => $app->pivot->app_role,
                 'permissions' => $perms['permissions'],
                 'companyPermissions' => $perms['companyPermissions'],
+                'companySellers' => $perms['companySellers'],
+                'companies' => $perms['companies'],
             ];
         });
 
@@ -166,6 +168,8 @@ class UserAccessController extends Controller
             'access.*.permissions' => 'nullable|array',
             'access.*.permissions.*' => 'string',
             'access.*.companyPermissions' => 'nullable|array',
+            'access.*.companySellers' => 'nullable|array',
+            'access.*.companies' => 'nullable|array',
         ]);
 
         $previousAppIds = $user->applications()->pluck('applications.id')->all();
@@ -188,7 +192,9 @@ class UserAccessController extends Controller
                     'app_role' => $role !== null && $role !== '' ? (string) $role : null,
                     'app_permissions' => $this->encodeAppPermissions(
                         $entry['permissions'] ?? [],
-                        $entry['companyPermissions'] ?? null
+                        $entry['companyPermissions'] ?? null,
+                        $entry['companySellers'] ?? null,
+                        $entry['companies'] ?? null,
                     ),
                 ];
             }
@@ -257,31 +263,58 @@ class UserAccessController extends Controller
             foreach ((array) $value['byCompany'] as $companyId => $perms) {
                 $byCompany[(string) $companyId] = array_values((array) $perms);
             }
+            $sellers = [];
+            foreach ((array) ($value['sellers'] ?? []) as $companyId => $code) {
+                $sellers[(string) $companyId] = (string) $code;
+            }
+            $companies = array_values(array_map('strval', (array) ($value['companies'] ?? array_keys($byCompany))));
 
-            return ['permissions' => [], 'companyPermissions' => $byCompany];
+            return [
+                'permissions' => [],
+                'companyPermissions' => $byCompany,
+                'companySellers' => $sellers,
+                'companies' => $companies,
+            ];
         }
 
         return [
             'permissions' => is_array($value) ? array_values($value) : [],
             'companyPermissions' => [],
+            'companySellers' => [],
+            'companies' => [],
         ];
     }
 
     /**
-     * Construye el JSON de app_permissions: por compañía si se envía
-     * companyPermissions, o lista plana en caso contrario.
+     * Construye el JSON de app_permissions: por compañía (con códigos de vendedor
+     * y compañías habilitadas) o lista plana.
      */
-    private function encodeAppPermissions(mixed $permissions, mixed $companyPermissions): string
+    private function encodeAppPermissions(mixed $permissions, mixed $companyPermissions, mixed $companySellers = null, mixed $companies = null): string
     {
-        if (is_array($companyPermissions) && count($companyPermissions) > 0) {
+        $hasCompany = (is_array($companyPermissions) && count($companyPermissions) > 0)
+            || (is_array($companies) && count($companies) > 0);
+
+        if ($hasCompany) {
             $byCompany = [];
-            foreach ($companyPermissions as $companyId => $perms) {
+            foreach ((array) $companyPermissions as $companyId => $perms) {
                 $byCompany[(string) $companyId] = array_values(array_unique(
                     array_map('strval', (array) $perms)
                 ));
             }
+            $sellers = [];
+            foreach ((array) $companySellers as $companyId => $code) {
+                $code = trim((string) $code);
+                if ($code !== '') {
+                    $sellers[(string) $companyId] = $code;
+                }
+            }
+            $ids = array_values(array_map('strval', (array) ($companies ?? array_keys($byCompany))));
 
-            return json_encode(['byCompany' => $byCompany]);
+            return json_encode([
+                'byCompany' => $byCompany,
+                'sellers' => $sellers,
+                'companies' => $ids,
+            ]);
         }
 
         return json_encode(array_values(array_unique(

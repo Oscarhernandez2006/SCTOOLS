@@ -61,14 +61,36 @@ class UserProvisioner
         // El flag "bloqueado por la suite" es explícito: se activa al desactivar.
         $ok = $this->client->setEstado($application, $user->cedula, $active, ! $active) && $ok;
 
-        // Apps multi-compañía: empuja los módulos de cada compañía.
+        // Apps multi-compañía (Sigcom): asigna acceso + código de vendedor y
+        // módulos por cada compañía habilitada; quita las compañías deshabilitadas.
         if ($perms['type'] === 'byCompany') {
-            foreach ($perms['companies'] as $companyId => $lista) {
+            $enabled = $perms['enabled'];
+
+            $remote = $this->client->getUser($application, $user->cedula);
+            $current = [];
+            if ($remote && ! empty($remote['companies'])) {
+                foreach ($remote['companies'] as $c) {
+                    $current[] = (string) ($c['companyId'] ?? '');
+                }
+            }
+            foreach ($current as $companyId) {
+                if ($companyId !== '' && ! in_array($companyId, $enabled, true)) {
+                    $ok = $this->client->removeCompany($application, $user->cedula, $companyId) && $ok;
+                }
+            }
+
+            foreach ($enabled as $companyId) {
+                $ok = $this->client->assignCompany(
+                    $application,
+                    $user->cedula,
+                    $companyId,
+                    $perms['sellers'][$companyId] ?? null,
+                ) && $ok;
                 $ok = $this->client->setCompanyPermisos(
                     $application,
                     $user->cedula,
-                    (string) $companyId,
-                    $lista,
+                    $companyId,
+                    $perms['companies'][$companyId] ?? [],
                 ) && $ok;
             }
         }
@@ -324,10 +346,24 @@ class UserProvisioner
 
         if (! empty($companies) && is_array($companies)) {
             $byCompany = [];
+            $sellers = [];
+            $ids = [];
             foreach ($companies as $c) {
-                $byCompany[(string) ($c['companyId'] ?? '')] = array_values((array) ($c['permisos'] ?? []));
+                $companyId = (string) ($c['companyId'] ?? '');
+                if ($companyId === '') {
+                    continue;
+                }
+                $byCompany[$companyId] = array_values((array) ($c['permisos'] ?? []));
+                if (! empty($c['sellerCode'])) {
+                    $sellers[$companyId] = (string) $c['sellerCode'];
+                }
+                $ids[] = $companyId;
             }
-            $appPermissions = json_encode(['byCompany' => $byCompany]);
+            $appPermissions = json_encode([
+                'byCompany' => $byCompany,
+                'sellers' => $sellers,
+                'companies' => $ids,
+            ]);
         } else {
             $appPermissions = json_encode(array_values((array) ($remote['permisos'] ?? [])));
         }
@@ -379,8 +415,18 @@ class UserProvisioner
             foreach ((array) $value['byCompany'] as $companyId => $perms) {
                 $companies[(string) $companyId] = array_values((array) $perms);
             }
+            $sellers = [];
+            foreach ((array) ($value['sellers'] ?? []) as $companyId => $code) {
+                $sellers[(string) $companyId] = (string) $code;
+            }
+            $enabled = array_values(array_map('strval', (array) ($value['companies'] ?? array_keys($companies))));
 
-            return ['type' => 'byCompany', 'companies' => $companies];
+            return [
+                'type' => 'byCompany',
+                'companies' => $companies,
+                'sellers' => $sellers,
+                'enabled' => $enabled,
+            ];
         }
 
         $arr = is_array($value) ? array_values($value) : [];

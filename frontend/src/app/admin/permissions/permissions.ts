@@ -39,6 +39,10 @@ export class Permissions implements OnInit {
   // Módulos por compañía (apps multi-compañía como Sigcom):
   // appId -> (companyId -> set de módulos).
   readonly appCompanyPerms = signal<Map<number, Map<string, Set<string>>>>(new Map());
+  // Compañías habilitadas por app: appId -> set de companyId.
+  readonly appCompanies = signal<Map<number, Set<string>>>(new Map());
+  // Código de vendedor por compañía: appId -> (companyId -> código).
+  readonly appCompanySellers = signal<Map<number, Map<string, string>>>(new Map());
   // Pestaña de compañía activa por app: appId -> companyId.
   readonly activeCompany = signal<Map<number, string>>(new Map());
   // Catálogo de roles/módulos por app externa (cargado bajo demanda).
@@ -113,6 +117,8 @@ export class Permissions implements OnInit {
     this.appRoles.set(new Map());
     this.appPerms.set(new Map());
     this.appCompanyPerms.set(new Map());
+    this.appCompanies.set(new Map());
+    this.appCompanySellers.set(new Map());
     // Refresca contra las apps externas al abrir el detalle: refleja el rol y
     // permisos actuales (por si cambiaron directamente en la app).
     this.adminService.refreshUserApplications(user.id).subscribe({
@@ -121,12 +127,16 @@ export class Permissions implements OnInit {
         const roles = new Map<number, string>();
         const perms = new Map<number, Set<string>>();
         const companyPerms = new Map<number, Map<string, Set<string>>>();
+        const companiesEnabled = new Map<number, Set<string>>();
+        const companySellers = new Map<number, Map<string, string>>();
         const access = res.access ?? res.application_ids.map((id) => ({
           application_id: id,
           abilities: ['view'],
           role: null as string | null,
           permissions: [] as string[],
           companyPermissions: {} as Record<string, string[]>,
+          companySellers: {} as Record<string, string>,
+          companies: [] as string[],
         }));
         for (const entry of access) {
           map.set(entry.application_id, new Set(entry.abilities.length ? entry.abilities : ['view']));
@@ -140,11 +150,22 @@ export class Permissions implements OnInit {
             }
             companyPerms.set(entry.application_id, byCompany);
           }
+          if (entry.companies?.length) {
+            companiesEnabled.set(entry.application_id, new Set(entry.companies));
+          }
+          const cs = entry.companySellers;
+          if (cs && Object.keys(cs).length) {
+            const sellers = new Map<string, string>();
+            for (const [cid, code] of Object.entries(cs)) sellers.set(cid, code);
+            companySellers.set(entry.application_id, sellers);
+          }
         }
         this.granted.set(map);
         this.appRoles.set(roles);
         this.appPerms.set(perms);
         this.appCompanyPerms.set(companyPerms);
+        this.appCompanies.set(companiesEnabled);
+        this.appCompanySellers.set(companySellers);
         this.original = this.serialize(map);
         this.loadingAccess.set(false);
         // Precarga los catálogos de las apps aprovisionables ya otorgadas.
@@ -167,8 +188,51 @@ export class Permissions implements OnInit {
     return this.catalogFor(appId)?.companies ?? [];
   }
 
+  /** ¿La compañía está habilitada (el usuario tiene acceso) en esa app? */
+  isCompanyEnabled(appId: number, companyId: string): boolean {
+    return this.appCompanies().get(appId)?.has(companyId) ?? false;
+  }
+
+  toggleCompany(appId: number, companyId: string): void {
+    if (!this.isGranted(appId)) return;
+    const next = new Map(this.appCompanies());
+    const set = new Set(next.get(appId) ?? []);
+    if (set.has(companyId)) {
+      set.delete(companyId);
+    } else {
+      set.add(companyId);
+      this.setActiveCompany(appId, companyId);
+    }
+    next.set(appId, set);
+    this.appCompanies.set(next);
+  }
+
+  companySeller(appId: number, companyId: string): string {
+    return this.appCompanySellers().get(appId)?.get(companyId) ?? '';
+  }
+
+  setCompanySeller(appId: number, companyId: string, code: string): void {
+    const next = new Map(this.appCompanySellers());
+    const byCompany = new Map(next.get(appId) ?? new Map<string, string>());
+    if (code) {
+      byCompany.set(companyId, code);
+    } else {
+      byCompany.delete(companyId);
+    }
+    next.set(appId, byCompany);
+    this.appCompanySellers.set(next);
+  }
+
+  /** Compañías habilitadas (para las pestañas de módulos). */
+  enabledCompaniesFor(appId: number): { id: string; name: string }[] {
+    return this.companiesFor(appId).filter((c) => this.isCompanyEnabled(appId, c.id));
+  }
+
   activeCompanyId(appId: number): string {
-    return this.activeCompany().get(appId) ?? this.companiesFor(appId)[0]?.id ?? '';
+    const active = this.activeCompany().get(appId);
+    const enabled = this.enabledCompaniesFor(appId);
+    if (active && enabled.some((c) => c.id === active)) return active;
+    return enabled[0]?.id ?? '';
   }
 
   setActiveCompany(appId: number, companyId: string): void {
@@ -334,12 +398,19 @@ export class Permissions implements OnInit {
         role: this.appRoles().get(application_id) ?? null,
       };
       if (this.isMultiCompany(application_id)) {
+        const enabled = this.appCompanies().get(application_id) ?? new Set<string>();
+        const modules = this.appCompanyPerms().get(application_id);
+        const sellers = this.appCompanySellers().get(application_id);
         const byCompany: Record<string, string[]> = {};
-        const m = this.appCompanyPerms().get(application_id);
-        if (m) {
-          for (const [cid, s] of m) byCompany[cid] = Array.from(s);
+        const sellerMap: Record<string, string> = {};
+        for (const cid of enabled) {
+          byCompany[cid] = Array.from(modules?.get(cid) ?? []);
+          const code = sellers?.get(cid);
+          if (code) sellerMap[cid] = code;
         }
         entry.companyPermissions = byCompany;
+        entry.companySellers = sellerMap;
+        entry.companies = Array.from(enabled);
       } else {
         entry.permissions = Array.from(this.appPerms().get(application_id) ?? []);
       }
@@ -389,7 +460,21 @@ export class Permissions implements OnInit {
       })
       .sort()
       .join('|');
-    return `${abilities}||${roles}||${perms}||${companyPerms}`;
+    const companiesOn = Array.from(this.appCompanies().entries())
+      .map(([id, set]) => `${id}[${Array.from(set).sort().join(',')}]`)
+      .sort()
+      .join('|');
+    const sellers = Array.from(this.appCompanySellers().entries())
+      .map(([id, byCompany]) => {
+        const inner = Array.from(byCompany.entries())
+          .map(([cid, code]) => `${cid}=${code}`)
+          .sort()
+          .join(';');
+        return `${id}(${inner})`;
+      })
+      .sort()
+      .join('|');
+    return `${abilities}||${roles}||${perms}||${companyPerms}||${companiesOn}||${sellers}`;
   }
 
   userInitials(user: AdminUser): string {

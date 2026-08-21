@@ -57,6 +57,8 @@ interface UserApplicationsResponse {
     role?: string | null;
     permissions?: string[];
     companyPermissions?: Record<string, string[]>;
+    companySellers?: Record<string, string>;
+    companies?: string[];
   }[];
 }
 
@@ -66,6 +68,8 @@ export interface AppAccess {
   role?: string | null;
   permissions?: string[];
   companyPermissions?: Record<string, string[]>;
+  companySellers?: Record<string, string>;
+  companies?: string[];
 }
 
 /** Catálogo de roles y módulos que expone una app externa (SIGCOM/SIGCOMPRO). */
