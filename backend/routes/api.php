@@ -89,6 +89,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
         Route::get('/users', [UserAccessController::class, 'users']);
         Route::get('/applications', [UserAccessController::class, 'applications']);
+        Route::get('/applications/{application}/catalog', [UserAccessController::class, 'catalog']);
         Route::get('/users/{user}/applications', [UserAccessController::class, 'show']);
         Route::put('/users/{user}/applications', [UserAccessController::class, 'update']);
 

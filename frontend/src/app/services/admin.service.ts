@@ -43,17 +43,43 @@ export interface CatalogApplication {
   color: string;
   type: 'app' | 'form';
   is_active: boolean;
+  sso_enabled?: boolean;
+  /** True si la app expone la API de aprovisionamiento (rol/permisos por app). */
+  provisionable?: boolean;
 }
 
 interface UserApplicationsResponse {
   user_id: number;
   application_ids: number[];
-  access?: { application_id: number; abilities: string[] }[];
+  access?: {
+    application_id: number;
+    abilities: string[];
+    role?: string | null;
+    permissions?: string[];
+  }[];
 }
 
 export interface AppAccess {
   application_id: number;
   abilities: string[];
+  role?: string | null;
+  permissions?: string[];
+}
+
+/** Catálogo de roles y módulos que expone una app externa (SIGCOM/SIGCOMPRO). */
+export interface AppModule {
+  key: string;
+  label: string;
+}
+
+export interface AppModuleGroup {
+  label: string;
+  modules: AppModule[];
+}
+
+export interface AppProvisioningCatalog {
+  roles: string[];
+  groups: AppModuleGroup[];
 }
 
 export interface Role {
@@ -220,6 +246,12 @@ export interface UserPayload {
   is_active: boolean;
   role_id?: number | null;
   application_ids: number[];
+  app_access?: {
+    application_id: number;
+    role?: string | null;
+    permissions?: string[];
+    abilities?: string[];
+  }[];
   siesa_username?: string;
   siesa_password?: string;
 }
@@ -254,12 +286,37 @@ export class AdminService {
     );
   }
 
-  /** Guarda el acceso granular (apps + habilidades) de un usuario. */
+  /** Guarda el acceso granular (apps + habilidades + rol/permisos por app) de un usuario. */
   updateUserAccess(userId: number, access: AppAccess[]): Observable<UserApplicationsResponse> {
     return this.http.put<UserApplicationsResponse>(
       `/api/admin/users/${userId}/applications`,
       { access }
     );
+  }
+
+  /**
+   * Catálogo de roles y módulos que expone una app externa. Normaliza las dos
+   * formas del backend: `{ roles, permisos: apartados[] }` (SIGCOMPRO) y
+   * `{ roles, grupos: [{label, modules}] }` (SIGCOM).
+   */
+  getAppCatalog(applicationId: number): Observable<AppProvisioningCatalog> {
+    return this.http
+      .get<{
+        roles?: string[];
+        grupos?: { label: string; modules: { key: string; label: string }[] }[];
+        permisos?: { label: string; modulos: { key: string; label: string }[] }[];
+      }>(`/api/admin/applications/${applicationId}/catalog`)
+      .pipe(
+        map((res) => {
+          const groups: AppModuleGroup[] = res.grupos
+            ? res.grupos.map((g) => ({ label: g.label, modules: g.modules ?? [] }))
+            : (res.permisos ?? []).map((a) => ({
+                label: a.label,
+                modules: (a.modulos ?? []).map((m) => ({ key: m.key, label: m.label })),
+              }));
+          return { roles: res.roles ?? [], groups };
+        })
+      );
   }
 
   // ---- Roles / grupos ----

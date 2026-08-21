@@ -37,6 +37,8 @@ class Application extends Model
 
     public function users(): BelongsToMany
     {
-        return $this->belongsToMany(User::class)->withPivot('abilities')->withTimestamps();
+        return $this->belongsToMany(User::class)
+            ->withPivot('abilities', 'app_role', 'app_permissions')
+            ->withTimestamps();
     }
 }

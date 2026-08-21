@@ -7,6 +7,7 @@ use App\Models\Role;
 use App\Models\SiesaCredential;
 use App\Models\User;
 use App\Support\AuditLogger;
+use App\Support\UserProvisioner;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -14,6 +15,10 @@ use Symfony\Component\HttpFoundation\Response;
 
 class UserController extends Controller
 {
+    public function __construct(private readonly UserProvisioner $provisioner)
+    {
+    }
+
     /**
      * Ensure the authenticated user is an administrator.
      */
@@ -71,6 +76,13 @@ class UserController extends Controller
             'role_id' => 'nullable|integer|exists:roles,id',
             'application_ids' => 'nullable|array',
             'application_ids.*' => 'integer|exists:applications,id',
+            'app_access' => 'nullable|array',
+            'app_access.*.application_id' => 'required|integer|exists:applications,id',
+            'app_access.*.role' => 'nullable|string|max:190',
+            'app_access.*.permissions' => 'nullable|array',
+            'app_access.*.permissions.*' => 'string',
+            'app_access.*.abilities' => 'nullable|array',
+            'app_access.*.abilities.*' => 'string',
             'siesa_username' => 'nullable|string|max:190',
             'siesa_password' => 'nullable|string|max:190',
             'siesa_domain' => 'nullable|string|max:190',
@@ -89,7 +101,11 @@ class UserController extends Controller
         ]);
 
         // Onboarding: si no se especifican apps pero hay rol, aplica su preset.
-        $sync = $this->buildAccessSync($validated['application_ids'] ?? null, $role);
+        if (!empty($validated['app_access'])) {
+            $sync = $this->buildAppAccessSync($validated['app_access']);
+        } else {
+            $sync = $this->buildAccessSync($validated['application_ids'] ?? null, $role);
+        }
         $user->applications()->sync($sync);
 
         // El acceso es por cédula; las credenciales Siesa son opcionales.
@@ -105,6 +121,9 @@ class UserController extends Controller
         }
 
         AuditLogger::record($request, 'user.created', 'user', $user->id, "Usuario creado: {$user->name}");
+
+        // Refleja el usuario (con su contraseña) en las apps externas habilitadas.
+        $this->provisioner->syncUser($user->fresh(['applications']), $validated['password']);
 
         return response()->json($this->present($user), Response::HTTP_CREATED);
     }
@@ -126,6 +145,13 @@ class UserController extends Controller
             'role_id' => 'nullable|integer|exists:roles,id',
             'application_ids' => 'nullable|array',
             'application_ids.*' => 'integer|exists:applications,id',
+            'app_access' => 'nullable|array',
+            'app_access.*.application_id' => 'required|integer|exists:applications,id',
+            'app_access.*.role' => 'nullable|string|max:190',
+            'app_access.*.permissions' => 'nullable|array',
+            'app_access.*.permissions.*' => 'string',
+            'app_access.*.abilities' => 'nullable|array',
+            'app_access.*.abilities.*' => 'string',
             'siesa_username' => 'nullable|string|max:190',
             'siesa_password' => 'nullable|string|max:190',
             'siesa_domain' => 'nullable|string|max:190',
@@ -158,7 +184,11 @@ class UserController extends Controller
         }
         $user->save();
 
-        if (array_key_exists('application_ids', $validated)) {
+        $previousAppIds = $user->applications()->pluck('applications.id')->all();
+
+        if (array_key_exists('app_access', $validated) && $validated['app_access'] !== null) {
+            $user->applications()->sync($this->buildAppAccessSync($validated['app_access']));
+        } elseif (array_key_exists('application_ids', $validated)) {
             // Conserva las habilidades ya otorgadas; agrega "view" a las nuevas.
             $existing = $user->applications()->get()
                 ->mapWithKeys(fn ($a) => [$a->id => ['abilities' => $a->pivot->abilities ?? json_encode(['view'])]]);
@@ -184,6 +214,13 @@ class UserController extends Controller
 
         AuditLogger::record($request, 'user.updated', 'user', $user->id, "Usuario actualizado: {$user->name}");
 
+        // Refleja los cambios (estado, rol, permisos y contraseña si cambió) en
+        // las apps externas, y bloquea las apps a las que se le quitó el acceso.
+        $fresh = $user->fresh(['applications']);
+        $this->provisioner->syncUser($fresh, $validated['password'] ?? null);
+        $currentAppIds = $fresh->applications()->pluck('applications.id')->all();
+        $this->provisioner->blockApplications($fresh, array_values(array_diff($previousAppIds, $currentAppIds)));
+
         return response()->json($this->present($user->fresh()));
     }
 
@@ -197,6 +234,10 @@ class UserController extends Controller
         if ($user->id === $request->user()->id) {
             abort(Response::HTTP_UNPROCESSABLE_ENTITY, 'No puedes eliminar tu propio usuario.');
         }
+
+        // Antes de borrar en la suite, bloquea y desactiva en las apps externas
+        // para no dejar cuentas activas huérfanas.
+        $this->provisioner->blockEverywhere($user->loadMissing('applications'));
 
         $user->tokens()->delete();
         $user->delete();
@@ -302,6 +343,43 @@ class UserController extends Controller
             'face_enrolled_at' => $user->face_enrolled_at?->toIso8601String(),
             'face_bypass_until' => $user->face_bypass_until?->toIso8601String(),
         ];
+    }
+
+    /**
+     * Build the pivot sync payload from an explicit per-app access list
+     * (application_id + optional app role, module permissions and abilities).
+     *
+     * @param  array<int,array<string,mixed>>  $appAccess
+     */
+    private function buildAppAccessSync(array $appAccess): array
+    {
+        $sync = [];
+
+        foreach ($appAccess as $entry) {
+            $appId = (int) ($entry['application_id'] ?? 0);
+            if ($appId <= 0) {
+                continue;
+            }
+
+            $abilities = array_values(array_intersect(
+                (array) ($entry['abilities'] ?? []),
+                \App\Models\Application::ABILITIES
+            ));
+            if (!in_array('view', $abilities, true)) {
+                array_unshift($abilities, 'view');
+            }
+
+            $role = $entry['role'] ?? null;
+            $permissions = array_values(array_unique(array_map('strval', (array) ($entry['permissions'] ?? []))));
+
+            $sync[$appId] = [
+                'abilities' => json_encode($abilities),
+                'app_role' => $role !== null && $role !== '' ? (string) $role : null,
+                'app_permissions' => json_encode($permissions),
+            ];
+        }
+
+        return $sync;
     }
 
     /**

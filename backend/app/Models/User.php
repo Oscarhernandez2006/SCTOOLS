@@ -27,7 +27,9 @@ class User extends Authenticatable
 
     public function applications(): BelongsToMany
     {
-        return $this->belongsToMany(Application::class)->withPivot('abilities')->withTimestamps();
+        return $this->belongsToMany(Application::class)
+            ->withPivot('abilities', 'app_role', 'app_permissions')
+            ->withTimestamps();
     }
 
     public function role(): BelongsTo

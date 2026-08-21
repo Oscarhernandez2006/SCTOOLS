@@ -463,3 +463,74 @@
   .layout { grid-template-columns: 1fr; }
   .users { position: static; }
 }
+
+/* ---- Configuración por app externa (rol + módulos) ---- */
+.perm-card__app-config {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px dashed var(--color-border, #d9e0dc);
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+}
+
+.perm-card__app-loading {
+  font-size: 0.8125rem;
+  color: var(--color-text-soft, #6b7770);
+}
+
+.perm-card__role {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.perm-card__role-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-text-soft, #6b7770);
+}
+
+.perm-card__role-select {
+  padding: 0.5rem 0.625rem;
+  border: 1px solid var(--color-border, #d9e0dc);
+  border-radius: 8px;
+  background: var(--color-white, #fff);
+  font-size: 0.875rem;
+  color: var(--color-text, #1f2a24);
+}
+
+.perm-card__module-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.perm-card__module-group-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-text-soft, #6b7770);
+}
+
+.perm-card__modules {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 0.375rem 0.75rem;
+}
+
+.module-check {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8125rem;
+  color: var(--color-text, #1f2a24);
+  cursor: pointer;
+
+  input { accent-color: var(--color-accent, #57ad31); }
+}
+
+.perm-card__hint {
+  margin: 0.25rem 0 0;
+  font-size: 0.75rem;
+  color: var(--color-text-soft, #6b7770);
+}

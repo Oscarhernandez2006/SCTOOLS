@@ -601,3 +601,17 @@
   .field-row { flex-direction: column; }
 }
 
+
+/* ---- Rol por app externa (alta de usuario) ---- */
+.app-roles { display: flex; flex-direction: column; gap: 0.5rem; }
+.app-roles__row {
+  display: flex; align-items: center; justify-content: space-between; gap: 0.75rem;
+}
+.app-roles__name {
+  display: inline-flex; align-items: center; gap: 0.375rem;
+  font-size: 0.875rem; font-weight: 600;
+}
+.app-roles__select {
+  padding: 0.4rem 0.6rem; border: 1px solid var(--color-border, #d9e0dc);
+  border-radius: 8px; background: #fff; font-size: 0.85rem; min-width: 190px;
+}

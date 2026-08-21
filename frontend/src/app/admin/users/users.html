@@ -229,6 +229,33 @@
         </div>
       </div>
 
+      @if (!editing() && selectedProvisionableApps().length) {
+        <div class="field">
+          <label class="field__label">Rol en cada aplicación</label>
+          <div class="app-roles">
+            @for (app of selectedProvisionableApps(); track app.id) {
+              <div class="app-roles__row">
+                <span class="app-roles__name">
+                  <span class="material-symbols-outlined" [style.color]="app.color || '#57AD31'">{{ app.icon || 'apps' }}</span>
+                  {{ app.name }}
+                </span>
+                <select
+                  class="app-roles__select"
+                  [value]="getAppRole(app.id)"
+                  (change)="setAppRole(app.id, $any($event.target).value)"
+                >
+                  <option value="">— Rol por defecto —</option>
+                  @for (role of appRolesFor(app.id); track role) {
+                    <option [value]="role" [selected]="getAppRole(app.id) === role">{{ role }}</option>
+                  }
+                </select>
+              </div>
+            }
+          </div>
+          <span class="field__hint">Los módulos finos por app se ajustan luego en “Permisos”.</span>
+        </div>
+      }
+
       @if (formError()) {
         <div class="form-error">
           <span class="material-symbols-outlined">error</span>

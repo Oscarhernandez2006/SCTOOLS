@@ -3,7 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { Sidebar } from '../../shared/sidebar/sidebar';
 import { TopNav } from '../../shared/top-nav/top-nav';
-import { AdminService, AdminUser, CatalogApplication } from '../../services/admin.service';
+import { AdminService, AdminUser, AppProvisioningCatalog, CatalogApplication } from '../../services/admin.service';
 
 /** Etiquetas legibles para cada habilidad granular. */
 const ABILITY_LABELS: Record<string, string> = {
@@ -32,6 +32,13 @@ export class Permissions implements OnInit {
 
   // Acceso granular: appId -> set de habilidades otorgadas.
   readonly granted = signal<Map<number, Set<string>>>(new Map());
+  // Rol por app externa: appId -> rol.
+  readonly appRoles = signal<Map<number, string>>(new Map());
+  // Módulos por app externa: appId -> set de claves de módulo.
+  readonly appPerms = signal<Map<number, Set<string>>>(new Map());
+  // Catálogo de roles/módulos por app externa (cargado bajo demanda).
+  readonly catalogs = signal<Map<number, AppProvisioningCatalog>>(new Map());
+  readonly loadingCatalog = signal<Set<number>>(new Set());
   private original = '';
 
   readonly searchQuery = signal('');
@@ -78,19 +85,108 @@ export class Permissions implements OnInit {
     this.selectedUser.set(user);
     this.loadingAccess.set(true);
     this.granted.set(new Map());
+    this.appRoles.set(new Map());
+    this.appPerms.set(new Map());
     this.adminService.getUserApplications(user.id).subscribe({
       next: (res) => {
         const map = new Map<number, Set<string>>();
-        const access = res.access ?? res.application_ids.map((id) => ({ application_id: id, abilities: ['view'] }));
+        const roles = new Map<number, string>();
+        const perms = new Map<number, Set<string>>();
+        const access = res.access ?? res.application_ids.map((id) => ({
+          application_id: id,
+          abilities: ['view'],
+          role: null as string | null,
+          permissions: [] as string[],
+        }));
         for (const entry of access) {
           map.set(entry.application_id, new Set(entry.abilities.length ? entry.abilities : ['view']));
+          if (entry.role) roles.set(entry.application_id, entry.role);
+          if (entry.permissions?.length) perms.set(entry.application_id, new Set(entry.permissions));
         }
         this.granted.set(map);
+        this.appRoles.set(roles);
+        this.appPerms.set(perms);
         this.original = this.serialize(map);
         this.loadingAccess.set(false);
+        // Precarga los catálogos de las apps aprovisionables ya otorgadas.
+        for (const app of this.applications()) {
+          if (map.has(app.id) && this.isProvisionable(app)) {
+            this.loadCatalog(app.id);
+          }
+        }
       },
       error: () => this.loadingAccess.set(false),
     });
+  }
+
+  /** ¿La app admite rol/módulos por aplicación (SIGCOM/SIGCOMPRO)? */
+  isProvisionable(app: CatalogApplication): boolean {
+    return app.provisionable === true;
+  }
+
+  catalogFor(appId: number): AppProvisioningCatalog | undefined {
+    return this.catalogs().get(appId);
+  }
+
+  isLoadingCatalog(appId: number): boolean {
+    return this.loadingCatalog().has(appId);
+  }
+
+  private loadCatalog(appId: number): void {
+    if (this.catalogs().has(appId) || this.loadingCatalog().has(appId)) return;
+    const loading = new Set(this.loadingCatalog());
+    loading.add(appId);
+    this.loadingCatalog.set(loading);
+    this.adminService.getAppCatalog(appId).subscribe({
+      next: (cat) => {
+        const next = new Map(this.catalogs());
+        next.set(appId, cat);
+        this.catalogs.set(next);
+        const done = new Set(this.loadingCatalog());
+        done.delete(appId);
+        this.loadingCatalog.set(done);
+      },
+      error: () => {
+        const done = new Set(this.loadingCatalog());
+        done.delete(appId);
+        this.loadingCatalog.set(done);
+      },
+    });
+  }
+
+  appRole(appId: number): string {
+    return this.appRoles().get(appId) ?? '';
+  }
+
+  setAppRole(appId: number, role: string): void {
+    const next = new Map(this.appRoles());
+    if (role) {
+      next.set(appId, role);
+    } else {
+      next.delete(appId);
+    }
+    this.appRoles.set(next);
+  }
+
+  appHasPerm(appId: number, key: string): boolean {
+    return this.appPerms().get(appId)?.has(key) ?? false;
+  }
+
+  toggleAppPerm(appId: number, key: string): void {
+    if (!this.isGranted(appId)) return;
+    const next = new Map(this.appPerms());
+    const set = new Set(next.get(appId) ?? []);
+    if (set.has(key)) {
+      set.delete(key);
+    } else {
+      set.add(key);
+    }
+    if (set.size) {
+      next.set(appId, set);
+    } else {
+      next.delete(appId);
+    }
+    this.appPerms.set(next);
   }
 
   isGranted(appId: number): boolean {
@@ -107,6 +203,10 @@ export class Permissions implements OnInit {
       next.delete(appId);
     } else {
       next.set(appId, new Set(['view']));
+      const app = this.applications().find((a) => a.id === appId);
+      if (app && this.isProvisionable(app)) {
+        this.loadCatalog(appId);
+      }
     }
     this.granted.set(next);
   }
@@ -131,12 +231,14 @@ export class Permissions implements OnInit {
     const access = Array.from(this.granted().entries()).map(([application_id, set]) => ({
       application_id,
       abilities: Array.from(set),
+      role: this.appRoles().get(application_id) ?? null,
+      permissions: Array.from(this.appPerms().get(application_id) ?? []),
     }));
     this.adminService.updateUserAccess(user.id, access).subscribe({
       next: () => {
         this.original = this.serialize(this.granted());
         this.saving.set(false);
-        this.showToast('Permisos guardados correctamente');
+        this.showToast('Permisos guardados y sincronizados');
       },
       error: () => {
         this.saving.set(false);
@@ -154,10 +256,19 @@ export class Permissions implements OnInit {
   }
 
   private serialize(map: Map<number, Set<string>>): string {
-    return Array.from(map.entries())
+    const abilities = Array.from(map.entries())
       .map(([id, set]) => `${id}:${Array.from(set).sort().join(',')}`)
       .sort()
       .join('|');
+    const roles = Array.from(this.appRoles().entries())
+      .map(([id, role]) => `${id}=${role}`)
+      .sort()
+      .join('|');
+    const perms = Array.from(this.appPerms().entries())
+      .map(([id, set]) => `${id}#${Array.from(set).sort().join(',')}`)
+      .sort()
+      .join('|');
+    return `${abilities}||${roles}||${perms}`;
   }
 
   userInitials(user: AdminUser): string {

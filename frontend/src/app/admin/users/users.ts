@@ -23,6 +23,7 @@ interface UserFormModel {
   is_active: boolean;
   role_id: number | null;
   application_ids: number[];
+  appRoles: Record<number, string>;
   siesa_username: string;
   siesa_password: string;
 }
@@ -38,6 +39,7 @@ function emptyForm(): UserFormModel {
     is_active: true,
     role_id: null,
     application_ids: [],
+    appRoles: {},
     siesa_username: '',
     siesa_password: '',
   };
@@ -57,6 +59,8 @@ export class UsersAdmin implements OnInit {
   readonly users = signal<ManagedUser[]>([]);
   readonly catalog = signal<CatalogApplication[]>([]);
   readonly roles = signal<Role[]>([]);
+  // Roles disponibles por app externa (cargados bajo demanda para el alta).
+  readonly appRoleCatalogs = signal<Map<number, string[]>>(new Map());
   readonly loading = signal(true);
   readonly saving = signal(false);
 
@@ -140,6 +144,7 @@ export class UsersAdmin implements OnInit {
       is_active: user.is_active,
       role_id: user.role_id,
       application_ids: [...user.application_ids],
+      appRoles: {},
       siesa_username: '',
       siesa_password: '',
     });
@@ -165,10 +170,50 @@ export class UsersAdmin implements OnInit {
       ? f.application_ids.filter((id) => id !== appId)
       : [...f.application_ids, appId];
     this.form.set({ ...f, application_ids: ids });
+    const app = this.catalog().find((a) => a.id === appId);
+    if (app && this.isProvisionable(app) && ids.includes(appId)) {
+      this.ensureAppRoles(appId);
+    }
   }
 
   hasApp(appId: number): boolean {
     return this.form().application_ids.includes(appId);
+  }
+
+  /** ¿La app admite rol por aplicación (SIGCOM/SIGCOMPRO)? */
+  isProvisionable(app: CatalogApplication): boolean {
+    return app.provisionable === true;
+  }
+
+  /** Apps aprovisionables seleccionadas (para pedir el rol en el alta). */
+  readonly selectedProvisionableApps = computed(() =>
+    this.catalog().filter(
+      (a) => this.isProvisionable(a) && this.form().application_ids.includes(a.id),
+    ),
+  );
+
+  appRolesFor(appId: number): string[] {
+    return this.appRoleCatalogs().get(appId) ?? [];
+  }
+
+  getAppRole(appId: number): string {
+    return this.form().appRoles[appId] ?? '';
+  }
+
+  setAppRole(appId: number, role: string): void {
+    const f = this.form();
+    this.form.set({ ...f, appRoles: { ...f.appRoles, [appId]: role } });
+  }
+
+  private ensureAppRoles(appId: number): void {
+    if (this.appRoleCatalogs().has(appId)) return;
+    this.adminService.getAppCatalog(appId).subscribe({
+      next: (cat) => {
+        const next = new Map(this.appRoleCatalogs());
+        next.set(appId, cat.roles);
+        this.appRoleCatalogs.set(next);
+      },
+    });
   }
 
   togglePassword(): void {
@@ -209,6 +254,16 @@ export class UsersAdmin implements OnInit {
     if (f.password.trim()) payload.password = f.password;
     if (f.siesa_username.trim()) payload.siesa_username = f.siesa_username.trim();
     if (f.siesa_password.trim()) payload.siesa_password = f.siesa_password;
+
+    // En el alta se define el rol por app: se envía app_access con el rol elegido
+    // para cada app habilitada (la edición de rol/módulos va en Permisos).
+    if (!this.editing()) {
+      payload.app_access = f.application_ids.map((application_id) => ({
+        application_id,
+        role: f.appRoles[application_id] || null,
+        permissions: [],
+      }));
+    }
 
     this.saving.set(true);
     this.formError.set('');

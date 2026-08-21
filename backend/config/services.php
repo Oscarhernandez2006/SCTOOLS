@@ -40,4 +40,21 @@ return [
         'shared_secret' => env('SSO_SHARED_SECRET'),
     ],
 
+    /*
+    | Aprovisionamiento de usuarios hacia las apps externas (server-to-server).
+    | La suite escribe usuarios/permisos directamente en cada app llamando su
+    | API /api/provisioning, autenticada con el mismo SSO_SHARED_SECRET.
+    | base_urls: base del backend por slug. Si no se define, se usa la `url` de
+    | la aplicación en el catálogo. El cliente agrega el sufijo /api/provisioning.
+    */
+    'provisioning' => [
+        'base_urls' => [
+            'sigcom' => env('SIGCOM_API_URL', env('SIGCOM_URL')),
+            'sigcompro' => env('SIGCOMPRO_API_URL', env('SIGCOMPRO_URL')),
+        ],
+        // Slugs de apps que exponen la API de aprovisionamiento.
+        'apps' => ['sigcom', 'sigcompro'],
+        'timeout' => (int) env('PROVISIONING_TIMEOUT', 8),
+    ],
+
 ];

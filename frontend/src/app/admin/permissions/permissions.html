@@ -133,6 +133,57 @@
                     }
                   </div>
                 </div>
+
+                @if (isProvisionable(app)) {
+                  <div class="perm-card__app-config">
+                    @if (isLoadingCatalog(app.id)) {
+                      <span class="perm-card__app-loading">Cargando roles y módulos de {{ app.name }}…</span>
+                    } @else if (catalogFor(app.id); as cat) {
+                      <div class="perm-card__role">
+                        <label class="perm-card__role-label" [attr.for]="'role-' + app.id">
+                          Rol en {{ app.name }}
+                        </label>
+                        <select
+                          class="perm-card__role-select"
+                          [id]="'role-' + app.id"
+                          [value]="appRole(app.id)"
+                          (change)="setAppRole(app.id, $any($event.target).value)"
+                        >
+                          <option value="">— Sin rol específico —</option>
+                          @for (role of cat.roles; track role) {
+                            <option [value]="role" [selected]="appRole(app.id) === role">{{ role }}</option>
+                          }
+                        </select>
+                      </div>
+
+                      @if (cat.groups.length) {
+                        <span class="perm-card__abilities-label">Módulos habilitados en {{ app.name }}:</span>
+                        @for (group of cat.groups; track group.label) {
+                          <div class="perm-card__module-group">
+                            <span class="perm-card__module-group-label">{{ group.label }}</span>
+                            <div class="perm-card__modules">
+                              @for (mod of group.modules; track mod.key) {
+                                <label class="module-check">
+                                  <input
+                                    type="checkbox"
+                                    [checked]="appHasPerm(app.id, mod.key)"
+                                    (change)="toggleAppPerm(app.id, mod.key)"
+                                  />
+                                  <span>{{ mod.label }}</span>
+                                </label>
+                              }
+                            </div>
+                          </div>
+                        }
+                        <p class="perm-card__hint">
+                          Si no marcas ningún módulo, el usuario verá los módulos por defecto de su rol.
+                        </p>
+                      }
+                    } @else {
+                      <span class="perm-card__app-loading">No se pudo cargar el catálogo de {{ app.name }}.</span>
+                    }
+                  </div>
+                }
               }
             </div>
           }
