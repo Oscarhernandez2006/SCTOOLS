@@ -19,6 +19,10 @@
       <p class="page-head__subtitle">Define a qué aplicaciones puede acceder cada empleado</p>
     </div>
   </div>
+  <button class="btn btn--ghost perm-head__import" [disabled]="importing()" (click)="importFromApps()">
+    <span class="material-symbols-outlined">cloud_download</span>
+    {{ importing() ? 'Importando...' : 'Importar desde apps' }}
+  </button>
 </div>
 <div class="layout">
   <!-- Lista de usuarios -->

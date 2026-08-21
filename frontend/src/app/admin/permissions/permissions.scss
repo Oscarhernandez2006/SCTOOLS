@@ -534,3 +534,7 @@
   font-size: 0.75rem;
   color: var(--color-text-soft, #6b7770);
 }
+
+/* ---- Botón importar desde apps ---- */
+.perm-head { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+.perm-head__import { white-space: nowrap; }

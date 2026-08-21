@@ -45,6 +45,7 @@ export class Permissions implements OnInit {
   readonly loadingUsers = signal(true);
   readonly loadingAccess = signal(false);
   readonly saving = signal(false);
+  readonly importing = signal(false);
   readonly toastMessage = signal('');
   readonly toastVisible = signal(false);
 
@@ -222,6 +223,28 @@ export class Permissions implements OnInit {
     }
     next.set(appId, set);
     this.granted.set(next);
+  }
+
+  /** Importa a la suite los usuarios/roles/permisos de las apps externas. */
+  importFromApps(): void {
+    if (this.importing()) return;
+    this.importing.set(true);
+    this.adminService.importUsersFromApps().subscribe({
+      next: (res) => {
+        this.importing.set(false);
+        const parts = Object.entries(res.summary).map(([slug, s]) =>
+          s.error
+            ? `${slug}: error`
+            : `${slug}: +${s.created ?? 0} nuevos, ${s.linked ?? 0} vinculados`,
+        );
+        this.showToast(`Importado — ${parts.join(' · ')}`);
+        this.adminService.getUsers().subscribe({ next: (users) => this.users.set(users) });
+      },
+      error: () => {
+        this.importing.set(false);
+        this.showToast('Error al importar desde las apps');
+      },
+    });
   }
 
   save(): void {

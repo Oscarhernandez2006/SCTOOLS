@@ -4,6 +4,7 @@ namespace App\Support;
 
 use App\Models\Application;
 use App\Models\User;
+use Illuminate\Support\Str;
 
 /**
  * Orquesta el aprovisionamiento de un usuario de la suite hacia las apps
@@ -170,6 +171,136 @@ class UserProvisioner
         return $result;
     }
 
+    /**
+     * Importa los usuarios existentes en las apps aprovisionables hacia la
+     * suite, reflejando su rol y permisos por app. Idempotente: cruza por
+     * cédula, no duplica usuarios ni accesos, y NO pisa la configuración por
+     * app ya definida en la suite (solo rellena lo vacío).
+     *
+     * @return array<string,array<string,int|string>>
+     */
+    public function importFromApps(): array
+    {
+        $summary = [];
+
+        $apps = Application::query()
+            ->whereIn('slug', (array) config('services.provisioning.apps', []))
+            ->get();
+
+        foreach ($apps as $application) {
+            if (! $this->client->isProvisionable($application)) {
+                continue;
+            }
+
+            $users = $this->client->listUsers($application);
+            if ($users === null) {
+                $summary[$application->slug] = ['error' => 'no disponible'];
+                continue;
+            }
+
+            $created = 0;
+            $linked = 0;
+
+            foreach ($users as $u) {
+                $cedula = trim((string) ($u['cedula'] ?? ''));
+                if ($cedula === '') {
+                    continue;
+                }
+
+                $suiteUser = User::query()->where('cedula', $cedula)->first();
+                $email = $this->safeEmail($u['email'] ?? null, $suiteUser?->id);
+
+                if (! $suiteUser) {
+                    $suiteUser = User::create([
+                        'name' => ($u['nombre'] ?? '') ?: $cedula,
+                        'cedula' => $cedula,
+                        'email' => $email,
+                        // Sin acceso al hash real: contraseña aleatoria; el
+                        // usuario entra por SSO o el admin la restablece.
+                        'password' => Str::random(40),
+                        'is_active' => (bool) ($u['activo'] ?? true),
+                        'is_admin' => false,
+                    ]);
+                    $created++;
+                } else {
+                    if (empty($suiteUser->name) && ! empty($u['nombre'])) {
+                        $suiteUser->name = $u['nombre'];
+                    }
+                    if (empty($suiteUser->email) && $email) {
+                        $suiteUser->email = $email;
+                    }
+                    $suiteUser->save();
+                    $linked++;
+                }
+
+                $this->linkAppFromImport($suiteUser, $application, $u);
+            }
+
+            $summary[$application->slug] = [
+                'created' => $created,
+                'linked' => $linked,
+                'total' => count($users),
+            ];
+        }
+
+        return $summary;
+    }
+
+    /**
+     * Adjunta/actualiza el pivote con el rol y permisos que trae la app, sin
+     * pisar lo ya configurado en la suite (solo rellena lo vacío).
+     *
+     * @param  array<string,mixed>  $remote
+     */
+    private function linkAppFromImport(User $user, Application $application, array $remote): void
+    {
+        $remoteRole = ($remote['rol'] ?? null) ?: null;
+        $remotePerms = json_encode(array_values((array) ($remote['permisos'] ?? [])));
+
+        $existing = $user->applications()->where('applications.id', $application->id)->first();
+
+        if ($existing) {
+            $pivot = $existing->pivot;
+            $data = ['abilities' => $pivot->abilities ?? json_encode(['view'])];
+
+            if (empty($pivot->app_role) && $remoteRole !== null) {
+                $data['app_role'] = $remoteRole;
+            }
+            $currentPerms = $pivot->app_permissions;
+            if ($currentPerms === null || $currentPerms === '' || $currentPerms === '[]') {
+                $data['app_permissions'] = $remotePerms;
+            }
+
+            $user->applications()->syncWithoutDetaching([$application->id => $data]);
+
+            return;
+        }
+
+        $user->applications()->syncWithoutDetaching([
+            $application->id => [
+                'abilities' => json_encode(['view']),
+                'app_role' => $remoteRole,
+                'app_permissions' => $remotePerms,
+            ],
+        ]);
+    }
+
+    /** Evita chocar con el email único de otro usuario distinto. */
+    private function safeEmail(?string $email, ?int $ignoreUserId): ?string
+    {
+        $email = $email ? trim($email) : null;
+        if (! $email) {
+            return null;
+        }
+
+        $exists = User::query()
+            ->where('email', $email)
+            ->when($ignoreUserId, fn ($q) => $q->where('id', '!=', $ignoreUserId))
+            ->exists();
+
+        return $exists ? null : $email;
+    }
+
     private function appRole(Application $application): ?string
     {
         $role = $application->pivot->app_role ?? null;
@@ -177,19 +308,18 @@ class UserProvisioner
         return $role !== null && $role !== '' ? (string) $role : null;
     }
 
-    /** @return array<int,string>|null */
+    /** @return array<int,string>|null Null si está vacío: no toca los módulos de la app. */
     private function appPermissions(Application $application): ?array
     {
         $raw = $application->pivot->app_permissions ?? null;
         if ($raw === null) {
             return null;
         }
-        if (is_array($raw)) {
-            return array_values($raw);
+        $value = is_array($raw) ? $raw : json_decode((string) $raw, true);
+        if (! is_array($value) || count($value) === 0) {
+            return null;
         }
 
-        $decoded = json_decode((string) $raw, true);
-
-        return is_array($decoded) ? array_values($decoded) : null;
+        return array_values($value);
     }
 }

@@ -51,6 +51,20 @@ class ProvisioningClient
         return $res->json();
     }
 
+    /** Lista los usuarios existentes en la app (para importarlos a la suite). */
+    public function listUsers(Application $application): ?array
+    {
+        $res = $this->request($application)?->get($this->endpoint($application, '/usuarios'));
+
+        if (! $res || ! $res->successful()) {
+            return null;
+        }
+
+        $json = $res->json();
+
+        return is_array($json) ? $json : null;
+    }
+
     /** Crea o actualiza (upsert por cédula) un usuario en la app. */
     public function upsertUser(Application $application, array $payload): bool
     {

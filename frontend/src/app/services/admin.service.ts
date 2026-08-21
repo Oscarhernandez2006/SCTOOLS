@@ -286,6 +286,15 @@ export class AdminService {
     );
   }
 
+  /** Importa a la suite los usuarios/roles/permisos existentes en las apps externas. */
+  importUsersFromApps(): Observable<{
+    summary: Record<string, { created?: number; linked?: number; total?: number; error?: string }>;
+  }> {
+    return this.http.post<{
+      summary: Record<string, { created?: number; linked?: number; total?: number; error?: string }>;
+    }>('/api/admin/provisioning/import', {});
+  }
+
   /** Guarda el acceso granular (apps + habilidades + rol/permisos por app) de un usuario. */
   updateUserAccess(userId: number, access: AppAccess[]): Observable<UserApplicationsResponse> {
     return this.http.put<UserApplicationsResponse>(

@@ -108,6 +108,28 @@ class UserAccessController extends Controller
     }
 
     /**
+     * Importa hacia la suite los usuarios (rol + permisos) que ya existen en
+     * las apps externas, para reflejarlos aquí y poder gestionarlos.
+     */
+    public function import(Request $request): JsonResponse
+    {
+        $this->authorizeAdmin($request);
+
+        $summary = $this->provisioner->importFromApps();
+
+        AuditLogger::record(
+            $request,
+            'users.imported',
+            'user',
+            null,
+            'Usuarios importados desde las apps externas',
+            $summary
+        );
+
+        return response()->json(['summary' => $summary]);
+    }
+
+    /**
      * Replace the set of applications (and per-app abilities) a user can access.
      * Accepts either `access` (granular) or `application_ids` (simple, defaults to view).
      */
