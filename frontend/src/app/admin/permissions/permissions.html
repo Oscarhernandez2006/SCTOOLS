@@ -121,23 +121,6 @@
               </div>
 
               @if (isGranted(app.id)) {
-                <div class="perm-card__abilities">
-                  <span class="perm-card__abilities-label">Qué puede hacer:</span>
-                  <div class="perm-card__chips">
-                    @for (ability of abilities(); track ability) {
-                      <button
-                        type="button"
-                        class="ability-chip"
-                        [class.ability-chip--on]="hasAbility(app.id, ability)"
-                        [class.ability-chip--locked]="ability === 'view'"
-                        (click)="toggleAbility(app.id, ability)"
-                      >
-                        {{ abilityLabel(ability) }}
-                      </button>
-                    }
-                  </div>
-                </div>
-
                 @if (isProvisionable(app)) {
                   <div class="perm-card__app-config">
                     @if (isLoadingCatalog(app.id)) {
@@ -202,20 +185,36 @@
                             <span class="perm-card__module-group-label">{{ group.label }}</span>
                             <div class="perm-card__modules">
                               @for (mod of group.modules; track mod.key) {
-                                <label class="module-check">
-                                  <input
-                                    type="checkbox"
-                                    [checked]="appHasPerm(app.id, mod.key)"
-                                    (change)="toggleAppPerm(app.id, mod.key)"
-                                  />
-                                  <span>{{ mod.label }}</span>
-                                </label>
+                                <div class="module-item">
+                                  <label class="module-check">
+                                    <input
+                                      type="checkbox"
+                                      [checked]="appHasPerm(app.id, mod.key)"
+                                      (change)="toggleAppPerm(app.id, mod.key)"
+                                    />
+                                    <span>{{ mod.label }}</span>
+                                  </label>
+                                  @if (mod.actions?.length && appHasPerm(app.id, mod.key)) {
+                                    <div class="module-actions">
+                                      @for (act of mod.actions; track act.key) {
+                                        <label class="module-check module-check--action">
+                                          <input
+                                            type="checkbox"
+                                            [checked]="appHasPerm(app.id, act.key)"
+                                            (change)="toggleAppPerm(app.id, act.key)"
+                                          />
+                                          <span>{{ act.label }}</span>
+                                        </label>
+                                      }
+                                    </div>
+                                  }
+                                </div>
                               }
                             </div>
                           </div>
                         }
                         <p class="perm-card__hint">
-                          Si no marcas ningún módulo, el usuario verá los módulos por defecto de su rol.
+                          Marca el módulo para verlo; las acciones son permisos finos (crear, editar, anular…).
                         </p>
                       }
                     } @else {

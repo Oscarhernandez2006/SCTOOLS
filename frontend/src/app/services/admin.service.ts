@@ -69,9 +69,16 @@ export interface AppAccess {
 }
 
 /** Catálogo de roles y módulos que expone una app externa (SIGCOM/SIGCOMPRO). */
+export interface AppModuleAction {
+  key: string;
+  label: string;
+}
+
 export interface AppModule {
   key: string;
   label: string;
+  /** Acciones granulares (sub-permisos) del módulo (Sigcompro). */
+  actions?: AppModuleAction[];
 }
 
 export interface AppModuleGroup {
@@ -329,7 +336,10 @@ export class AdminService {
       .get<{
         roles?: string[];
         grupos?: { label: string; modules: { key: string; label: string }[] }[];
-        permisos?: { label: string; modulos: { key: string; label: string }[] }[];
+        permisos?: {
+          label: string;
+          modulos: { key: string; label: string; acciones?: { key: string; label: string }[] }[];
+        }[];
         companies?: { id: string; name: string }[];
       }>(`/api/admin/applications/${applicationId}/catalog`)
       .pipe(
@@ -338,7 +348,11 @@ export class AdminService {
             ? res.grupos.map((g) => ({ label: g.label, modules: g.modules ?? [] }))
             : (res.permisos ?? []).map((a) => ({
                 label: a.label,
-                modules: (a.modulos ?? []).map((m) => ({ key: m.key, label: m.label })),
+                modules: (a.modulos ?? []).map((m) => ({
+                  key: m.key,
+                  label: m.label,
+                  actions: m.acciones ?? [],
+                })),
               }));
           return { roles: res.roles ?? [], groups, companies: res.companies ?? [] };
         })

@@ -550,3 +550,13 @@
   background: var(--color-accent, #57ad31); border-color: var(--color-accent, #57ad31);
   color: #fff; font-weight: 600;
 }
+
+/* ---- Acciones granulares anidadas (Sigcompro) ---- */
+.module-item { display: flex; flex-direction: column; gap: 0.25rem; }
+.module-actions {
+  display: flex; flex-direction: column; gap: 0.2rem;
+  margin: 0.1rem 0 0.3rem 1.35rem;
+  padding-left: 0.6rem;
+  border-left: 2px solid var(--color-border, #d9e0dc);
+}
+.module-check--action { font-size: 0.78rem; color: var(--color-text-soft, #6b7770); }
