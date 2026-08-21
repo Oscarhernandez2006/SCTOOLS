@@ -130,6 +130,20 @@ class UserAccessController extends Controller
     }
 
     /**
+     * Refresca un usuario consultando las apps externas y reflejando su rol y
+     * permisos actuales (pueden cambiar también desde las apps). Devuelve el
+     * acceso ya actualizado.
+     */
+    public function refresh(Request $request, User $user): JsonResponse
+    {
+        $this->authorizeAdmin($request);
+
+        $this->provisioner->refreshUserFromApps($user);
+
+        return $this->show($request, $user->fresh());
+    }
+
+    /**
      * Replace the set of applications (and per-app abilities) a user can access.
      * Accepts either `access` (granular) or `application_ids` (simple, defaults to view).
      */

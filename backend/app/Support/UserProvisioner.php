@@ -247,42 +247,16 @@ class UserProvisioner
     }
 
     /**
-     * Adjunta/actualiza el pivote con el rol y permisos que trae la app, sin
-     * pisar lo ya configurado en la suite (solo rellena lo vacío).
+     * Adjunta/actualiza el pivote reflejando el rol y permisos ACTUALES que
+     * trae la app (fuente de verdad de lo que hay hoy allá). Conserva las
+     * habilidades granulares de la suite.
      *
      * @param  array<string,mixed>  $remote
      */
     private function linkAppFromImport(User $user, Application $application, array $remote): void
     {
-        $remoteRole = ($remote['rol'] ?? null) ?: null;
-        $remotePerms = json_encode(array_values((array) ($remote['permisos'] ?? [])));
-
         $existing = $user->applications()->where('applications.id', $application->id)->first();
-
-        if ($existing) {
-            $pivot = $existing->pivot;
-            $data = ['abilities' => $pivot->abilities ?? json_encode(['view'])];
-
-            if (empty($pivot->app_role) && $remoteRole !== null) {
-                $data['app_role'] = $remoteRole;
-            }
-            $currentPerms = $pivot->app_permissions;
-            if ($currentPerms === null || $currentPerms === '' || $currentPerms === '[]') {
-                $data['app_permissions'] = $remotePerms;
-            }
-
-            $user->applications()->syncWithoutDetaching([$application->id => $data]);
-
-            return;
-        }
-
-        $user->applications()->syncWithoutDetaching([
-            $application->id => [
-                'abilities' => json_encode(['view']),
-                'app_role' => $remoteRole,
-                'app_permissions' => $remotePerms,
-            ],
-        ]);
+        $this->writePivotFromRemote($user, $application, $remote, $existing?->pivot);
     }
 
     /** Evita chocar con el email único de otro usuario distinto. */
@@ -299,6 +273,45 @@ class UserProvisioner
             ->exists();
 
         return $exists ? null : $email;
+    }
+
+    /**
+     * Refresca UN usuario desde las apps externas: consulta cada app donde
+     * tiene acceso y refleja el rol/permisos ACTUALES (los permisos también se
+     * pueden cambiar desde las apps). Idempotente, cruza por cédula.
+     */
+    public function refreshUserFromApps(User $user): void
+    {
+        foreach ($user->applications()->get() as $application) {
+            if (! $this->client->isProvisionable($application)) {
+                continue;
+            }
+
+            $remote = $this->client->getUser($application, $user->cedula);
+            if ($remote === null) {
+                continue;
+            }
+
+            $this->writePivotFromRemote($user, $application, $remote, $application->pivot);
+        }
+    }
+
+    /**
+     * Adjunta/actualiza el pivote reflejando el rol y permisos ACTUALES de la
+     * app (la app es fuente de verdad de lo que hay hoy allá). Conserva las
+     * habilidades granulares de la suite.
+     *
+     * @param  array<string,mixed>  $remote
+     */
+    private function writePivotFromRemote(User $user, Application $application, array $remote, $existingPivot = null): void
+    {
+        $user->applications()->syncWithoutDetaching([
+            $application->id => [
+                'abilities' => $existingPivot?->abilities ?? json_encode(['view']),
+                'app_role' => ($remote['rol'] ?? null) ?: null,
+                'app_permissions' => json_encode(array_values((array) ($remote['permisos'] ?? []))),
+            ],
+        ]);
     }
 
     private function appRole(Application $application): ?string

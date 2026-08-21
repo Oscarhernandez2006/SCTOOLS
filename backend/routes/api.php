@@ -92,6 +92,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/applications/{application}/catalog', [UserAccessController::class, 'catalog']);
         Route::post('/provisioning/import', [UserAccessController::class, 'import']);
         Route::get('/users/{user}/applications', [UserAccessController::class, 'show']);
+        Route::post('/users/{user}/applications/refresh', [UserAccessController::class, 'refresh']);
         Route::put('/users/{user}/applications', [UserAccessController::class, 'update']);
 
         // Gestión de usuarios (CRUD, solo admin)

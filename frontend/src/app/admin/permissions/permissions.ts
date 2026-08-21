@@ -72,12 +72,31 @@ export class Permissions implements OnInit {
         this.abilities.set(res.abilities);
       },
     });
+    this.loadUsers();
+    // Al entrar, sincroniza en segundo plano desde las apps externas (los
+    // permisos también se pueden cambiar allá) y recarga la lista al terminar.
+    this.autoImport();
+  }
+
+  private loadUsers(): void {
     this.adminService.getUsers().subscribe({
       next: (users) => {
         this.users.set(users);
         this.loadingUsers.set(false);
       },
       error: () => this.loadingUsers.set(false),
+    });
+  }
+
+  private autoImport(): void {
+    if (this.importing()) return;
+    this.importing.set(true);
+    this.adminService.importUsersFromApps().subscribe({
+      next: () => {
+        this.importing.set(false);
+        this.loadUsers();
+      },
+      error: () => this.importing.set(false),
     });
   }
 
@@ -88,7 +107,9 @@ export class Permissions implements OnInit {
     this.granted.set(new Map());
     this.appRoles.set(new Map());
     this.appPerms.set(new Map());
-    this.adminService.getUserApplications(user.id).subscribe({
+    // Refresca contra las apps externas al abrir el detalle: refleja el rol y
+    // permisos actuales (por si cambiaron directamente en la app).
+    this.adminService.refreshUserApplications(user.id).subscribe({
       next: (res) => {
         const map = new Map<number, Set<string>>();
         const roles = new Map<number, string>();

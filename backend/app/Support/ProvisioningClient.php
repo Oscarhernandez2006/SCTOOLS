@@ -65,6 +65,36 @@ class ProvisioningClient
         return is_array($json) ? $json : null;
     }
 
+    /**
+     * Trae un usuario de la app por cédula, normalizado (soporta las dos formas:
+     * {rol,permisos,cedula} de SIGCOMPRO y {role,permissions,documentId} de SIGCOM).
+     * Devuelve null si no existe allá (404) o si la app no responde.
+     */
+    public function getUser(Application $application, string $cedula): ?array
+    {
+        $res = $this->request($application)?->get(
+            $this->endpoint($application, '/usuarios/' . rawurlencode($cedula))
+        );
+
+        if (! $res || ! $res->successful()) {
+            return null;
+        }
+
+        $json = $res->json();
+        if (! is_array($json)) {
+            return null;
+        }
+
+        return [
+            'cedula' => $json['cedula'] ?? $json['documentId'] ?? $cedula,
+            'nombre' => $json['nombre'] ?? $json['name'] ?? null,
+            'email' => $json['email'] ?? null,
+            'rol' => $json['rol'] ?? $json['role'] ?? null,
+            'activo' => $json['activo'] ?? $json['active'] ?? true,
+            'permisos' => $json['permisos'] ?? $json['permissions'] ?? [],
+        ];
+    }
+
     /** Crea o actualiza (upsert por cédula) un usuario en la app. */
     public function upsertUser(Application $application, array $payload): bool
     {

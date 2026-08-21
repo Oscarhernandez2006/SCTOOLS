@@ -279,6 +279,14 @@ export class AdminService {
     return this.http.get<UserApplicationsResponse>(`/api/admin/users/${userId}/applications`);
   }
 
+  /** Refresca desde las apps externas el rol/permisos de un usuario y los devuelve. */
+  refreshUserApplications(userId: number): Observable<UserApplicationsResponse> {
+    return this.http.post<UserApplicationsResponse>(
+      `/api/admin/users/${userId}/applications/refresh`,
+      {}
+    );
+  }
+
   updateUserApplications(userId: number, applicationIds: number[]): Observable<UserApplicationsResponse> {
     return this.http.put<UserApplicationsResponse>(
       `/api/admin/users/${userId}/applications`,
