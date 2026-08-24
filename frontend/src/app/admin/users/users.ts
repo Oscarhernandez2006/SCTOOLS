@@ -182,7 +182,7 @@ export class UsersAdmin implements OnInit {
 
   /** ¿La app admite rol por aplicación (SIGCOM/SIGCOMPRO)? */
   isProvisionable(app: CatalogApplication): boolean {
-    return app.provisionable === true;
+    return app.provisionable === true || app.sso_enabled === true;
   }
 
   /** Apps aprovisionables seleccionadas (para pedir el rol en el alta). */

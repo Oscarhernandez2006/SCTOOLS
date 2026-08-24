@@ -19,10 +19,10 @@ class ProvisioningClient
     /** ¿La aplicación expone la API de aprovisionamiento y tiene SSO? */
     public function isProvisionable(Application $application): bool
     {
-        $apps = (array) config('services.provisioning.apps', []);
-
-        return $application->sso_enabled
-            && in_array($application->slug, $apps, true)
+        // Basta con que tenga SSO y una URL base resoluble. No se depende de la
+        // lista `services.provisioning.apps` para no romperse si el config cache
+        // del servidor quedó viejo.
+        return (bool) $application->sso_enabled
             && $this->baseUrl($application) !== null;
     }
 

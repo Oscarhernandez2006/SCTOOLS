@@ -247,7 +247,9 @@
                         </p>
                       }
                     } @else {
-                      <span class="perm-card__app-loading">No se pudo cargar el catálogo de {{ app.name }}.</span>
+                      <span class="perm-card__app-loading">
+                        No se pudo cargar el catálogo de {{ app.name }}. Verifica que su backend esté desplegado y que el SSO_SHARED_SECRET coincida.
+                      </span>
                     }
                   </div>
                 }

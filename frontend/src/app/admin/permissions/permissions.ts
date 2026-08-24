@@ -262,7 +262,7 @@ export class Permissions implements OnInit {
 
   /** ¿La app admite rol/módulos por aplicación (SIGCOM/SIGCOMPRO)? */
   isProvisionable(app: CatalogApplication): boolean {
-    return app.provisionable === true;
+    return app.provisionable === true || app.sso_enabled === true;
   }
 
   catalogFor(appId: number): AppProvisioningCatalog | undefined {
