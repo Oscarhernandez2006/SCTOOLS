@@ -120,139 +120,11 @@
                 </span>
               </div>
 
-              @if (isGranted(app.id)) {
-                @if (isProvisionable(app)) {
-                  <div class="perm-card__app-config">
-                    @if (isLoadingCatalog(app.id)) {
-                      <span class="perm-card__app-loading">Cargando roles y módulos de {{ app.name }}…</span>
-                    } @else if (catalogFor(app.id); as cat) {
-                      <div class="perm-card__role">
-                        <label class="perm-card__role-label" [attr.for]="'role-' + app.id">
-                          Rol en {{ app.name }}
-                        </label>
-                        <select
-                          class="perm-card__role-select"
-                          [id]="'role-' + app.id"
-                          [value]="appRole(app.id)"
-                          (change)="setAppRole(app.id, $any($event.target).value)"
-                        >
-                          <option value="">— Sin rol específico —</option>
-                          @for (role of cat.roles; track role) {
-                            <option [value]="role" [selected]="appRole(app.id) === role">{{ role }}</option>
-                          }
-                        </select>
-                      </div>
-
-                      @if (isMultiCompany(app.id)) {
-                        <!-- Sigcom: acceso por compañía + código de vendedor -->
-                        <span class="perm-card__abilities-label">Compañías y código de vendedor:</span>
-                        <div class="company-access">
-                          @for (co of companiesFor(app.id); track co.id) {
-                            <div class="company-access__row">
-                              <label class="module-check">
-                                <input
-                                  type="checkbox"
-                                  [checked]="isCompanyEnabled(app.id, co.id)"
-                                  (change)="toggleCompany(app.id, co.id)"
-                                />
-                                <span>{{ co.name }}</span>
-                              </label>
-                              @if (isCompanyEnabled(app.id, co.id)) {
-                                <input
-                                  class="company-access__seller"
-                                  type="text"
-                                  placeholder="Código vendedor"
-                                  [value]="companySeller(app.id, co.id)"
-                                  (input)="setCompanySeller(app.id, co.id, $any($event.target).value)"
-                                />
-                              }
-                            </div>
-                          }
-                        </div>
-
-                        @if (enabledCompaniesFor(app.id).length) {
-                          <div class="company-tabs">
-                            @for (co of enabledCompaniesFor(app.id); track co.id) {
-                              <button
-                                type="button"
-                                class="company-tab"
-                                [class.company-tab--on]="activeCompanyId(app.id) === co.id"
-                                (click)="setActiveCompany(app.id, co.id)"
-                              >
-                                {{ co.name }}
-                              </button>
-                            }
-                          </div>
-                          <span class="perm-card__abilities-label">Módulos en esta compañía:</span>
-                          @for (group of cat.groups; track group.label) {
-                            <div class="perm-card__module-group">
-                              <span class="perm-card__module-group-label">{{ group.label }}</span>
-                              <div class="perm-card__modules">
-                                @for (mod of group.modules; track mod.key) {
-                                  <label class="module-check">
-                                    <input
-                                      type="checkbox"
-                                      [checked]="appCompanyHasPerm(app.id, activeCompanyId(app.id), mod.key)"
-                                      (change)="toggleAppCompanyPerm(app.id, activeCompanyId(app.id), mod.key)"
-                                    />
-                                    <span>{{ mod.label }}</span>
-                                  </label>
-                                }
-                              </div>
-                            </div>
-                          }
-                          <p class="perm-card__hint">
-                            Sin módulos marcados en una compañía, el usuario verá los de su rol allí.
-                          </p>
-                        } @else {
-                          <p class="perm-card__hint">Habilita al menos una compañía para asignar módulos.</p>
-                        }
-                      } @else if (cat.groups.length) {
-                        <span class="perm-card__abilities-label">Módulos habilitados en {{ app.name }}:</span>
-                        @for (group of cat.groups; track group.label) {
-                          <div class="perm-card__module-group">
-                            <span class="perm-card__module-group-label">{{ group.label }}</span>
-                            <div class="perm-card__modules">
-                              @for (mod of group.modules; track mod.key) {
-                                <div class="module-item">
-                                  <label class="module-check">
-                                    <input
-                                      type="checkbox"
-                                      [checked]="appHasPerm(app.id, mod.key)"
-                                      (change)="toggleAppPerm(app.id, mod.key)"
-                                    />
-                                    <span>{{ mod.label }}</span>
-                                  </label>
-                                  @if (mod.actions?.length && appHasPerm(app.id, mod.key)) {
-                                    <div class="module-actions">
-                                      @for (act of mod.actions; track act.key) {
-                                        <label class="module-check module-check--action">
-                                          <input
-                                            type="checkbox"
-                                            [checked]="appHasPerm(app.id, act.key)"
-                                            (change)="toggleAppPerm(app.id, act.key)"
-                                          />
-                                          <span>{{ act.label }}</span>
-                                        </label>
-                                      }
-                                    </div>
-                                  }
-                                </div>
-                              }
-                            </div>
-                          </div>
-                        }
-                        <p class="perm-card__hint">
-                          Marca el módulo para verlo; las acciones son permisos finos (crear, editar, anular…).
-                        </p>
-                      }
-                    } @else {
-                      <span class="perm-card__app-loading">
-                        No se pudo cargar el catálogo de {{ app.name }}. Verifica que su backend esté desplegado y que el SSO_SHARED_SECRET coincida.
-                      </span>
-                    }
-                  </div>
-                }
+              @if (isGranted(app.id) && isProvisionable(app)) {
+                <button class="perm-card__configure" (click)="openAppConfig(app, $event)">
+                  <span class="material-symbols-outlined">tune</span>
+                  Configurar rol y permisos
+                </button>
               }
             </div>
           }
@@ -267,6 +139,155 @@
             {{ saving() ? 'Guardando...' : 'Guardar cambios' }}
           </button>
         </div>
+
+        @if (activeConfigApp(); as app) {
+          <div class="config-modal__backdrop" (click)="closeAppConfig()"></div>
+          <div class="config-modal" role="dialog" aria-modal="true" [attr.aria-label]="'Configurar ' + app.name">
+            <div class="config-modal__header">
+              <div>
+                <h3 class="config-modal__title">Configuración de {{ app.name }}</h3>
+                <p class="config-modal__subtitle">Define rol y módulos para {{ selectedUser()!.name }}</p>
+              </div>
+              <button class="config-modal__close" (click)="closeAppConfig()">
+                <span class="material-symbols-outlined">close</span>
+              </button>
+            </div>
+
+            <div class="config-modal__body">
+              @if (isLoadingCatalog(app.id)) {
+                <span class="perm-card__app-loading">Cargando roles y módulos de {{ app.name }}…</span>
+              } @else if (catalogFor(app.id); as cat) {
+                <div class="perm-card__role">
+                  <label class="perm-card__role-label" [attr.for]="'role-modal-' + app.id">
+                    Rol en {{ app.name }}
+                  </label>
+                  <select
+                    class="perm-card__role-select"
+                    [id]="'role-modal-' + app.id"
+                    [value]="appRole(app.id)"
+                    (change)="setAppRole(app.id, $any($event.target).value)"
+                  >
+                    <option value="">— Sin rol específico —</option>
+                    @for (role of cat.roles; track role) {
+                      <option [value]="role" [selected]="appRole(app.id) === role">{{ role }}</option>
+                    }
+                  </select>
+                </div>
+
+                @if (isMultiCompany(app.id)) {
+                  <span class="perm-card__abilities-label">Compañías y código de vendedor:</span>
+                  <div class="company-access">
+                    @for (co of companiesFor(app.id); track co.id) {
+                      <div class="company-access__row">
+                        <label class="module-check">
+                          <input
+                            type="checkbox"
+                            [checked]="isCompanyEnabled(app.id, co.id)"
+                            (change)="toggleCompany(app.id, co.id)"
+                          />
+                          <span>{{ co.name }}</span>
+                        </label>
+                        @if (isCompanyEnabled(app.id, co.id)) {
+                          <input
+                            class="company-access__seller"
+                            type="text"
+                            placeholder="Código vendedor"
+                            [value]="companySeller(app.id, co.id)"
+                            (input)="setCompanySeller(app.id, co.id, $any($event.target).value)"
+                          />
+                        }
+                      </div>
+                    }
+                  </div>
+
+                  @if (enabledCompaniesFor(app.id).length) {
+                    <div class="company-tabs">
+                      @for (co of enabledCompaniesFor(app.id); track co.id) {
+                        <button
+                          type="button"
+                          class="company-tab"
+                          [class.company-tab--on]="activeCompanyId(app.id) === co.id"
+                          (click)="setActiveCompany(app.id, co.id)"
+                        >
+                          {{ co.name }}
+                        </button>
+                      }
+                    </div>
+                    <span class="perm-card__abilities-label">Módulos en esta compañía:</span>
+                    @for (group of cat.groups; track group.label) {
+                      <div class="perm-card__module-group">
+                        <span class="perm-card__module-group-label">{{ group.label }}</span>
+                        <div class="perm-card__modules">
+                          @for (mod of group.modules; track mod.key) {
+                            <label class="module-check">
+                              <input
+                                type="checkbox"
+                                [checked]="appCompanyHasPerm(app.id, activeCompanyId(app.id), mod.key)"
+                                (change)="toggleAppCompanyPerm(app.id, activeCompanyId(app.id), mod.key)"
+                              />
+                              <span>{{ mod.label }}</span>
+                            </label>
+                          }
+                        </div>
+                      </div>
+                    }
+                    <p class="perm-card__hint">
+                      Sin módulos marcados en una compañía, el usuario verá los de su rol allí.
+                    </p>
+                  } @else {
+                    <p class="perm-card__hint">Habilita al menos una compañía para asignar módulos.</p>
+                  }
+                } @else if (cat.groups.length) {
+                  <span class="perm-card__abilities-label">Módulos habilitados en {{ app.name }}:</span>
+                  @for (group of cat.groups; track group.label) {
+                    <div class="perm-card__module-group">
+                      <span class="perm-card__module-group-label">{{ group.label }}</span>
+                      <div class="perm-card__modules">
+                        @for (mod of group.modules; track mod.key) {
+                          <div class="module-item">
+                            <label class="module-check">
+                              <input
+                                type="checkbox"
+                                [checked]="appHasPerm(app.id, mod.key)"
+                                (change)="toggleAppPerm(app.id, mod.key)"
+                              />
+                              <span>{{ mod.label }}</span>
+                            </label>
+                            @if (mod.actions?.length && appHasPerm(app.id, mod.key)) {
+                              <div class="module-actions">
+                                @for (act of mod.actions; track act.key) {
+                                  <label class="module-check module-check--action">
+                                    <input
+                                      type="checkbox"
+                                      [checked]="appHasPerm(app.id, act.key)"
+                                      (change)="toggleAppPerm(app.id, act.key)"
+                                    />
+                                    <span>{{ act.label }}</span>
+                                  </label>
+                                }
+                              </div>
+                            }
+                          </div>
+                        }
+                      </div>
+                    </div>
+                  }
+                  <p class="perm-card__hint">
+                    Marca el módulo para verlo; las acciones son permisos finos (crear, editar, anular…).
+                  </p>
+                }
+              } @else {
+                <span class="perm-card__app-loading">
+                  No se pudo cargar el catálogo de {{ app.name }}. Verifica que su backend esté desplegado y que el SSO_SHARED_SECRET coincida.
+                </span>
+              }
+            </div>
+
+            <div class="config-modal__footer">
+              <button class="btn btn--secondary" (click)="closeAppConfig()">Listo</button>
+            </div>
+          </div>
+        }
       }
     }
   </main>

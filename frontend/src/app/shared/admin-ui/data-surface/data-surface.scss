@@ -1,0 +1,15 @@
+:host {
+  display: block;
+}
+
+.sc-data-surface {
+  padding: 0.9rem 1rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-white);
+  box-shadow: 0 12px 22px rgba(18, 25, 31, 0.05);
+}
+
+.sc-data-surface--compact {
+  padding: 0.75rem 0.85rem;
+}

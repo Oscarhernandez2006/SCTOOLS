@@ -14,14 +14,14 @@
         </div>
       </div>
 
-      <div class="filters">
+      <sc-filter-bar>
         <input class="filters__input" type="text" placeholder="Buscar por usuario..." [ngModel]="search()" (ngModelChange)="search.set($event)" />
         <button class="btn btn--ghost" (click)="load()">
           <span class="material-symbols-outlined">refresh</span> Actualizar
         </button>
-      </div>
+      </sc-filter-bar>
 
-      <div class="card">
+      <sc-data-surface [compact]="true">
         @if (loading()) {
           <div class="page__loading">Cargando sesiones...</div>
         } @else {
@@ -49,7 +49,7 @@
             </tbody>
           </table>
         }
-      </div>
+      </sc-data-surface>
     </div>
   </main>
 </div>

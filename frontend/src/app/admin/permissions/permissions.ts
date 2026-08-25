@@ -29,6 +29,7 @@ export class Permissions implements OnInit {
   readonly applications = signal<CatalogApplication[]>([]);
   readonly abilities = signal<string[]>([]);
   readonly selectedUser = signal<AdminUser | null>(null);
+  readonly activeConfigAppId = signal<number | null>(null);
 
   // Acceso granular: appId -> set de habilidades otorgadas.
   readonly granted = signal<Map<number, Set<string>>>(new Map());
@@ -57,6 +58,12 @@ export class Permissions implements OnInit {
   readonly importing = signal(false);
   readonly toastMessage = signal('');
   readonly toastVisible = signal(false);
+
+  readonly activeConfigApp = computed(() => {
+    const appId = this.activeConfigAppId();
+    if (appId === null) return null;
+    return this.applications().find((app) => app.id === appId) ?? null;
+  });
 
   readonly filteredUsers = computed(() => {
     const q = this.searchQuery().trim().toLowerCase();
@@ -111,6 +118,7 @@ export class Permissions implements OnInit {
 
   selectUser(user: AdminUser): void {
     if (this.selectedUser()?.id === user.id) return;
+    this.closeAppConfig();
     this.selectedUser.set(user);
     this.loadingAccess.set(true);
     this.granted.set(new Map());
@@ -342,6 +350,9 @@ export class Permissions implements OnInit {
     const next = new Map(this.granted());
     if (next.has(appId)) {
       next.delete(appId);
+      if (this.activeConfigAppId() === appId) {
+        this.closeAppConfig();
+      }
     } else {
       next.set(appId, new Set(['view']));
       const app = this.applications().find((a) => a.id === appId);
@@ -350,6 +361,17 @@ export class Permissions implements OnInit {
       }
     }
     this.granted.set(next);
+  }
+
+  openAppConfig(app: CatalogApplication, event?: Event): void {
+    event?.stopPropagation();
+    if (!this.isGranted(app.id) || !this.isProvisionable(app)) return;
+    this.activeConfigAppId.set(app.id);
+    this.loadCatalog(app.id);
+  }
+
+  closeAppConfig(): void {
+    this.activeConfigAppId.set(null);
   }
 
   toggleAbility(appId: number, ability: string): void {

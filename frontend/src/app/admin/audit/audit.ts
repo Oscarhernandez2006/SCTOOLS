@@ -4,11 +4,13 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { Sidebar } from '../../shared/sidebar/sidebar';
 import { TopNav } from '../../shared/top-nav/top-nav';
+import { FilterBar } from '../../shared/admin-ui/filter-bar/filter-bar';
+import { DataSurface } from '../../shared/admin-ui/data-surface/data-surface';
 import { AdminService, AuditEntry, Paginated } from '../../services/admin.service';
 
 @Component({
   selector: 'app-audit',
-  imports: [Sidebar, DatePipe, FormsModule, TopNav],
+  imports: [Sidebar, DatePipe, FormsModule, TopNav, FilterBar, DataSurface],
   templateUrl: './audit.html',
   styleUrl: './audit.scss',
 })

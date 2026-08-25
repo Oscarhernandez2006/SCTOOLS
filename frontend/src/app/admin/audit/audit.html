@@ -15,7 +15,7 @@
       </div>
 
       <!-- Filtros -->
-      <div class="filters">
+      <sc-filter-bar>
         <select class="filters__input" [ngModel]="filterAction()" (ngModelChange)="filterAction.set($event)">
           <option value="">Todas las acciones</option>
           @for (a of actions(); track a) {
@@ -29,9 +29,9 @@
           <span class="material-symbols-outlined">filter_alt</span> Filtrar
         </button>
         <button class="btn btn--ghost" (click)="clearFilters()">Limpiar</button>
-      </div>
+      </sc-filter-bar>
 
-      <div class="card">
+      <sc-data-surface [compact]="true">
         @if (loading()) {
           <div class="page__loading">Cargando bitácora...</div>
         } @else if (page(); as p) {
@@ -62,7 +62,7 @@
             </div>
           }
         }
-      </div>
+      </sc-data-surface>
     </div>
   </main>
 </div>
