@@ -458,9 +458,22 @@
 .page-head {
   display: flex;
   align-items: center;
-  justify-content: flex-start;
-  gap: 0.875rem;
-  margin-bottom: 1.5rem;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+
+  &__info {
+    display: flex;
+    align-items: center;
+    gap: 0.875rem;
+  }
+
+  &__actions {
+    display: flex;
+    gap: 0.6rem;
+    align-items: center;
+  }
 
   &__icon {
     font-size: 30px;
@@ -570,6 +583,59 @@
     background: var(--color-surface);
     padding: 0.125rem 0.5rem;
     border-radius: var(--radius-xl);
+  }
+
+  &__ver-mas {
+    margin-left: auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--color-accent);
+    background: none;
+    border: none;
+    cursor: pointer;
+    transition: gap var(--transition-fast);
+    .material-symbols-outlined { font-size: 16px; }
+    &:hover { gap: 0.5rem; }
+  }
+}
+
+.ver-mas-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  margin-top: 0.75rem;
+  padding: 0.75rem;
+  border: 1.5px dashed var(--color-border);
+  border-radius: var(--radius-lg);
+  background: rgba(87, 173, 49, 0.03);
+  color: var(--color-accent);
+  font-weight: 600;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 150ms ease;
+  .material-symbols-outlined { font-size: 20px; }
+
+  &:hover {
+    background: rgba(87, 173, 49, 0.08);
+    border-color: var(--color-accent-light);
+    transform: translateY(-1px);
+  }
+
+  &__badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(87, 173, 49, 0.15);
+    color: var(--color-accent);
+    border-radius: 999px;
+    padding: 0.1rem 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 700;
   }
 }
 

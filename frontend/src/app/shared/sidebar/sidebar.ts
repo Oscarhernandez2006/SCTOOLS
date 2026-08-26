@@ -23,7 +23,6 @@ export class Sidebar {
     const items: NavLink[] = [{ icon: 'home', label: 'Inicio', route: '/portal' }];
     if (this.auth.currentUser()?.is_admin) {
       items.push(
-        { icon: 'monitoring', label: 'Panel', route: '/admin/panel' },
         { icon: 'tune', label: 'Gestionar apps', route: '/admin/aplicaciones' },
         { icon: 'group', label: 'Usuarios', route: '/admin/usuarios' },
         { icon: 'badge', label: 'Roles', route: '/admin/roles' },

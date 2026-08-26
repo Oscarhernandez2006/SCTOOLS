@@ -105,6 +105,10 @@ export class Portal implements OnInit, OnDestroy {
     this.router.navigate(['/admin/permisos']);
   }
 
+  goToAppsAdmin(): void {
+    this.router.navigate(['/admin/aplicaciones']);
+  }
+
   get currentUserName(): string {
     return this.user()?.name ?? 'Usuario';
   }
@@ -323,8 +327,6 @@ export class Portal implements OnInit, OnDestroy {
       { icon: 'grid_view', label: 'Aplicaciones', view: 'aplicaciones' },
     ];
     if (this.isAdmin) {
-      links.push({ icon: 'monitoring', label: 'Panel', view: 'inicio', route: '/admin/panel', adminOnly: true });
-      links.push({ icon: 'tune', label: 'Gestionar apps', view: 'inicio', route: '/admin/aplicaciones', adminOnly: true });
       links.push({ icon: 'group', label: 'Usuarios', view: 'inicio', route: '/admin/usuarios', adminOnly: true });
       links.push({ icon: 'badge', label: 'Roles', view: 'inicio', route: '/admin/roles', adminOnly: true });
       links.push({ icon: 'admin_panel_settings', label: 'Permisos', view: 'inicio', route: '/admin/permisos', adminOnly: true });
