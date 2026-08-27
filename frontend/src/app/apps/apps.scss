@@ -47,7 +47,7 @@
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
   box-shadow: 0 6px 16px rgba(18, 25, 31, 0.04);
-  margin-bottom: 1rem;
+  margin-bottom: 1.5rem;
 
   &__icon {
     position: absolute;
@@ -86,7 +86,7 @@
 }
 
 // ---- Grid ----
-.ap-section { margin-bottom: 1.5rem; }
+.ap-section { margin-bottom: 2rem; }
 
 .ap-grid {
   display: grid;

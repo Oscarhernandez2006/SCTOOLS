@@ -538,6 +538,26 @@ export class Portal implements OnInit, OnDestroy {
     (this.stats()?.apps_by_category ?? []).map((c) => ({ label: c.category, value: c.count }))
   );
 
+  /** Usuarios activos vs inactivos. */
+  readonly usersStatusDonut = computed<DonutDatum[]>(() => {
+    const s = this.stats()?.summary;
+    if (!s) return [];
+    return [
+      { label: 'Activos', value: s.users_active, color: CHART_SEMANTIC.positive },
+      { label: 'Inactivos', value: s.users_inactive, color: CHART_SEMANTIC.neutral },
+    ];
+  });
+
+  /** Tasa de éxito de autenticación en los últimos 7 días. */
+  readonly loginRateDonut = computed<DonutDatum[]>(() => {
+    const s = this.stats()?.summary;
+    if (!s || !s.logins_last_7d) return [];
+    return [
+      { label: 'Exitosos', value: s.logins_ok_last_7d, color: CHART_SEMANTIC.positive },
+      { label: 'Fallidos', value: Math.max(0, s.logins_last_7d - s.logins_ok_last_7d), color: CHART_SEMANTIC.negative },
+    ];
+  });
+
   /** Estado para cada tarjeta de gráfica (loading / error / empty / ready). */
   cardState(hasData: boolean): ChartCardState {
     if (this.statsLoading()) return 'loading';

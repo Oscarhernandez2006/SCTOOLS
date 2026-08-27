@@ -651,19 +651,15 @@
     </section>
     }
 
-    <!-- Estadísticas detalladas (solo admin) -->
+    <!-- Gráficas de actividad (solo admin) -->
     @if (activeView() === 'inicio' && isAdmin) {
       <section class="dashboard">
-        <h3 class="section-title">
-          <span class="material-symbols-outlined section-title__icon">monitoring</span>
-          Estadísticas detalladas
-        </h3>
         <div class="dashboard__grid">
           <!-- Tendencia de ingresos -->
           <sc-chart-card
             class="dashboard__cell"
-            title="Inicios de sesión"
-            subtitle="Últimos 7 días"
+            title="Tendencia de accesos"
+            subtitle="Inicios de sesión · últimos 7 días"
             [state]="cardState(trendPoints().length > 0)"
             [bodyHeight]="200"
             (retry)="loadStats()"
@@ -677,11 +673,23 @@
             />
           </sc-chart-card>
 
-          <!-- Accesos por app -->
+          <!-- Usuarios activos vs inactivos -->
+          <sc-chart-card
+            class="dashboard__cell"
+            title="Estado de usuarios"
+            subtitle="Activos vs inactivos en la suite"
+            [state]="cardState(usersStatusDonut().length > 0)"
+            [bodyHeight]="200"
+            (retry)="loadStats()"
+          >
+            <sc-donut-chart [data]="usersStatusDonut()" centerLabel="Total" ariaLabel="Usuarios activos vs inactivos" />
+          </sc-chart-card>
+
+          <!-- Top apps con más accesos -->
           <sc-chart-card
             class="dashboard__cell"
             title="Accesos por aplicación"
-            subtitle="Usuarios con acceso"
+            subtitle="Usuarios habilitados por app"
             [state]="cardState(accessBars().length > 0)"
             [bodyHeight]="180"
             (retry)="loadStats()"
@@ -689,36 +697,24 @@
             <sc-bar-chart [data]="accessBars()" />
           </sc-chart-card>
 
-          <!-- SSO por app -->
+          <!-- Tasa de éxito de autenticación -->
           <sc-chart-card
             class="dashboard__cell"
-            title="Ingresos SSO por app"
-            subtitle="Últimos 30 días"
-            [state]="cardState(ssoBars().length > 0)"
+            title="Tasa de autenticación"
+            subtitle="Logins exitosos vs fallidos · 7 días"
+            [state]="cardState(loginRateDonut().length > 0)"
             [bodyHeight]="180"
-            emptyText="Sin actividad SSO reciente."
+            emptyText="Sin actividad de login reciente."
             (retry)="loadStats()"
           >
-            <sc-bar-chart [data]="ssoBars()" />
-          </sc-chart-card>
-
-          <!-- Apps por categoría -->
-          <sc-chart-card
-            class="dashboard__cell"
-            title="Apps por categoría"
-            subtitle="Distribución del catálogo"
-            [state]="cardState(categoryDonut().length > 0)"
-            [bodyHeight]="180"
-            (retry)="loadStats()"
-          >
-            <sc-donut-chart [data]="categoryDonut()" centerLabel="Apps" ariaLabel="Aplicaciones por categoría" />
+            <sc-donut-chart [data]="loginRateDonut()" centerLabel="Intentos" ariaLabel="Tasa de éxito de autenticación" />
           </sc-chart-card>
 
           <!-- Últimos ingresos -->
           <sc-chart-card
             class="dashboard__cell dashboard__cell--wide"
-            title="Últimos ingresos"
-            subtitle="Actividad reciente"
+            title="Últimos accesos"
+            subtitle="Actividad de autenticación reciente"
             [state]="cardState((stats()?.recent_logins?.length ?? 0) > 0)"
             [bodyHeight]="160"
             (retry)="loadStats()"

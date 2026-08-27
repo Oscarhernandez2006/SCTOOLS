@@ -270,12 +270,6 @@
       </div>
 
       <section class="ap-section">
-        <h3 class="section-title">
-          <span class="material-symbols-outlined section-title__icon">apps</span>
-          Aplicaciones
-          <span class="section-title__count">{{ filteredApps().length }}</span>
-        </h3>
-
         <div class="ap-grid">
           @if (appsLoading()) {
             @for (s of [1,2,3,4]; track s) { <div class="card-skeleton"></div> }
