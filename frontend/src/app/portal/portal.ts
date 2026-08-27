@@ -7,7 +7,7 @@ import { AppCard, AppCardData } from '../shared/app-card/app-card';
 import { AuthService } from '../services/auth.service';
 import { Application, ApplicationsService } from '../services/applications.service';
 import { DashboardStats, StatsService } from '../services/stats.service';
-import { AdminService, ServiceHealth } from '../services/admin.service';
+import { AdminService, ApplicationPayload, ManagedApplication, ServiceHealth } from '../services/admin.service';
 import { PresenceService } from '../services/presence.service';
 import { SiesaService } from '../services/siesa.service';
 import {
@@ -21,6 +21,36 @@ import {
   LinePoint,
   CHART_SEMANTIC,
 } from '../shared/charts';
+
+const ICON_OPTIONS: string[] = [
+  'apps', 'dashboard', 'grid_view', 'widgets', 'inventory_2', 'inventory', 'warehouse',
+  'forklift', 'pallet', 'package_2', 'local_shipping', 'shopping_cart', 'store',
+  'storefront', 'sell', 'local_offer', 'redeem', 'card_giftcard', 'receipt_long',
+  'description', 'assignment', 'fact_check', 'task', 'checklist', 'event', 'calendar_month',
+  'schedule', 'payments', 'account_balance', 'attach_money', 'paid', 'savings',
+  'request_quote', 'badge', 'group', 'groups', 'person', 'manage_accounts',
+  'support_agent', 'headset_mic', 'build', 'handyman', 'construction', 'engineering',
+  'settings', 'tune', 'monitoring', 'analytics', 'bar_chart', 'pie_chart', 'trending_up',
+  'insights', 'table_chart', 'folder', 'folder_open', 'cloud', 'cloud_upload', 'database',
+  'dns', 'lan', 'hub', 'devices', 'computer', 'smartphone', 'qr_code_scanner',
+  'label', 'water_drop', 'agriculture', 'factory', 'scale', 'verified', 'shield',
+  'lock', 'key', 'mail', 'chat', 'notifications', 'map', 'location_on', 'work', 'home',
+];
+
+type AppFormModel = {
+  id: number | null;
+  slug: string; name: string; description: string; icon: string; url: string;
+  category: string; color: string; logo: string; keywords: string;
+  type: 'app' | 'form'; sso_enabled: boolean; is_active: boolean; sort_order: number;
+};
+
+function emptyAppForm(): AppFormModel {
+  return {
+    id: null, slug: '', name: '', description: '', icon: 'apps', url: '',
+    category: '', color: '#57AD31', logo: '', keywords: '',
+    type: 'app', sso_enabled: false, is_active: true, sort_order: 0,
+  };
+}
 
 @Component({
   selector: 'app-portal',
@@ -50,6 +80,7 @@ export class Portal implements OnInit, OnDestroy {
     this.loadStats();
     this.loadHealth();
     this.presence.init();
+    if (this.isAdmin) this.loadManagedApps();
   }
 
   ngOnDestroy(): void {
@@ -106,7 +137,7 @@ export class Portal implements OnInit, OnDestroy {
   }
 
   goToAppsAdmin(): void {
-    this.router.navigate(['/admin/aplicaciones']);
+    this.openCreateApp();
   }
 
   get currentUserName(): string {
@@ -138,6 +169,14 @@ export class Portal implements OnInit, OnDestroy {
   }
 
   readonly currentDate = new Date();
+
+  get greetingDate(): string {
+    const d = new Date();
+    const weekday = d.toLocaleDateString('es-CO', { weekday: 'long' });
+    const month = d.toLocaleDateString('es-CO', { month: 'long' });
+    const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+    return `${cap(weekday)}, ${d.getDate()} de ${month} de ${d.getFullYear()}`;
+  }
 
   // Calendario helpers
   get calendarMonth(): string {
@@ -329,7 +368,7 @@ export class Portal implements OnInit, OnDestroy {
     if (this.isAdmin) {
       links.push({ icon: 'group', label: 'Usuarios', view: 'inicio', route: '/admin/usuarios', adminOnly: true });
       links.push({ icon: 'groups', label: 'Grupos', view: 'inicio', route: '/admin/roles', adminOnly: true });
-      links.push({ icon: 'admin_panel_settings', label: 'Roles', view: 'inicio', route: '/admin/permisos', adminOnly: true });
+      links.push({ icon: 'admin_panel_settings', label: 'Permisos', view: 'inicio', route: '/admin/permisos', adminOnly: true });
       links.push({ icon: 'history', label: 'Auditoría', view: 'inicio', route: '/admin/auditoria', adminOnly: true });
       links.push({ icon: 'devices', label: 'Sesiones', view: 'inicio', route: '/admin/sesiones', adminOnly: true });
       links.push({ icon: 'timer', label: 'Presencia', view: 'inicio', route: '/admin/presencia', adminOnly: true });
@@ -514,6 +553,22 @@ export class Portal implements OnInit, OnDestroy {
 
   readonly siesaConnected = computed(() => !!this.siesaStatus()?.has_credentials);
 
+  // ---- Gestión inline de aplicaciones (admin) ----
+  readonly managedApps = signal<ManagedApplication[]>([]);
+  readonly appModalOpen = signal(false);
+  readonly appEditing = signal(false);
+  readonly appForm = signal<AppFormModel>(emptyAppForm());
+  readonly appFormError = signal('');
+  readonly appConfirmDelete = signal<ManagedApplication | null>(null);
+  readonly appSaving = signal(false);
+  readonly iconPickerOpen = signal(false);
+  readonly iconSearch = signal('');
+  readonly logoError = signal('');
+  readonly filteredIcons = computed(() => {
+    const q = this.iconSearch().trim().toLowerCase();
+    return (q ? ICON_OPTIONS.filter((i) => i.includes(q)) : ICON_OPTIONS).slice(0, 60);
+  });
+
   /**
    * Siesa se carga desde la DB como una app más (respeta permisos). Aquí sólo
    * le añadimos, de forma reactiva, el botón de credenciales y el estado de
@@ -648,11 +703,158 @@ export class Portal implements OnInit, OnDestroy {
       return;
     }
     if (this.isAdmin) {
-      this.router.navigate(['/admin/aplicaciones']);
+      const managed = this.managedApps().find((m) => m.slug === app.slug);
+      if (managed) this.openEditApp(managed);
     }
   }
 
   logout(): void {
     this.authService.logout();
+  }
+
+  // ---- CRUD inline de aplicaciones ----
+
+  private loadManagedApps(): void {
+    this.adminService.getManagedApplications().subscribe({
+      next: (apps) => this.managedApps.set(apps),
+      error: () => {},
+    });
+  }
+
+  openCreateApp(): void {
+    this.appForm.set(emptyAppForm());
+    this.appEditing.set(false);
+    this.appFormError.set('');
+    this.logoError.set('');
+    this.iconPickerOpen.set(false);
+    this.appModalOpen.set(true);
+  }
+
+  openEditApp(app: ManagedApplication): void {
+    this.appForm.set({
+      id: app.id, slug: app.slug, name: app.name,
+      description: app.description ?? '', icon: app.icon ?? 'apps',
+      url: app.url, category: app.category ?? '', color: app.color ?? '#57AD31',
+      logo: app.logo ?? '', keywords: app.keywords ?? '',
+      type: app.type, sso_enabled: app.sso_enabled,
+      is_active: app.is_active, sort_order: app.sort_order,
+    });
+    this.appEditing.set(true);
+    this.appFormError.set('');
+    this.logoError.set('');
+    this.iconPickerOpen.set(false);
+    this.appModalOpen.set(true);
+  }
+
+  closeAppModal(): void {
+    if (this.appSaving()) return;
+    this.appModalOpen.set(false);
+    this.iconPickerOpen.set(false);
+  }
+
+  onAppNameChange(value: string): void {
+    const f = this.appForm();
+    const auto = this.slugify(value);
+    const next = { ...f, name: value };
+    if (!this.appEditing() && (f.slug === '' || f.slug === this.slugify(f.name))) next.slug = auto;
+    this.appForm.set(next);
+  }
+
+  private slugify(text: string): string {
+    return text.toLowerCase().normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+  }
+
+  updateAppField<K extends keyof AppFormModel>(key: K, value: AppFormModel[K]): void {
+    this.appForm.set({ ...this.appForm(), [key]: value });
+  }
+
+  selectAppIcon(icon: string): void {
+    this.updateAppField('icon', icon);
+    this.iconPickerOpen.set(false);
+    this.iconSearch.set('');
+  }
+
+  onLogoSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    this.logoError.set('');
+    if (!file) return;
+    if (!file.type.startsWith('image/')) { this.logoError.set('El archivo debe ser una imagen.'); input.value = ''; return; }
+    if (file.size > 1024 * 1024) { this.logoError.set('La imagen supera 1 MB.'); input.value = ''; return; }
+    const reader = new FileReader();
+    reader.onload = () => this.updateAppField('logo', reader.result as string);
+    reader.onerror = () => this.logoError.set('No se pudo leer la imagen.');
+    reader.readAsDataURL(file);
+    input.value = '';
+  }
+
+  removeLogo(): void {
+    this.updateAppField('logo', '');
+    this.logoError.set('');
+  }
+
+  saveApp(): void {
+    if (this.appSaving()) return;
+    const f = this.appForm();
+    if (!f.name.trim() || !f.slug.trim() || !f.url.trim()) {
+      this.appFormError.set('Nombre, identificador y enlace son obligatorios.');
+      return;
+    }
+    this.appSaving.set(true);
+    this.appFormError.set('');
+    const payload: ApplicationPayload = {
+      slug: f.slug.trim(), name: f.name.trim(),
+      description: f.description?.trim() || null, icon: f.icon?.trim() || null,
+      url: f.url.trim(), category: f.category?.trim() || null,
+      color: f.color || null, logo: f.logo?.trim() || null,
+      keywords: f.keywords?.trim() || null, type: f.type,
+      sso_enabled: f.sso_enabled, is_active: f.is_active,
+      sort_order: Number(f.sort_order) || 0,
+    };
+    const req$ = this.appEditing() && f.id
+      ? this.adminService.updateApplication(f.id, payload)
+      : this.adminService.createApplication(payload);
+    req$.subscribe({
+      next: () => {
+        this.appSaving.set(false);
+        this.appModalOpen.set(false);
+        this.showToast(this.appEditing() ? 'Aplicación actualizada' : 'Aplicación creada');
+        this.loadApplications();
+        this.loadManagedApps();
+      },
+      error: (err) => {
+        this.appSaving.set(false);
+        const msg = err?.error?.message || 'No se pudo guardar la aplicación.';
+        this.appFormError.set(msg);
+      },
+    });
+  }
+
+  askDeleteApp(): void {
+    const f = this.appForm();
+    const managed = this.managedApps().find((m) => m.id === f.id);
+    if (managed) { this.appModalOpen.set(false); this.appConfirmDelete.set(managed); }
+  }
+
+  cancelDeleteApp(): void {
+    this.appConfirmDelete.set(null);
+  }
+
+  doDeleteApp(): void {
+    const app = this.appConfirmDelete();
+    if (!app) return;
+    this.adminService.deleteApplication(app.id).subscribe({
+      next: () => {
+        this.appConfirmDelete.set(null);
+        this.showToast('Aplicación eliminada');
+        this.loadApplications();
+        this.loadManagedApps();
+      },
+      error: () => {
+        this.appConfirmDelete.set(null);
+        this.showToast('No se pudo eliminar');
+      },
+    });
   }
 }

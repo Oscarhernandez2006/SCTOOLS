@@ -185,6 +185,21 @@ textarea {
   }
 }
 
+.btn--danger {
+  background: linear-gradient(135deg, #e55252 0%, #c0392b 100%);
+  color: var(--color-white);
+
+  &:hover {
+    filter: brightness(1.06);
+    box-shadow: 0 8px 18px rgba(192, 57, 43, 0.28);
+  }
+}
+
+.btn--sm {
+  padding: 0.38rem 0.75rem;
+  font-size: 0.8125rem;
+}
+
 /* ---- Card ---- */
 .card {
   background: var(--color-white);

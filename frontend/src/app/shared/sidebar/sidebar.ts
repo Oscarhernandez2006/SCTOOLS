@@ -25,7 +25,7 @@ export class Sidebar {
       items.push(
         { icon: 'group', label: 'Usuarios', route: '/admin/usuarios' },
         { icon: 'groups', label: 'Grupos', route: '/admin/roles' },
-        { icon: 'admin_panel_settings', label: 'Roles', route: '/admin/permisos' },
+        { icon: 'admin_panel_settings', label: 'Permisos', route: '/admin/permisos' },
         { icon: 'history', label: 'Auditoría', route: '/admin/auditoria' },
         { icon: 'devices', label: 'Sesiones', route: '/admin/sesiones' },
         { icon: 'timer', label: 'Presencia', route: '/admin/presencia' },
