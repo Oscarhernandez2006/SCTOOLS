@@ -714,6 +714,12 @@ export class Portal implements OnInit, OnDestroy {
 
   // ---- CRUD inline de aplicaciones ----
 
+  private showToast(message: string, duration = 2500): void {
+    this.toastMessage.set(message);
+    this.toastVisible.set(true);
+    setTimeout(() => this.toastVisible.set(false), duration);
+  }
+
   private loadManagedApps(): void {
     this.adminService.getManagedApplications().subscribe({
       next: (apps) => this.managedApps.set(apps),
