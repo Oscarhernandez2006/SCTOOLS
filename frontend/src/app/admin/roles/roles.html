@@ -6,15 +6,15 @@
     <div class="page">
       <div class="page-head">
         <div class="page-head__info">
-          <span class="material-symbols-outlined page-head__icon">badge</span>
+          <span class="material-symbols-outlined page-head__icon">groups</span>
           <div>
-            <h1 class="page-head__title">Roles y grupos</h1>
-            <p class="page-head__subtitle">Presets de acceso y permisos para onboarding rápido</p>
+            <h1 class="page-head__title">Grupos de acceso</h1>
+            <p class="page-head__subtitle">Presets de aplicaciones para asignar acceso rápidamente al crear usuarios</p>
           </div>
         </div>
         <div class="page-head__actions">
           <button class="btn btn--primary" (click)="openCreate()">
-            <span class="material-symbols-outlined">add</span> Nuevo rol
+            <span class="material-symbols-outlined">add</span> Nuevo grupo
           </button>
         </div>
       </div>
@@ -23,11 +23,11 @@
         <div class="page__loading">Cargando roles...</div>
       } @else if (!roles().length) {
         <div class="empty-state">
-          <span class="material-symbols-outlined empty-state__icon">badge</span>
-          <h3 class="empty-state__title">Aún no hay roles</h3>
-          <p class="empty-state__text">Crea un rol para agrupar accesos y permisos, y agilizar el onboarding de nuevos usuarios.</p>
+          <span class="material-symbols-outlined empty-state__icon">groups</span>
+          <h3 class="empty-state__title">Ún no hay grupos</h3>
+          <p class="empty-state__text">Crea un grupo para agrupar accesos a aplicaciones y agilizar el alta de nuevos usuarios.</p>
           <button class="btn btn--primary" (click)="openCreate()">
-            <span class="material-symbols-outlined">add</span> Crear primer rol
+            <span class="material-symbols-outlined">add</span> Crear primer grupo
           </button>
         </div>
       } @else {
@@ -90,7 +90,7 @@
 
         <label class="check">
           <input type="checkbox" [ngModel]="fIsAdmin()" (ngModelChange)="fIsAdmin.set($event)" />
-          <span>Rol de administrador (acceso total)</span>
+          <span>Grupo de administrador (acceso total)</span>
         </label>
 
         <div class="field__label field__label--section">Aplicaciones y permisos</div>

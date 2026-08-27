@@ -35,7 +35,7 @@ export class Roles implements OnInit {
   readonly fIsAdmin = signal(false);
   readonly fApps = signal<Map<number, Set<string>>>(new Map());
 
-  readonly modalTitle = computed(() => (this.editing() ? 'Editar rol' : 'Nuevo rol'));
+  readonly modalTitle = computed(() => (this.editing() ? 'Editar grupo' : 'Nuevo grupo'));
 
   abilityLabel(a: string): string {
     return ABILITY_LABELS[a] ?? a;

@@ -328,8 +328,8 @@ export class Portal implements OnInit, OnDestroy {
     ];
     if (this.isAdmin) {
       links.push({ icon: 'group', label: 'Usuarios', view: 'inicio', route: '/admin/usuarios', adminOnly: true });
-      links.push({ icon: 'badge', label: 'Roles', view: 'inicio', route: '/admin/roles', adminOnly: true });
-      links.push({ icon: 'admin_panel_settings', label: 'Permisos', view: 'inicio', route: '/admin/permisos', adminOnly: true });
+      links.push({ icon: 'groups', label: 'Grupos', view: 'inicio', route: '/admin/roles', adminOnly: true });
+      links.push({ icon: 'admin_panel_settings', label: 'Roles', view: 'inicio', route: '/admin/permisos', adminOnly: true });
       links.push({ icon: 'history', label: 'Auditoría', view: 'inicio', route: '/admin/auditoria', adminOnly: true });
       links.push({ icon: 'devices', label: 'Sesiones', view: 'inicio', route: '/admin/sesiones', adminOnly: true });
       links.push({ icon: 'timer', label: 'Presencia', view: 'inicio', route: '/admin/presencia', adminOnly: true });
@@ -398,7 +398,12 @@ export class Portal implements OnInit, OnDestroy {
   }
 
   filteredApps = computed(() => {
-    const all = this.apps().map((a) => (a.slug === 'siesa' ? this.decorateSiesaCard(a) : a));
+    const all = this.apps().map((a) => {
+      if (a.slug === 'siesa') return this.decorateSiesaCard(a);
+      return this.isAdmin
+        ? { ...a, secondaryActionIcon: 'edit', secondaryActionLabel: 'Editar aplicación' }
+        : a;
+    });
     const q = this.searchQuery().trim();
     if (!q) return all;
     return all.filter((a) => this.matchesSearch(a, q));
@@ -636,10 +641,14 @@ export class Portal implements OnInit, OnDestroy {
     }, 1000);
   }
 
-  /** Acción secundaria de una card (p. ej. editar credenciales de Siesa). */
+  /** Acción secundaria: credenciales Siesa para todos; editar app para admins. */
   onCardSecondary(app: AppCardData): void {
     if (app.slug === 'siesa') {
       this.openSiesaModal();
+      return;
+    }
+    if (this.isAdmin) {
+      this.router.navigate(['/admin/aplicaciones']);
     }
   }
 
