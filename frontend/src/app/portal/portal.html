@@ -627,7 +627,7 @@
       <h3 class="section-title">
         <span class="material-symbols-outlined section-title__icon">apps</span>
         Aplicaciones
-        <button class="section-title__ver-mas" (click)="activeView.set('aplicaciones')">
+        <button class="section-title__ver-mas" (click)="goToApps()">
           Ver todas <span class="material-symbols-outlined">arrow_forward</span>
         </button>
       </h3>
@@ -648,71 +648,6 @@
         }
       </div>
 
-    </section>
-    }
-
-    @if (activeView() === 'aplicaciones') {
-    <section class="page-head">
-      <div class="page-head__info">
-        <span class="material-symbols-outlined page-head__icon">apps</span>
-        <div>
-          <h2 class="page-head__title">Aplicaciones disponibles</h2>
-          <p class="page-head__subtitle">Estas son las herramientas a las que tienes acceso</p>
-        </div>
-      </div>
-      @if (isAdmin) {
-        <div class="page-head__actions">
-          <button class="btn btn--secondary" (click)="goToAppsAdmin()">
-            <span class="material-symbols-outlined">add_circle</span>
-            Nueva aplicación
-          </button>
-        </div>
-      }
-    </section>
-
-    <!-- Search -->
-    <section class="search-section">
-      <div class="search">
-        <span class="material-symbols-outlined search__icon">search</span>
-        <input
-          class="search__input"
-          type="text"
-          placeholder="Buscar aplicaciones..."
-          [ngModel]="searchQuery()"
-          (ngModelChange)="searchQuery.set($event)"
-        />
-        @if (searchQuery()) {
-          <button class="search__clear" (click)="searchQuery.set('')">
-            <span class="material-symbols-outlined">close</span>
-          </button>
-        }
-      </div>
-    </section>
-
-    <!-- Grid de apps (vista aplicaciones: todas) -->
-    <section class="apps-section">
-      <h3 class="section-title">
-        <span class="material-symbols-outlined section-title__icon">apps</span>
-        Aplicaciones
-        <span class="section-title__count">{{ filteredApps().length }}</span>
-      </h3>
-
-      <div class="apps-grid">
-        @if (appsLoading()) {
-          @for (s of skeletonItems; track s) {
-            <div class="card-skeleton"></div>
-          }
-        } @else {
-          @for (app of filteredApps(); track app.name) {
-            <app-card [data]="app" (cardClick)="onAppClick($event)" (secondaryClick)="onCardSecondary($event)" />
-          } @empty {
-            <div class="apps-grid__empty">
-              <span class="material-symbols-outlined apps-grid__empty-icon">search_off</span>
-              <p>No se encontraron aplicaciones</p>
-            </div>
-          }
-        }
-      </div>
     </section>
     }
 

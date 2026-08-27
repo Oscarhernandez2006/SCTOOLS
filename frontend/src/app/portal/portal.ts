@@ -110,7 +110,7 @@ export class Portal implements OnInit, OnDestroy {
   calendarOpen = signal(false);
 
   // Vista activa del portal (controlada por el sidebar)
-  activeView = signal<'inicio' | 'aplicaciones'>('inicio');
+  activeView = signal<'inicio'>('inicio');
 
   // Reloj en tiempo real
   currentTime = signal(new Date());
@@ -138,6 +138,10 @@ export class Portal implements OnInit, OnDestroy {
 
   goToAppsAdmin(): void {
     this.openCreateApp();
+  }
+
+  goToApps(): void {
+    this.router.navigate(['/apps']);
   }
 
   get currentUserName(): string {
@@ -361,9 +365,9 @@ export class Portal implements OnInit, OnDestroy {
   }
 
   readonly sidebarLinks = computed(() => {
-    const links: { icon: string; label: string; view: 'inicio' | 'aplicaciones'; route?: string; adminOnly?: boolean }[] = [
+    const links: { icon: string; label: string; view: 'inicio'; route?: string; adminOnly?: boolean }[] = [
       { icon: 'home', label: 'Inicio', view: 'inicio' },
-      { icon: 'grid_view', label: 'Aplicaciones', view: 'aplicaciones' },
+      { icon: 'grid_view', label: 'Aplicaciones', view: 'inicio', route: '/apps' },
     ];
     if (this.isAdmin) {
       links.push({ icon: 'group', label: 'Usuarios', view: 'inicio', route: '/admin/usuarios', adminOnly: true });
@@ -376,7 +380,7 @@ export class Portal implements OnInit, OnDestroy {
     return links;
   });
 
-  selectSidebar(item: { view: 'inicio' | 'aplicaciones'; route?: string }): void {
+  selectSidebar(item: { view: 'inicio'; route?: string }): void {
     if (item.route) {
       this.router.navigate([item.route]);
       return;

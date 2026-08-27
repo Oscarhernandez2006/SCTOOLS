@@ -5,6 +5,7 @@ export const routes: Routes = [
   { path: '', redirectTo: 'login', pathMatch: 'full' },
   { path: 'login', loadComponent: () => import('./login/login').then(m => m.Login), canActivate: [guestGuard] },
   { path: 'portal', loadComponent: () => import('./portal/portal').then(m => m.Portal), canActivate: [authGuard] },
+  { path: 'apps', loadComponent: () => import('./apps/apps').then(m => m.AppsPage), canActivate: [authGuard] },
   { path: 'siesa-launch', loadComponent: () => import('./siesa-launch/siesa-launch').then(m => m.SiesaLaunch), canActivate: [authGuard] },
   { path: 'admin/panel', loadComponent: () => import('./admin/dashboard/dashboard').then(m => m.Dashboard), canActivate: [adminGuard] },
   { path: 'admin/permisos', loadComponent: () => import('./admin/permissions/permissions').then(m => m.Permissions), canActivate: [adminGuard] },

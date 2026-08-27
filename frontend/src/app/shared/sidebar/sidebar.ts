@@ -20,7 +20,10 @@ export class Sidebar {
   private router = inject(Router);
 
   readonly links = computed<NavLink[]>(() => {
-    const items: NavLink[] = [{ icon: 'home', label: 'Inicio', route: '/portal' }];
+    const items: NavLink[] = [
+      { icon: 'home', label: 'Inicio', route: '/portal' },
+      { icon: 'grid_view', label: 'Aplicaciones', route: '/apps' },
+    ];
     if (this.auth.currentUser()?.is_admin) {
       items.push(
         { icon: 'group', label: 'Usuarios', route: '/admin/usuarios' },

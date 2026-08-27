@@ -1,0 +1,296 @@
+@if (toastVisible()) {
+  <div class="toast">
+    <span class="material-symbols-outlined toast__icon">check_circle</span>
+    {{ toastMessage() }}
+  </div>
+}
+
+<!-- Siesa modal -->
+@if (siesaModalOpen()) {
+  <div class="ap-overlay" (click)="closeSiesaModal()"></div>
+  <div class="ap-modal">
+    <div class="ap-modal__header">
+      <h2 class="ap-modal__title">Conectar con Siesa</h2>
+      <button class="ap-modal__close" (click)="closeSiesaModal()">
+        <span class="material-symbols-outlined">close</span>
+      </button>
+    </div>
+    <div class="ap-modal__body">
+      <p class="ap-modal__hint">Guarda tus credenciales de Siesa. Se almacenan cifradas y se usan para el inicio de sesión automático.</p>
+
+      <div class="ap-field">
+        <label class="ap-field__label" for="siesa-user">Usuario de Siesa</label>
+        <div class="ap-field__wrap">
+          <span class="material-symbols-outlined">person</span>
+          <input id="siesa-user" class="ap-field__input" type="text" autocomplete="off" placeholder="Tu usuario de Siesa"
+            [(ngModel)]="siesaUsername" name="siesaUsername" />
+        </div>
+      </div>
+
+      <div class="ap-field">
+        <label class="ap-field__label" for="siesa-pass">Contraseña de Siesa</label>
+        <div class="ap-field__wrap">
+          <span class="material-symbols-outlined">key</span>
+          <input id="siesa-pass" class="ap-field__input" [type]="showSiesaPassword() ? 'text' : 'password'"
+            autocomplete="new-password" placeholder="Tu contraseña de Siesa"
+            [(ngModel)]="siesaPassword" name="siesaPassword" />
+          <button type="button" class="ap-field__toggle" (click)="showSiesaPassword.set(!showSiesaPassword())">
+            <span class="material-symbols-outlined">{{ showSiesaPassword() ? 'visibility_off' : 'visibility' }}</span>
+          </button>
+        </div>
+      </div>
+
+      @if (siesaError()) {
+        <div class="ap-error"><span class="material-symbols-outlined">error</span>{{ siesaError() }}</div>
+      }
+
+      <div class="ap-modal__actions">
+        @if (siesaConnected()) {
+          <button class="btn btn--danger" (click)="deleteSiesaCredentials()" [disabled]="siesaSaving()">
+            <span class="material-symbols-outlined">delete</span> Eliminar
+          </button>
+        }
+        <button class="btn btn--primary" (click)="saveSiesaCredentials()" [disabled]="siesaSaving()">
+          <span class="material-symbols-outlined">{{ siesaSaving() ? 'progress_activity' : 'save' }}</span>
+          {{ siesaSaving() ? 'Guardando...' : 'Guardar credenciales' }}
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Admin: modal crear/editar app -->
+@if (isAdmin && appModalOpen()) {
+  <div class="app-modal-backdrop" (click)="closeAppModal()"></div>
+  <div class="app-modal" role="dialog">
+    <div class="app-modal__header">
+      <div class="app-modal__header-info">
+        <span class="app-modal__header-icon" [style.background]="(appForm().color || '#57AD31') + '22'" [style.color]="appForm().color || '#57AD31'">
+          @if (appForm().logo) { <img [src]="appForm().logo" alt="" /> }
+          @else { <span class="material-symbols-outlined">{{ appForm().icon || 'apps' }}</span> }
+        </span>
+        <div>
+          <h2 class="app-modal__title">{{ appEditing() ? 'Editar aplicación' : 'Nueva aplicación' }}</h2>
+          <p class="app-modal__subtitle">{{ appForm().name || 'Sin nombre aún' }}</p>
+        </div>
+      </div>
+      <button class="app-modal__close" (click)="closeAppModal()">
+        <span class="material-symbols-outlined">close</span>
+      </button>
+    </div>
+
+    <div class="app-modal__body">
+      <div class="app-modal__row">
+        <div class="app-modal__field">
+          <label class="app-modal__label">Nombre *</label>
+          <input class="app-modal__input" type="text" placeholder="Ej: SIGCAN" [ngModel]="appForm().name" (ngModelChange)="onAppNameChange($event)" />
+        </div>
+        <div class="app-modal__field">
+          <label class="app-modal__label">Identificador (slug) *</label>
+          <input class="app-modal__input" type="text" placeholder="sigcan" [ngModel]="appForm().slug" (ngModelChange)="updateAppField('slug', $event)" />
+        </div>
+      </div>
+
+      <div class="app-modal__field">
+        <label class="app-modal__label">Enlace (URL) *</label>
+        <input class="app-modal__input" type="url" placeholder="https://..." [ngModel]="appForm().url" (ngModelChange)="updateAppField('url', $event)" />
+      </div>
+
+      <div class="app-modal__field">
+        <label class="app-modal__label">Descripción</label>
+        <textarea class="app-modal__input app-modal__input--area" rows="2" placeholder="Breve descripción"
+          [ngModel]="appForm().description" (ngModelChange)="updateAppField('description', $event)"></textarea>
+      </div>
+
+      <div class="app-modal__row">
+        <div class="app-modal__field">
+          <label class="app-modal__label">Categoría</label>
+          <input class="app-modal__input" type="text" placeholder="Ej: Comercial" [ngModel]="appForm().category" (ngModelChange)="updateAppField('category', $event)" />
+        </div>
+        <div class="app-modal__field">
+          <label class="app-modal__label">Tipo</label>
+          <select class="app-modal__input" [ngModel]="appForm().type" (ngModelChange)="updateAppField('type', $event)">
+            <option value="app">Aplicación</option>
+            <option value="form">Formulario</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="app-modal__row">
+        <div class="app-modal__field">
+          <label class="app-modal__label">Ícono</label>
+          <button type="button" class="app-modal__icon-trigger" (click)="iconPickerOpen.set(!iconPickerOpen())">
+            <span class="app-modal__icon-preview" [style.color]="appForm().color || '#57AD31'">
+              <span class="material-symbols-outlined">{{ appForm().icon || 'apps' }}</span>
+            </span>
+            <span class="app-modal__icon-name">{{ appForm().icon || 'apps' }}</span>
+            <span class="material-symbols-outlined">{{ iconPickerOpen() ? 'expand_less' : 'expand_more' }}</span>
+          </button>
+          @if (iconPickerOpen()) {
+            <div class="app-modal__icon-picker">
+              <div class="app-modal__icon-search">
+                <span class="material-symbols-outlined">search</span>
+                <input type="text" placeholder="Buscar..." [ngModel]="iconSearch()" (ngModelChange)="iconSearch.set($event)" />
+              </div>
+              <div class="app-modal__icon-grid">
+                @for (ic of filteredIcons(); track ic) {
+                  <button type="button" class="app-modal__icon-item" [class.app-modal__icon-item--on]="appForm().icon === ic" [title]="ic" (click)="selectAppIcon(ic)">
+                    <span class="material-symbols-outlined">{{ ic }}</span>
+                  </button>
+                }
+              </div>
+            </div>
+          }
+        </div>
+        <div class="app-modal__field">
+          <label class="app-modal__label">Color</label>
+          <div class="app-modal__color-row">
+            <input type="color" class="app-modal__color-picker" [ngModel]="appForm().color" (ngModelChange)="updateAppField('color', $event)" />
+            <input class="app-modal__input" type="text" [ngModel]="appForm().color" (ngModelChange)="updateAppField('color', $event)" placeholder="#57AD31" />
+          </div>
+        </div>
+      </div>
+
+      <div class="app-modal__field">
+        <label class="app-modal__label">Logo (imagen · max 1 MB, reemplaza al ícono)</label>
+        <div class="app-modal__logo">
+          @if (appForm().logo) {
+            <div class="app-modal__logo-preview"><img [src]="appForm().logo" alt="Logo" /></div>
+          } @else {
+            <div class="app-modal__logo-placeholder"><span class="material-symbols-outlined">image</span></div>
+          }
+          <div class="app-modal__logo-actions">
+            <label class="btn btn--secondary btn--sm">
+              <span class="material-symbols-outlined">upload</span>
+              {{ appForm().logo ? 'Cambiar' : 'Subir imagen' }}
+              <input type="file" accept="image/*" hidden (change)="onLogoSelected($event)" />
+            </label>
+            @if (appForm().logo) {
+              <button type="button" class="btn btn--secondary btn--sm" (click)="removeLogo()">
+                <span class="material-symbols-outlined">delete</span>
+              </button>
+            }
+          </div>
+        </div>
+        @if (logoError()) {
+          <span class="app-modal__hint--error">{{ logoError() }}</span>
+        }
+      </div>
+
+      <div class="app-modal__toggles">
+        <label class="app-modal__toggle">
+          <span class="app-modal__switch" [class.app-modal__switch--on]="appForm().is_active">
+            <input type="checkbox" class="app-modal__switch-input" [checked]="appForm().is_active" (change)="updateAppField('is_active', !appForm().is_active)" />
+            <span class="app-modal__switch-track"><span class="app-modal__switch-thumb"></span></span>
+          </span>
+          <span><strong>Activa</strong><small>Visible en el portal para usuarios con acceso</small></span>
+        </label>
+        <label class="app-modal__toggle">
+          <span class="app-modal__switch" [class.app-modal__switch--on]="appForm().sso_enabled">
+            <input type="checkbox" class="app-modal__switch-input" [checked]="appForm().sso_enabled" (change)="updateAppField('sso_enabled', !appForm().sso_enabled)" />
+            <span class="app-modal__switch-track"><span class="app-modal__switch-thumb"></span></span>
+          </span>
+          <span><strong>SSO habilitado</strong><small>Inicio de sesión automático desde el portal</small></span>
+        </label>
+      </div>
+
+      @if (appFormError()) {
+        <div class="app-modal__error">
+          <span class="material-symbols-outlined">error</span>{{ appFormError() }}
+        </div>
+      }
+    </div>
+
+    <div class="app-modal__footer">
+      @if (appEditing()) {
+        <button class="btn btn--danger" (click)="askDeleteApp()" [disabled]="appSaving()">
+          <span class="material-symbols-outlined">delete</span> Eliminar
+        </button>
+      }
+      <div class="app-modal__footer-end">
+        <button class="btn btn--secondary" (click)="closeAppModal()" [disabled]="appSaving()">Cancelar</button>
+        <button class="btn btn--primary" (click)="saveApp()" [disabled]="appSaving()">
+          <span class="material-symbols-outlined">{{ appSaving() ? 'progress_activity' : 'save' }}</span>
+          {{ appSaving() ? 'Guardando...' : (appEditing() ? 'Guardar cambios' : 'Crear aplicación') }}
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Admin: confirmar eliminación -->
+@if (appConfirmDelete()) {
+  <div class="app-modal-backdrop" (click)="cancelDeleteApp()"></div>
+  <div class="app-confirm">
+    <span class="material-symbols-outlined app-confirm__icon">warning</span>
+    <h3 class="app-confirm__title">Eliminar "{{ appConfirmDelete()!.name }}"</h3>
+    <p class="app-confirm__text">Esta acción no se puede deshacer y quitará el acceso de todos los usuarios.</p>
+    <div class="app-confirm__actions">
+      <button class="btn btn--secondary" (click)="cancelDeleteApp()">Cancelar</button>
+      <button class="btn btn--danger" (click)="doDeleteApp()">
+        <span class="material-symbols-outlined">delete</span> Eliminar
+      </button>
+    </div>
+  </div>
+}
+
+<app-top-nav></app-top-nav>
+
+<div class="admin-shell">
+  <app-sidebar></app-sidebar>
+  <main class="admin-shell__main">
+    <div class="ap-page">
+      <div class="page-head">
+        <div class="page-head__info">
+          <span class="material-symbols-outlined page-head__icon">apps</span>
+          <div>
+            <h1 class="page-head__title">Aplicaciones</h1>
+            <p class="page-head__subtitle">Herramientas disponibles para tu usuario</p>
+          </div>
+        </div>
+        @if (isAdmin) {
+          <div class="page-head__actions">
+            <button class="btn btn--secondary" (click)="openCreateApp()">
+              <span class="material-symbols-outlined">add_circle</span>
+              Nueva aplicación
+            </button>
+          </div>
+        }
+      </div>
+
+      <div class="ap-search">
+        <span class="material-symbols-outlined ap-search__icon">search</span>
+        <input class="ap-search__input" type="text" placeholder="Buscar aplicaciones..."
+          [ngModel]="searchQuery()" (ngModelChange)="searchQuery.set($event)" />
+        @if (searchQuery()) {
+          <button class="ap-search__clear" (click)="searchQuery.set('')">
+            <span class="material-symbols-outlined">close</span>
+          </button>
+        }
+      </div>
+
+      <section class="ap-section">
+        <h3 class="section-title">
+          <span class="material-symbols-outlined section-title__icon">apps</span>
+          Aplicaciones
+          <span class="section-title__count">{{ filteredApps().length }}</span>
+        </h3>
+
+        <div class="ap-grid">
+          @if (appsLoading()) {
+            @for (s of [1,2,3,4]; track s) { <div class="card-skeleton"></div> }
+          } @else {
+            @for (app of filteredApps(); track app.name) {
+              <app-card [data]="app" (cardClick)="onAppClick($event)" (secondaryClick)="onCardSecondary($event)" />
+            } @empty {
+              <div class="ap-grid__empty">
+                <span class="material-symbols-outlined">search_off</span>
+                <p>No se encontraron aplicaciones</p>
+              </div>
+            }
+          }
+        </div>
+      </section>
+    </div>
+  </main>
+</div>
