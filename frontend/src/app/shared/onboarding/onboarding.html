@@ -1,0 +1,26 @@
+<div class="ob-backdrop"></div>
+<div class="ob-card" role="dialog" aria-modal="true">
+  <div class="ob-step-dots">
+    @for (s of steps; track $index; let i = $index) {
+      <span class="ob-dot" [class.ob-dot--on]="step() === i"></span>
+    }
+  </div>
+
+  <div class="ob-icon">
+    <span class="material-symbols-outlined">{{ current.icon }}</span>
+  </div>
+
+  <h2 class="ob-title">{{ current.title }}</h2>
+  <p class="ob-text">{{ current.text }}</p>
+
+  <div class="ob-actions">
+    <button class="ob-skip" (click)="skip()">Saltar</button>
+    <button class="ob-next" (click)="next()">
+      {{ isLast ? 'Comenzar' : 'Siguiente' }}
+      @if (!isLast) { <span class="material-symbols-outlined">arrow_forward</span> }
+      @else { <span class="material-symbols-outlined">check</span> }
+    </button>
+  </div>
+
+  <span class="ob-counter">{{ step() + 1 }} / {{ total }}</span>
+</div>

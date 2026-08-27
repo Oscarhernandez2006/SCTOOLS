@@ -1,0 +1,92 @@
+@if (toastVisible()) {
+  <div class="toast"><span class="material-symbols-outlined toast__icon">check_circle</span>{{ toast() }}</div>
+}
+
+@if (modalOpen()) {
+  <div class="modal-overlay" (click)="closeModal()"></div>
+  <div class="modal">
+    <div class="modal__header">
+      <h2 class="modal__title">{{ editing() ? 'Editar anuncio' : 'Nuevo anuncio' }}</h2>
+      <button class="modal__close" (click)="closeModal()"><span class="material-symbols-outlined">close</span></button>
+    </div>
+    <div class="modal__body">
+      <div class="field">
+        <label class="field__label">Título *</label>
+        <input class="field__input" type="text" placeholder="Título del comunicado" maxlength="200"
+          [ngModel]="form().title" (ngModelChange)="updateForm('title', $event)" />
+      </div>
+      <div class="field">
+        <label class="field__label">Mensaje *</label>
+        <textarea class="field__input field__input--area" rows="4" placeholder="Contenido del anuncio..." maxlength="2000"
+          [ngModel]="form().body" (ngModelChange)="updateForm('body', $event)"></textarea>
+      </div>
+      <div class="field">
+        <label class="field__label">Fecha de expiración (opcional)</label>
+        <input class="field__input" type="date" [ngModel]="form().expires_at" (ngModelChange)="updateForm('expires_at', $event)" />
+        <span class="field__hint">Si no se establece, el anuncio no expira.</span>
+      </div>
+    </div>
+    <div class="modal__footer">
+      <button class="btn btn--secondary" (click)="closeModal()" [disabled]="saving()">Cancelar</button>
+      <button class="btn btn--primary" (click)="save()" [disabled]="saving() || !form().title.trim()">
+        <span class="material-symbols-outlined">{{ saving() ? 'progress_activity' : 'campaign' }}</span>
+        {{ saving() ? 'Publicando...' : (editing() ? 'Guardar' : 'Publicar') }}
+      </button>
+    </div>
+  </div>
+}
+
+<app-top-nav></app-top-nav>
+<div class="admin-shell">
+  <app-sidebar></app-sidebar>
+  <main class="admin-shell__main">
+    <div class="container">
+      <div class="page-head">
+        <div class="page-head__info">
+          <span class="material-symbols-outlined page-head__icon">campaign</span>
+          <div>
+            <h1 class="page-head__title">Anuncios internos</h1>
+            <p class="page-head__subtitle">Comunica novedades a todos los usuarios de la suite</p>
+          </div>
+        </div>
+        <div class="page-head__actions">
+          <button class="btn btn--primary" (click)="openCreate()">
+            <span class="material-symbols-outlined">add</span> Nuevo anuncio
+          </button>
+        </div>
+      </div>
+
+      @if (loading()) {
+        <div class="placeholder">Cargando anuncios...</div>
+      } @else if (items().length === 0) {
+        <div class="placeholder">
+          <span class="material-symbols-outlined placeholder__icon">campaign</span>
+          <p>No hay anuncios publicados aún.</p>
+        </div>
+      } @else {
+        <div class="ann-list">
+          @for (item of items(); track item.id) {
+            <div class="ann-row" [class.ann-row--expired]="isExpired(item)">
+              <div class="ann-row__info">
+                <div class="ann-row__head">
+                  <span class="ann-row__title">{{ item.title }}</span>
+                  @if (isExpired(item)) { <span class="badge badge--off">Expirado</span> }
+                  @else { <span class="badge badge--on">Activo</span> }
+                </div>
+                <p class="ann-row__body">{{ item.body }}</p>
+                <span class="ann-row__meta">
+                  Publicado por {{ item.published_by }} · {{ item.created_at | date:'dd/MM/yyyy HH:mm' }}
+                  @if (item.expires_at) { · Expira {{ item.expires_at | date:'dd/MM/yyyy' }} }
+                </span>
+              </div>
+              <div class="ann-row__actions">
+                <button class="icon-btn" (click)="openEdit(item)" title="Editar"><span class="material-symbols-outlined">edit</span></button>
+                <button class="icon-btn icon-btn--danger" (click)="delete(item)" title="Eliminar"><span class="material-symbols-outlined">delete</span></button>
+              </div>
+            </div>
+          }
+        </div>
+      }
+    </div>
+  </main>
+</div>

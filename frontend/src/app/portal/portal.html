@@ -1,4 +1,9 @@
 <div class="sc-portal">
+<!-- Onboarding de bienvenida (primera visita) -->
+@if (showOnboarding()) {
+  <sc-onboarding (done)="showOnboarding.set(false)" />
+}
+
 <!-- Toast -->
 @if (toastVisible()) {
   <div class="toast">
@@ -528,6 +533,21 @@
   <!-- Content -->
   <main class="content">
     @if (activeView() === 'inicio') {
+
+    <!-- Banners de anuncios activos -->
+    @for (ann of announcements(); track ann.id) {
+      <div class="ann-banner">
+        <span class="material-symbols-outlined ann-banner__icon">campaign</span>
+        <div class="ann-banner__body">
+          <strong>{{ ann.title }}</strong>
+          <span>{{ ann.body }}</span>
+        </div>
+        <button class="ann-banner__close" (click)="dismissAnnouncement(ann)" title="Descartar">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+    }
+
     <!-- Greeting -->
     <section class="greeting">
       <div class="greeting__text">
@@ -649,6 +669,82 @@
       </div>
 
     </section>
+    }
+
+    <!-- Dashboard ejecutivo cruzado + presencia (solo admin) -->
+    @if (activeView() === 'inicio' && isAdmin) {
+      <div class="cross-grid">
+        <!-- Widget SIGCOM -->
+        @if (sigcomResumen(); as sc) {
+          <div class="cross-card">
+            <div class="cross-card__head">
+              <span class="material-symbols-outlined cross-card__icon" style="color:#2B6CB0">shopping_cart</span>
+              <span class="cross-card__title">SIGCOM</span>
+              <a href="javascript:void(0)" class="cross-card__link">Ver <span class="material-symbols-outlined">arrow_forward</span></a>
+            </div>
+            <div class="cross-card__metrics">
+              <div class="cross-metric">
+                <span class="cross-metric__val">{{ sc.pedidos_hoy }}</span>
+                <span class="cross-metric__label">Pedidos hoy</span>
+                <span class="cross-metric__delta" [class.cross-metric__delta--up]="sc.pedidos_hoy >= sc.pedidos_ayer">
+                  vs {{ sc.pedidos_ayer }} ayer
+                </span>
+              </div>
+              <div class="cross-metric">
+                <span class="cross-metric__val">{{ sc.cartera_pendiente }}</span>
+                <span class="cross-metric__label">Cartera pendiente</span>
+              </div>
+              <div class="cross-metric">
+                <span class="cross-metric__val">{{ sc.cotizaciones_abiertas }}</span>
+                <span class="cross-metric__label">Cotizaciones abiertas</span>
+              </div>
+            </div>
+          </div>
+        }
+
+        <!-- Widget SIGCOMPRO -->
+        @if (sigcomproResumen(); as sp) {
+          <div class="cross-card">
+            <div class="cross-card__head">
+              <span class="material-symbols-outlined cross-card__icon" style="color:#8B1A2B">local_shipping</span>
+              <span class="cross-card__title">SIGCOMPRO</span>
+            </div>
+            <div class="cross-card__metrics">
+              <div class="cross-metric">
+                <span class="cross-metric__val">{{ sp.pendientes }}</span>
+                <span class="cross-metric__label">Pendientes</span>
+              </div>
+              <div class="cross-metric cross-metric--warn">
+                <span class="cross-metric__val">{{ sp.atrasados }}</span>
+                <span class="cross-metric__label">Atrasados</span>
+              </div>
+              <div class="cross-metric">
+                <span class="cross-metric__val">{{ sp.despachados_hoy }}</span>
+                <span class="cross-metric__label">Despachados hoy</span>
+              </div>
+            </div>
+          </div>
+        }
+
+        <!-- Widget presencia -->
+        <div class="cross-card">
+          <div class="cross-card__head">
+            <span class="material-symbols-outlined cross-card__icon">timer</span>
+            <span class="cross-card__title">Presencia hoy</span>
+            <a routerLink="/admin/presencia" class="cross-card__link">Ver <span class="material-symbols-outlined">arrow_forward</span></a>
+          </div>
+          <div class="cross-card__metrics">
+            <div class="cross-metric">
+              <span class="cross-metric__val">{{ onlineCount }}</span>
+              <span class="cross-metric__label">Activos ahora</span>
+            </div>
+            <div class="cross-metric">
+              <span class="cross-metric__val">{{ presenceToday()?.by_user?.length ?? '—' }}</span>
+              <span class="cross-metric__label">Con registro hoy</span>
+            </div>
+          </div>
+        </div>
+      </div>
     }
 
     <!-- Gráficas de actividad (solo admin) -->

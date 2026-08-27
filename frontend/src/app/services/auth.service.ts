@@ -35,6 +35,16 @@ interface MeResponse extends AuthUser {
   siesa?: SiesaStatus;
 }
 
+export interface LoginHistoryEntry {
+  id: number;
+  status: string;
+  browser: string | null;
+  os: string | null;
+  device_type: string | null;
+  ip_address: string | null;
+  at: string | null;
+}
+
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private readonly TOKEN_KEY = 'sc_tools_token';
@@ -130,6 +140,11 @@ export class AuthService {
       password: newPassword,
       password_confirmation: newPassword,
     });
+  }
+
+  /** Historial de accesos del propio usuario. */
+  getMyLogins(limit = 50): Observable<LoginHistoryEntry[]> {
+    return this.http.get<LoginHistoryEntry[]>('/api/auth/my-logins', { params: { limit } as never });
   }
 
   /** Refresca los datos del usuario (incluido is_admin) desde el backend. */

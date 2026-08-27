@@ -1,0 +1,47 @@
+<div class="cp-backdrop" (click)="close.emit()"></div>
+<div class="cp-panel" role="dialog" aria-modal="true" aria-label="Búsqueda global">
+  <div class="cp-search">
+    <span class="material-symbols-outlined cp-search__icon">search</span>
+    <input
+      #searchInput
+      class="cp-search__input"
+      type="text"
+      placeholder="Buscar apps, secciones, usuarios..."
+      [ngModel]="query()"
+      (ngModelChange)="onQueryChange($event)"
+      autofocus
+    />
+    <kbd class="cp-search__esc">Esc</kbd>
+  </div>
+
+  <div class="cp-list" role="listbox">
+    @if (results().length === 0) {
+      <div class="cp-empty">Sin resultados para "{{ query() }}"</div>
+    } @else {
+      @for (item of results(); track item.label; let i = $index) {
+        <button
+          class="cp-item"
+          [class.cp-item--selected]="selectedIdx() === i"
+          role="option"
+          (click)="run(item)"
+          (mouseenter)="selectedIdx.set(i)"
+        >
+          <span class="cp-item__icon" [style.color]="item.color || 'var(--color-accent)'">
+            <span class="material-symbols-outlined">{{ item.icon }}</span>
+          </span>
+          <span class="cp-item__info">
+            <span class="cp-item__label">{{ item.label }}</span>
+            <span class="cp-item__sub">{{ item.sub }}</span>
+          </span>
+          <span class="material-symbols-outlined cp-item__arrow">arrow_forward</span>
+        </button>
+      }
+    }
+  </div>
+
+  <div class="cp-footer">
+    <span><kbd>↑↓</kbd> navegar</span>
+    <span><kbd>Enter</kbd> abrir</span>
+    <span><kbd>Esc</kbd> cerrar</span>
+  </div>
+</div>

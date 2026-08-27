@@ -1,0 +1,113 @@
+<app-top-nav></app-top-nav>
+
+<div class="admin-shell">
+  <app-sidebar></app-sidebar>
+  <main class="admin-shell__main">
+    <div class="profile-page">
+
+      <!-- Encabezado -->
+      <div class="profile-page__hero">
+        <div class="profile-page__avatar">{{ initials }}</div>
+        <div>
+          <h1 class="profile-page__name">{{ user()?.name }}</h1>
+          <span class="profile-page__role">{{ user()?.is_admin ? 'Administrador' : 'Usuario' }}</span>
+        </div>
+      </div>
+
+      <!-- Info del usuario -->
+      <div class="profile-card">
+        <h2 class="profile-card__title">Información personal</h2>
+        <div class="profile-fields">
+          <div class="profile-field">
+            <span class="material-symbols-outlined">badge</span>
+            <div>
+              <span class="profile-field__label">Cédula</span>
+              <span class="profile-field__value">{{ user()?.cedula }}</span>
+            </div>
+          </div>
+          <div class="profile-field">
+            <span class="material-symbols-outlined">mail</span>
+            <div>
+              <span class="profile-field__label">Correo</span>
+              <span class="profile-field__value">{{ user()?.email || '—' }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Cambio de contraseña -->
+      <div class="profile-card">
+        <button class="profile-card__toggle" (click)="togglePwd()">
+          <span class="material-symbols-outlined">lock_reset</span>
+          Cambiar contraseña
+          <span class="material-symbols-outlined profile-card__caret">{{ pwdOpen() ? 'expand_less' : 'expand_more' }}</span>
+        </button>
+        @if (pwdOpen()) {
+          <div class="pwd-form">
+            <div class="pwd-field">
+              <label class="pwd-field__label">Contraseña actual</label>
+              <div class="pwd-field__wrap">
+                <input class="pwd-field__input" [type]="showCurrent() ? 'text' : 'password'" autocomplete="current-password"
+                  [(ngModel)]="pwdCurrent" placeholder="Tu contraseña actual" />
+                <button type="button" class="pwd-field__toggle" (click)="showCurrent.set(!showCurrent())">
+                  <span class="material-symbols-outlined">{{ showCurrent() ? 'visibility_off' : 'visibility' }}</span>
+                </button>
+              </div>
+            </div>
+            <div class="pwd-field">
+              <label class="pwd-field__label">Nueva contraseña</label>
+              <div class="pwd-field__wrap">
+                <input class="pwd-field__input" [type]="showNew() ? 'text' : 'password'" autocomplete="new-password"
+                  [(ngModel)]="pwdNew" placeholder="Mínimo 6 caracteres" />
+                <button type="button" class="pwd-field__toggle" (click)="showNew.set(!showNew())">
+                  <span class="material-symbols-outlined">{{ showNew() ? 'visibility_off' : 'visibility' }}</span>
+                </button>
+              </div>
+            </div>
+            <div class="pwd-field">
+              <label class="pwd-field__label">Confirmar nueva contraseña</label>
+              <input class="pwd-field__input" type="password" autocomplete="new-password"
+                [(ngModel)]="pwdConfirm" placeholder="Repite la nueva contraseña" />
+            </div>
+            @if (pwdError()) { <div class="pwd-msg pwd-msg--err"><span class="material-symbols-outlined">error</span>{{ pwdError() }}</div> }
+            @if (pwdSuccess()) { <div class="pwd-msg pwd-msg--ok"><span class="material-symbols-outlined">check_circle</span>{{ pwdSuccess() }}</div> }
+            <button class="btn btn--primary" (click)="changePassword()" [disabled]="pwdSaving()">
+              <span class="material-symbols-outlined">{{ pwdSaving() ? 'progress_activity' : 'save' }}</span>
+              {{ pwdSaving() ? 'Guardando...' : 'Actualizar contraseña' }}
+            </button>
+          </div>
+        }
+      </div>
+
+      <!-- Historial de accesos -->
+      <div class="profile-card">
+        <h2 class="profile-card__title">Mis últimos accesos</h2>
+        @if (loadingLogins()) {
+          <div class="profile-loading">Cargando historial...</div>
+        } @else if (logins().length === 0) {
+          <p class="profile-empty">Sin registros de acceso</p>
+        } @else {
+          <table class="login-table">
+            <thead>
+              <tr><th>Estado</th><th>Navegador</th><th>SO</th><th>IP</th><th>Fecha</th></tr>
+            </thead>
+            <tbody>
+              @for (l of logins(); track l.id) {
+                <tr>
+                  <td>
+                    <span class="material-symbols-outlined" [style.color]="statusColor(l.status)" style="font-size:18px; vertical-align:middle">{{ statusIcon(l.status) }}</span>
+                    {{ l.status === 'success' ? 'Exitoso' : 'Fallido' }}
+                  </td>
+                  <td>{{ l.browser || '—' }}</td>
+                  <td>{{ l.os || '—' }}</td>
+                  <td class="mono">{{ l.ip_address || '—' }}</td>
+                  <td class="mono">{{ l.at | date:'dd/MM/yyyy HH:mm' }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        }
+      </div>
+    </div>
+  </main>
+</div>

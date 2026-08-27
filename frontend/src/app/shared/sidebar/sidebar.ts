@@ -29,9 +29,11 @@ export class Sidebar {
         { icon: 'group', label: 'Usuarios', route: '/admin/usuarios' },
         { icon: 'groups', label: 'Grupos', route: '/admin/roles' },
         { icon: 'admin_panel_settings', label: 'Permisos', route: '/admin/permisos' },
+        { icon: 'campaign', label: 'Anuncios', route: '/admin/anuncios' },
         { icon: 'history', label: 'Auditoría', route: '/admin/auditoria' },
         { icon: 'devices', label: 'Sesiones', route: '/admin/sesiones' },
         { icon: 'timer', label: 'Presencia', route: '/admin/presencia' },
+        { icon: 'tv', label: 'Kiosko', route: '/kiosko' },
       );
     }
     return items;

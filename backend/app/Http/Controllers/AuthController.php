@@ -305,6 +305,28 @@ class AuthController extends Controller
         return response()->json(['message' => 'Contraseña actualizada correctamente']);
     }
 
+    /** Historial de accesos del propio usuario (para /mi-perfil y /mi-actividad). */
+    public function myLogins(Request $request): JsonResponse
+    {
+        $limit = min(100, max(10, (int) $request->query('limit', 50)));
+
+        $logs = LoginLog::where('user_id', $request->user()->id)
+            ->orderByDesc('created_at')
+            ->limit($limit)
+            ->get(['id', 'status', 'browser', 'os', 'device_type', 'ip_address', 'created_at'])
+            ->map(fn ($l) => [
+                'id' => $l->id,
+                'status' => $l->status,
+                'browser' => $l->browser,
+                'os' => $l->os,
+                'device_type' => $l->device_type,
+                'ip_address' => $l->ip_address,
+                'at' => $l->created_at?->toIso8601String(),
+            ]);
+
+        return response()->json($logs);
+    }
+
     private function extractClientInfo(Request $request): array
     {
         $ua = $request->userAgent() ?? '';

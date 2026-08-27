@@ -1,0 +1,54 @@
+<app-top-nav></app-top-nav>
+<div class="admin-shell">
+  <app-sidebar></app-sidebar>
+  <main class="admin-shell__main">
+    <div class="act-page">
+      <div class="page-head">
+        <div class="page-head__info">
+          <span class="material-symbols-outlined page-head__icon">history</span>
+          <div>
+            <h1 class="page-head__title">Mi actividad</h1>
+            <p class="page-head__subtitle">Historial de tus accesos e inicios de sesión</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="act-filters">
+        <button class="act-filter" [class.act-filter--on]="filterStatus() === 'all'" (click)="filterStatus.set('all')">Todos</button>
+        <button class="act-filter" [class.act-filter--on]="filterStatus() === 'success'" (click)="filterStatus.set('success')">Exitosos</button>
+        <button class="act-filter" [class.act-filter--on]="filterStatus() === 'failed'" (click)="filterStatus.set('failed')">Fallidos</button>
+      </div>
+
+      <div class="card">
+        @if (loading()) {
+          <div class="act-empty">Cargando historial...</div>
+        } @else if (filtered().length === 0) {
+          <div class="act-empty">Sin registros para el filtro seleccionado</div>
+        } @else {
+          <table class="act-table">
+            <thead>
+              <tr><th>Estado</th><th>Dispositivo</th><th>Navegador</th><th>SO</th><th>IP</th><th>Fecha</th></tr>
+            </thead>
+            <tbody>
+              @for (l of filtered(); track l.id) {
+                <tr>
+                  <td>
+                    <span class="act-status" [style.color]="statusColor(l.status)">
+                      <span class="material-symbols-outlined">{{ statusIcon(l.status) }}</span>
+                      {{ statusLabel(l.status) }}
+                    </span>
+                  </td>
+                  <td><span class="material-symbols-outlined" style="font-size:18px; color:var(--color-text-muted)">{{ deviceIcon(l.device_type) }}</span></td>
+                  <td>{{ l.browser || '—' }}</td>
+                  <td>{{ l.os || '—' }}</td>
+                  <td class="mono">{{ l.ip_address || '—' }}</td>
+                  <td class="mono">{{ l.at | date:'dd/MM/yyyy HH:mm' }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        }
+      </div>
+    </div>
+  </main>
+</div>

@@ -240,6 +240,39 @@ export interface ManagedApplication {
 
 export type ApplicationPayload = Omit<ManagedApplication, 'id'>;
 
+export interface NotificationItem {
+  id: number;
+  type: string;
+  title: string;
+  body: string;
+  data: Record<string, unknown> | null;
+  read_at: string | null;
+  created_at: string;
+}
+
+export interface AnnouncementItem {
+  id: number;
+  title: string;
+  body: string;
+  published_by?: string;
+  expires_at: string | null;
+  created_at: string;
+}
+
+export interface SigcomResumen {
+  pedidos_hoy: number;
+  pedidos_ayer: number;
+  cartera_pendiente: number;
+  cotizaciones_abiertas: number;
+}
+
+export interface SigcomproResumen {
+  pendientes: number;
+  atrasados: number;
+  alistados: number;
+  despachados_hoy: number;
+}
+
 export interface ManagedUser {
   id: number;
   name: string;
@@ -482,5 +515,52 @@ export class AdminService {
 
   revokeFaceBypass(userId: number): Observable<ManagedUser> {
     return this.http.delete<ManagedUser>(`/api/admin/manage/users/${userId}/face-bypass`);
+  }
+
+  // ---- Notificaciones ----
+  getNotifications(): Observable<NotificationItem[]> {
+    return this.http.get<NotificationItem[]>('/api/notifications');
+  }
+
+  markNotificationRead(id: number): Observable<{ ok: boolean }> {
+    return this.http.put<{ ok: boolean }>(`/api/notifications/${id}/read`, {});
+  }
+
+  markAllNotificationsRead(): Observable<{ ok: boolean }> {
+    return this.http.post<{ ok: boolean }>('/api/notifications/read-all', {});
+  }
+
+  // ---- Anuncios ----
+  getActiveAnnouncements(): Observable<AnnouncementItem[]> {
+    return this.http.get<AnnouncementItem[]>('/api/announcements/active');
+  }
+
+  markAnnouncementViewed(id: number): Observable<{ ok: boolean }> {
+    return this.http.post<{ ok: boolean }>(`/api/announcements/${id}/viewed`, {});
+  }
+
+  getAdminAnnouncements(): Observable<AnnouncementItem[]> {
+    return this.http.get<AnnouncementItem[]>('/api/admin/announcements');
+  }
+
+  createAnnouncement(payload: { title: string; body: string; expires_at?: string | null }): Observable<{ id: number }> {
+    return this.http.post<{ id: number }>('/api/admin/announcements', payload);
+  }
+
+  updateAnnouncement(id: number, payload: { title: string; body: string; expires_at?: string | null }): Observable<{ ok: boolean }> {
+    return this.http.put<{ ok: boolean }>(`/api/admin/announcements/${id}`, payload);
+  }
+
+  deleteAnnouncement(id: number): Observable<{ ok: boolean }> {
+    return this.http.delete<{ ok: boolean }>(`/api/admin/announcements/${id}`);
+  }
+
+  // ---- Resúmenes ejecutivos de apps externas ----
+  getSigcomResumen(): Observable<SigcomResumen> {
+    return this.http.get<SigcomResumen>('/api/admin/cross/sigcom');
+  }
+
+  getSigcomproResumen(): Observable<SigcomproResumen> {
+    return this.http.get<SigcomproResumen>('/api/admin/cross/sigcompro');
   }
 }

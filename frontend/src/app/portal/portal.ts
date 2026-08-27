@@ -1,5 +1,5 @@
 import { Component, computed, HostListener, inject, OnDestroy, OnInit, signal } from '@angular/core';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { DatePipe } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
@@ -7,9 +7,10 @@ import { AppCard, AppCardData } from '../shared/app-card/app-card';
 import { AuthService } from '../services/auth.service';
 import { Application, ApplicationsService } from '../services/applications.service';
 import { DashboardStats, StatsService } from '../services/stats.service';
-import { AdminService, ApplicationPayload, ManagedApplication, ServiceHealth } from '../services/admin.service';
+import { AdminService, AnnouncementItem, ApplicationPayload, ManagedApplication, ServiceHealth, SigcomResumen, SigcomproResumen } from '../services/admin.service';
 import { PresenceService } from '../services/presence.service';
 import { SiesaService } from '../services/siesa.service';
+import { OnboardingTour } from '../shared/onboarding/onboarding';
 import {
   BarChart,
   BarDatum,
@@ -54,7 +55,7 @@ function emptyAppForm(): AppFormModel {
 
 @Component({
   selector: 'app-portal',
-  imports: [FormsModule, DatePipe, AppCard, ChartCard, LineChart, BarChart, DonutChart],
+  imports: [FormsModule, DatePipe, AppCard, ChartCard, LineChart, BarChart, DonutChart, OnboardingTour, RouterLink],
   templateUrl: './portal.html',
   styleUrl: './portal.scss',
 })
@@ -81,6 +82,23 @@ export class Portal implements OnInit, OnDestroy {
     this.loadHealth();
     this.presence.init();
     if (this.isAdmin) this.loadManagedApps();
+    // Onboarding: mostrar solo la primera vez
+    if (!localStorage.getItem('suite-onboarding-done')) {
+      this.showOnboarding.set(true);
+    }
+    // Anuncios activos no vistos
+    this.adminService.getActiveAnnouncements().subscribe({
+      next: (a) => this.announcements.set(a),
+      error: () => {},
+    });
+    // Dashboard ejecutivo cruzado (solo admin)
+    if (this.isAdmin) {
+      this.adminService.getSigcomResumen().subscribe({ next: (r) => this.sigcomResumen.set(r), error: () => {} });
+      this.adminService.getSigcomproResumen().subscribe({ next: (r) => this.sigcomproResumen.set(r), error: () => {} });
+      // Presencia del día para el widget
+      const today = new Date().toISOString().slice(0, 10);
+      this.adminService.getPresence(today, today).subscribe({ next: (r) => this.presenceToday.set(r), error: () => {} });
+    }
   }
 
   ngOnDestroy(): void {
@@ -576,6 +594,29 @@ export class Portal implements OnInit, OnDestroy {
   showSiesaPassword = signal(false);
 
   readonly siesaConnected = computed(() => !!this.siesaStatus()?.has_credentials);
+
+  // ---- Onboarding ----
+  readonly showOnboarding = signal(false);
+
+  // ---- Anuncios ----
+  readonly announcements = signal<AnnouncementItem[]>([]);
+
+  dismissAnnouncement(ann: AnnouncementItem): void {
+    this.adminService.markAnnouncementViewed(ann.id).subscribe({ next: () => {} });
+    this.announcements.update((list) => list.filter((a) => a.id !== ann.id));
+  }
+
+  // ---- Dashboard ejecutivo cruzado ----
+  readonly sigcomResumen = signal<SigcomResumen | null>(null);
+  readonly sigcomproResumen = signal<SigcomproResumen | null>(null);
+  readonly presenceToday = signal<import('../services/admin.service').PresenceReport | null>(null);
+
+  get onlineCount(): number {
+    const r = this.presenceToday();
+    if (!r) return 0;
+    const fiveMinAgo = Date.now() - 5 * 60 * 1000;
+    return r.rows.filter((row) => row.last_seen_at && new Date(row.last_seen_at).getTime() > fiveMinAgo).length;
+  }
 
   // ---- Gestión inline de aplicaciones (admin) ----
   readonly managedApps = signal<ManagedApplication[]>([]);

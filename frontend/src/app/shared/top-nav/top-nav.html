@@ -75,6 +75,55 @@
       }
     </div>
 
+    <!-- Modo oscuro -->
+    <button class="tn__icon-btn" (click)="theme.toggle()" [title]="theme.isDark() ? 'Modo claro' : 'Modo oscuro'">
+      <span class="material-symbols-outlined">{{ theme.isDark() ? 'light_mode' : 'dark_mode' }}</span>
+    </button>
+
+    <!-- Búsqueda rápida Ctrl+K -->
+    <button class="tn__icon-btn tn__search-btn" (click)="paletteOpen.set(true)" title="Búsqueda rápida (Ctrl+K)">
+      <span class="material-symbols-outlined">search</span>
+    </button>
+
+    <!-- Centro de notificaciones -->
+    <div class="tn__notif">
+      <button class="tn__icon-btn tn__notif-btn" (click)="toggleNotif()" title="Notificaciones">
+        <span class="material-symbols-outlined">notifications</span>
+        @if (unreadCount() > 0) {
+          <span class="tn__notif-badge">{{ unreadCount() > 9 ? '9+' : unreadCount() }}</span>
+        }
+      </button>
+      @if (notifOpen()) {
+        <div class="tn__notif-panel">
+          <div class="tn__notif-head">
+            <span>Notificaciones</span>
+            @if (unreadCount() > 0) {
+              <button class="tn__notif-readall" (click)="markAllRead()">Marcar todas leídas</button>
+            }
+          </div>
+          @if (notifications().length === 0) {
+            <div class="tn__notif-empty">
+              <span class="material-symbols-outlined">notifications_none</span>
+              <p>Sin notificaciones</p>
+            </div>
+          } @else {
+            <div class="tn__notif-list">
+              @for (n of notifications(); track n.id) {
+                <div class="tn__notif-item" [class.tn__notif-item--unread]="!n.read_at" (click)="markRead(n)">
+                  <span class="tn__notif-icon material-symbols-outlined">{{ notifIcon(n.type) }}</span>
+                  <div class="tn__notif-body">
+                    <span class="tn__notif-title">{{ n.title }}</span>
+                    <span class="tn__notif-text">{{ n.body }}</span>
+                  </div>
+                  <span class="tn__notif-age">{{ notifAge(n.created_at) }}</span>
+                </div>
+              }
+            </div>
+          }
+        </div>
+      }
+    </div>
+
     <!-- Usuario -->
     <div class="tn__user" (click)="userMenuOpen.set(!userMenuOpen())">
       <div class="tn__avatar">{{ currentUserInitials }}</div>
@@ -86,9 +135,13 @@
 
       @if (userMenuOpen()) {
         <div class="tn__dropdown">
-          <button class="tn__dropdown-item" (click)="goHome()">
-            <span class="material-symbols-outlined">home</span>
-            Inicio
+          <button class="tn__dropdown-item" (click)="goToProfile()">
+            <span class="material-symbols-outlined">person</span>
+            Mi perfil
+          </button>
+          <button class="tn__dropdown-item" (click)="goToActivity()">
+            <span class="material-symbols-outlined">history</span>
+            Mi actividad
           </button>
           @if (isAdmin) {
             <button class="tn__dropdown-item" (click)="goToPermissions()">
@@ -105,3 +158,8 @@
     </div>
   </div>
 </header>
+
+<!-- Command Palette -->
+@if (paletteOpen()) {
+  <sc-command-palette (close)="paletteOpen.set(false)" />
+}

@@ -1,7 +1,9 @@
 <?php
 
+use App\Http\Controllers\Admin\AnnouncementController;
 use App\Http\Controllers\Admin\ApplicationController as AdminApplicationController;
 use App\Http\Controllers\Admin\AuditController;
+use App\Http\Controllers\Admin\CrossDashboardController;
 use App\Http\Controllers\Admin\PresenceController as AdminPresenceController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\ServiceHealthController;
@@ -11,6 +13,7 @@ use App\Http\Controllers\Admin\UserAccessController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\ApplicationController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PresenceController;
 use App\Http\Controllers\SiesaCredentialController;
 use App\Http\Controllers\SsoController;
@@ -35,6 +38,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/auth/me', [AuthController::class, 'me']);
     // El usuario puede cambiar su propia contraseña.
     Route::put('/auth/password', [AuthController::class, 'updatePassword']);
+    // Historial de accesos del propio usuario.
+    Route::get('/auth/my-logins', [AuthController::class, 'myLogins']);
     // Sesiones activas del propio usuario.
     Route::get('/auth/sessions', [SessionController::class, 'mine']);
 
@@ -45,6 +50,15 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Catálogo de aplicaciones a las que el usuario tiene acceso
     Route::get('/applications', [ApplicationController::class, 'index']);
+
+    // Notificaciones del usuario (propias + broadcast)
+    Route::get('/notifications', [NotificationController::class, 'index']);
+    Route::put('/notifications/{notification}/read', [NotificationController::class, 'markRead']);
+    Route::post('/notifications/read-all', [NotificationController::class, 'markAllRead']);
+
+    // Anuncios activos no vistos por el usuario
+    Route::get('/announcements/active', [AnnouncementController::class, 'active']);
+    Route::post('/announcements/{announcement}/viewed', [AnnouncementController::class, 'markViewed']);
 
     // Genera un ticket SSO de un solo uso para abrir una app externa
     Route::post('/sso/ticket', [SsoController::class, 'ticket']);
@@ -107,10 +121,20 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/manage/users/{user}/face-bypass', [AdminUserController::class, 'grantFaceBypass']);
         Route::delete('/manage/users/{user}/face-bypass', [AdminUserController::class, 'revokeFaceBypass']);
 
-        // Gestión del catálogo de aplicaciones (CRUD, solo admin)
+        // Gestión de aplicaciones (CRUD, solo admin)
         Route::get('/manage/applications', [AdminApplicationController::class, 'index']);
         Route::post('/manage/applications', [AdminApplicationController::class, 'store']);
         Route::put('/manage/applications/{application}', [AdminApplicationController::class, 'update']);
         Route::delete('/manage/applications/{application}', [AdminApplicationController::class, 'destroy']);
+
+        // Resúmenes ejecutivos de apps externas (proxy con SSO secret)
+        Route::get('/cross/sigcom', [CrossDashboardController::class, 'sigcom']);
+        Route::get('/cross/sigcompro', [CrossDashboardController::class, 'sigcompro']);
+
+        // Anuncios internos (CRUD admin)
+        Route::get('/announcements', [AnnouncementController::class, 'index']);
+        Route::post('/announcements', [AnnouncementController::class, 'store']);
+        Route::put('/announcements/{announcement}', [AnnouncementController::class, 'update']);
+        Route::delete('/announcements/{announcement}', [AnnouncementController::class, 'destroy']);
     });
 });

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Role;
 use App\Models\SiesaCredential;
 use App\Models\User;
+use App\Models\Notification;
 use App\Support\AuditLogger;
 use App\Support\UserProvisioner;
 use Illuminate\Http\JsonResponse;
@@ -107,6 +108,14 @@ class UserController extends Controller
             $sync = $this->buildAccessSync($validated['application_ids'] ?? null, $role);
         }
         $user->applications()->sync($sync);
+
+        // Notificación de bienvenida al nuevo usuario
+        Notification::dispatch(
+            'user_created',
+            '¡Bienvenido/a a la suite!',
+            "Tu cuenta fue creada. Usuario: {$user->cedula}",
+            $user->id,
+        );
 
         // El acceso es por cédula; las credenciales Siesa son opcionales.
         if (!empty($validated['siesa_username'])) {

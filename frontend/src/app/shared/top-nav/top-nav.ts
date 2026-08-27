@@ -1,44 +1,57 @@
-import { Component, HostListener, OnDestroy, OnInit, inject, signal } from '@angular/core';
+import { Component, HostListener, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 import { PresenceService } from '../../services/presence.service';
+import { ThemeService } from '../../services/theme.service';
+import { AdminService, NotificationItem } from '../../services/admin.service';
+import { CommandPalette } from '../command-palette/command-palette';
 
 /** Barra superior compartida por todo el suite (marca, reloj, clima, calendario, usuario). */
 @Component({
   selector: 'app-top-nav',
-  imports: [DatePipe],
+  imports: [DatePipe, CommandPalette],
   templateUrl: './top-nav.html',
   styleUrl: './top-nav.scss',
 })
 export class TopNav implements OnInit, OnDestroy {
   private http = inject(HttpClient);
   private authService = inject(AuthService);
+  private adminService = inject(AdminService);
   private router = inject(Router);
   readonly presence = inject(PresenceService);
+  readonly theme = inject(ThemeService);
 
   private clockInterval: ReturnType<typeof setInterval> | null = null;
+  private notifInterval: ReturnType<typeof setInterval> | null = null;
 
   readonly currentTime = signal(new Date());
   readonly userMenuOpen = signal(false);
   readonly calendarOpen = signal(false);
+  readonly notifOpen = signal(false);
+  readonly paletteOpen = signal(false);
 
   readonly weatherTemp = signal<number | null>(null);
   readonly weatherIcon = signal('');
-
   readonly calendarDate = signal(new Date());
   readonly selectedDay = signal<number | null>(null);
+
+  readonly notifications = signal<NotificationItem[]>([]);
+  readonly unreadCount = computed(() => this.notifications().filter((n) => !n.read_at).length);
 
   readonly user = this.authService.currentUser;
 
   ngOnInit(): void {
     this.clockInterval = setInterval(() => this.currentTime.set(new Date()), 1000);
     this.fetchWeather();
+    this.loadNotifications();
+    this.notifInterval = setInterval(() => this.loadNotifications(), 60_000);
   }
 
   ngOnDestroy(): void {
     if (this.clockInterval) clearInterval(this.clockInterval);
+    if (this.notifInterval) clearInterval(this.notifInterval);
   }
 
   @HostListener('document:click', ['$event'])
@@ -46,15 +59,19 @@ export class TopNav implements OnInit, OnDestroy {
     const t = event.target as HTMLElement;
     if (!t.closest('.tn__user')) this.userMenuOpen.set(false);
     if (!t.closest('.tn__calendar-wrapper')) this.calendarOpen.set(false);
+    if (!t.closest('.tn__notif')) this.notifOpen.set(false);
   }
 
-  get isAdmin(): boolean {
-    return !!this.user()?.is_admin;
+  @HostListener('document:keydown', ['$event'])
+  onKeyDown(e: KeyboardEvent): void {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+      e.preventDefault();
+      this.paletteOpen.set(!this.paletteOpen());
+    }
   }
 
-  get currentUserName(): string {
-    return this.user()?.name ?? 'Usuario';
-  }
+  get isAdmin(): boolean { return !!this.user()?.is_admin; }
+  get currentUserName(): string { return this.user()?.name ?? 'Usuario'; }
 
   get currentUserInitials(): string {
     const parts = (this.user()?.name ?? '').split(' ').filter((w) => w.length > 0);
@@ -62,8 +79,16 @@ export class TopNav implements OnInit, OnDestroy {
     return (parts[0][0] + parts[2][0]).toUpperCase();
   }
 
-  goHome(): void {
-    this.router.navigate(['/portal']);
+  goHome(): void { this.router.navigate(['/portal']); }
+
+  goToProfile(): void {
+    this.userMenuOpen.set(false);
+    this.router.navigate(['/mi-perfil']);
+  }
+
+  goToActivity(): void {
+    this.userMenuOpen.set(false);
+    this.router.navigate(['/mi-actividad']);
   }
 
   goToPermissions(): void {
@@ -74,6 +99,52 @@ export class TopNav implements OnInit, OnDestroy {
   logout(): void {
     this.userMenuOpen.set(false);
     this.authService.logout();
+  }
+
+  // ---- Notificaciones ----
+  private loadNotifications(): void {
+    this.adminService.getNotifications().subscribe({
+      next: (n) => this.notifications.set(n),
+      error: () => {},
+    });
+  }
+
+  toggleNotif(): void {
+    this.notifOpen.update((v) => !v);
+    this.userMenuOpen.set(false);
+  }
+
+  markAllRead(): void {
+    this.adminService.markAllNotificationsRead().subscribe({
+      next: () => this.notifications.update((ns) => ns.map((n) => ({ ...n, read_at: new Date().toISOString() }))),
+    });
+  }
+
+  markRead(notif: NotificationItem): void {
+    if (notif.read_at) return;
+    this.adminService.markNotificationRead(notif.id).subscribe({
+      next: () => this.notifications.update((ns) => ns.map((n) => n.id === notif.id ? { ...n, read_at: new Date().toISOString() } : n)),
+    });
+  }
+
+  notifIcon(type: string): string {
+    const map: Record<string, string> = {
+      permission_changed: 'admin_panel_settings',
+      user_created: 'person_add',
+      service_down: 'warning',
+      announcement: 'campaign',
+    };
+    return map[type] ?? 'notifications';
+  }
+
+  notifAge(at: string): string {
+    const diff = Date.now() - new Date(at).getTime();
+    const min = Math.floor(diff / 60000);
+    if (min < 1) return 'ahora';
+    if (min < 60) return `${min}m`;
+    const h = Math.floor(min / 60);
+    if (h < 24) return `${h}h`;
+    return `${Math.floor(h / 24)}d`;
   }
 
   // ---- Calendario ----
@@ -125,6 +196,8 @@ export class TopNav implements OnInit, OnDestroy {
     ['2026-4-15', ['Pago de nómina quincenal']],
     ['2026-4-18', ['Corpus Christi - Festivo']],
   ]);
+
+  // ---- Clima (se define al final del primer bloque de clima) ----
 
   // ---- Clima ----
   private fetchWeather(): void {

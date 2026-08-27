@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Application;
+use App\Models\Notification;
 use App\Models\User;
 use App\Support\AuditLogger;
 use App\Support\ProvisioningClient;
@@ -213,6 +214,15 @@ class UserAccessController extends Controller
             $user->id,
             "Permisos actualizados para {$user->name}",
             ['apps' => array_keys($sync)]
+        );
+
+        // Notifica al usuario afectado
+        $appCount = count($sync);
+        Notification::dispatch(
+            'permission_changed',
+            'Tus accesos fueron actualizados',
+            "Un administrador actualizó tus permisos ({$appCount} app" . ($appCount === 1 ? ')' : 's)'),
+            $user->id,
         );
 
         // Refleja rol/permisos/estado en las apps externas y bloquea las que se

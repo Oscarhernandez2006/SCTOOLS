@@ -698,6 +698,95 @@
 
 // Overlays and modal styles were moved to portal-overlay.scss
 
+// ---- Banner de anuncios ----
+.ann-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.85rem 1rem;
+  background: linear-gradient(135deg, rgba(87,173,49,.12) 0%, rgba(87,173,49,.06) 100%);
+  border: 1px solid rgba(87,173,49,.28);
+  border-left: 4px solid var(--color-accent);
+  border-radius: var(--radius-md);
+  margin-bottom: 0.75rem;
+  animation: toastIn 300ms ease-out;
+
+  &__icon { font-size: 22px; color: var(--color-accent); flex-shrink: 0; margin-top: 0.05rem; }
+
+  &__body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.18rem;
+    font-size: 0.86rem;
+    color: var(--color-text-primary);
+
+    strong { font-weight: 700; }
+    span { color: var(--color-text-secondary); }
+  }
+
+  &__close {
+    border: none; background: none; cursor: pointer;
+    color: var(--color-text-muted); display: grid; place-items: center;
+    width: 28px; height: 28px; border-radius: 50%;
+    flex-shrink: 0;
+    &:hover { background: rgba(0,0,0,.06); }
+    .material-symbols-outlined { font-size: 18px; }
+  }
+}
+
+// ---- Dashboard ejecutivo cruzado ----
+.cross-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 0.85rem;
+  margin-bottom: 1.5rem;
+}
+
+.cross-card {
+  background: var(--color-white);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 0.9rem 1rem;
+  box-shadow: 0 8px 18px rgba(18,25,31,.04);
+
+  &__head {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+  }
+
+  &__icon { font-size: 20px; color: var(--color-accent); }
+  &__title { flex: 1; font-size: 0.88rem; font-weight: 700; color: var(--color-text-primary); }
+  &__link {
+    display: inline-flex; align-items: center; gap: 0.2rem;
+    font-size: 0.75rem; font-weight: 600; color: var(--color-accent);
+    text-decoration: none;
+    .material-symbols-outlined { font-size: 14px; }
+    &:hover { text-decoration: underline; }
+  }
+
+  &__metrics {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.5rem;
+  }
+}
+
+.cross-metric {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+
+  &__val { font-family: var(--font-heading); font-size: 1.5rem; font-weight: 700; color: var(--color-text-primary); line-height: 1; }
+  &__label { font-size: 0.69rem; color: var(--color-text-muted); }
+  &__delta { font-size: 0.68rem; color: var(--color-text-muted); }
+  &__delta--up { color: var(--color-accent); }
+
+  &--warn &__val { color: #c0392b; }
+}
+
 // ---- Modal inline gesti\u00f3n de aplicaciones ----
 .app-modal-backdrop {
   position: fixed;
