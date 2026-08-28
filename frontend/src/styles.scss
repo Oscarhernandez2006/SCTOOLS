@@ -40,21 +40,22 @@
 
 /* ---- Modo oscuro ---- */
 :root.dark {
-  --color-primary: #0d1c1a;
-  --color-primary-mid: #122220;
-  --color-canvas: #0a100e;
-  --color-surface: #131f1c;
-  --color-white: #1b2b27;
-  --color-border: #2d4039;
+  --color-primary:      #111b1f;
+  --color-primary-mid:  #162224;
+  --color-accent:       #5dc436;
+  --color-accent-light: #82d15f;
+  --color-canvas:       #111916;
+  --color-surface:      #1c2b27;
+  --color-white:        #243330;
+  --color-border:       #2e4038;
   --color-text-primary: #dff0e8;
-  --color-text-secondary: #8db5a8;
-  --color-text-muted: #527060;
-  --color-accent: #5fbb38;
-  --color-accent-light: #86d060;
-  --shadow-sm: 0 1px 4px rgba(0,0,0,.35);
-  --shadow-md: 0 4px 14px rgba(0,0,0,.42);
-  --shadow-lg: 0 8px 32px rgba(0,0,0,.48);
-  --shadow-xl: 0 16px 48px rgba(0,0,0,.55);
+  --color-text-secondary: #a3bfb4;
+  --color-text-muted:   #6b9080;   /* elevado para que sea legible en fondos oscuros */
+  --color-alert:        #f08058;
+  --shadow-sm:  0 1px 4px rgba(0,0,0,.35);
+  --shadow-md:  0 4px 14px rgba(0,0,0,.45);
+  --shadow-lg:  0 8px 32px rgba(0,0,0,.5);
+  --shadow-xl:  0 16px 48px rgba(0,0,0,.55);
 }
 
 /* ---- Reset ---- */
@@ -226,53 +227,6 @@ textarea {
   border: 1px solid var(--color-border);
   box-shadow: 0 6px 18px rgba(18, 25, 31, 0.05);
   transition: all var(--transition-base);
-}
-
-/* ---- Ajustes globales de modo oscuro ---- */
-:root.dark {
-  /* El fondo de la página siempre usa el canvas oscuro */
-  body { background: var(--color-canvas); }
-
-  /* Cards y superficies blancas se vuelven verde oscuro neutro */
-  .card, [class*="admin-shell__main"], [class*="content"] {
-    color: var(--color-text-primary);
-  }
-
-  /* Inputs: fondo oscuro claro para que se lean */
-  input, select, textarea {
-    background: #1e302b !important;
-    color: var(--color-text-primary) !important;
-    border-color: var(--color-border) !important;
-
-    &::placeholder { color: var(--color-text-muted) !important; }
-    &:focus { border-color: var(--color-accent) !important; }
-  }
-
-  /* Dropdowns y paneles blancos */
-  .tn__dropdown, .tn__notif-panel {
-    background: #1a2d28;
-    border-color: var(--color-border);
-  }
-
-  .tn__dropdown-item {
-    color: var(--color-text-primary);
-    &:hover { background: var(--color-surface); }
-  }
-
-  /* Tablas */
-  table tbody tr:hover { background: rgba(255,255,255,.04); }
-
-  /* Badges y pills neutros */
-  [class*="badge--"], [class*="pill"] {
-    border-color: var(--color-border);
-  }
-
-  /* Modales y overlays */
-  .app-modal, .cp-panel, .ob-card, .ap-modal {
-    background: #18282480;
-    backdrop-filter: blur(12px);
-    border-color: var(--color-border);
-  }
 }
 
 .card--hover:hover {

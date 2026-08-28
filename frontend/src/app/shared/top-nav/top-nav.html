@@ -76,18 +76,8 @@
     </div>
 
     <!-- Modo oscuro -->
-    <button
-      class="tn__icon-btn tn__theme-btn"
-      [class.tn__theme-btn--dark]="theme.isDark()"
-      (click)="theme.toggle()"
-      [title]="theme.isDark() ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'"
-    >
+    <button class="tn__icon-btn tn__theme-btn" (click)="theme.toggle()" [title]="theme.isDark() ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'">
       <span class="material-symbols-outlined">{{ theme.isDark() ? 'light_mode' : 'dark_mode' }}</span>
-    </button>
-
-    <!-- Búsqueda rápida Ctrl+K -->
-    <button class="tn__icon-btn tn__search-btn" (click)="paletteOpen.set(true)" title="Búsqueda rápida (Ctrl+K)">
-      <span class="material-symbols-outlined">search</span>
     </button>
 
     <!-- Centro de notificaciones -->

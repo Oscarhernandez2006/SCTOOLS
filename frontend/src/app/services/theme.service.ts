@@ -7,7 +7,7 @@ export class ThemeService {
   readonly isDark = signal(false);
 
   constructor() {
-    // Solo aplicar dark si el usuario lo guardó manualmente; nunca por preferencia del OS.
+    // Solo se activa si el usuario lo guardó explícitamente — sin auto-detect por SO
     const saved = localStorage.getItem(THEME_KEY);
     this.apply(saved === 'dark');
   }
