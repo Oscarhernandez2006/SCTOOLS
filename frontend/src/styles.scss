@@ -40,18 +40,21 @@
 
 /* ---- Modo oscuro ---- */
 :root.dark {
-  --color-primary: #0a1018;
-  --color-primary-mid: #0f1e21;
-  --color-canvas: #0e1512;
-  --color-surface: #182420;
-  --color-white: #1c2b27;
-  --color-border: #2a3c36;
-  --color-text-primary: #e2ede8;
-  --color-text-secondary: #9ab5aa;
-  --color-text-muted: #4a6b5e;
-  --shadow-sm: 0 1px 3px rgba(0,0,0,.25);
-  --shadow-md: 0 4px 12px rgba(0,0,0,.3);
-  --shadow-lg: 0 8px 30px rgba(0,0,0,.35);
+  --color-primary: #0d1c1a;
+  --color-primary-mid: #122220;
+  --color-canvas: #0a100e;
+  --color-surface: #131f1c;
+  --color-white: #1b2b27;
+  --color-border: #2d4039;
+  --color-text-primary: #dff0e8;
+  --color-text-secondary: #8db5a8;
+  --color-text-muted: #527060;
+  --color-accent: #5fbb38;
+  --color-accent-light: #86d060;
+  --shadow-sm: 0 1px 4px rgba(0,0,0,.35);
+  --shadow-md: 0 4px 14px rgba(0,0,0,.42);
+  --shadow-lg: 0 8px 32px rgba(0,0,0,.48);
+  --shadow-xl: 0 16px 48px rgba(0,0,0,.55);
 }
 
 /* ---- Reset ---- */
@@ -223,6 +226,53 @@ textarea {
   border: 1px solid var(--color-border);
   box-shadow: 0 6px 18px rgba(18, 25, 31, 0.05);
   transition: all var(--transition-base);
+}
+
+/* ---- Ajustes globales de modo oscuro ---- */
+:root.dark {
+  /* El fondo de la página siempre usa el canvas oscuro */
+  body { background: var(--color-canvas); }
+
+  /* Cards y superficies blancas se vuelven verde oscuro neutro */
+  .card, [class*="admin-shell__main"], [class*="content"] {
+    color: var(--color-text-primary);
+  }
+
+  /* Inputs: fondo oscuro claro para que se lean */
+  input, select, textarea {
+    background: #1e302b !important;
+    color: var(--color-text-primary) !important;
+    border-color: var(--color-border) !important;
+
+    &::placeholder { color: var(--color-text-muted) !important; }
+    &:focus { border-color: var(--color-accent) !important; }
+  }
+
+  /* Dropdowns y paneles blancos */
+  .tn__dropdown, .tn__notif-panel {
+    background: #1a2d28;
+    border-color: var(--color-border);
+  }
+
+  .tn__dropdown-item {
+    color: var(--color-text-primary);
+    &:hover { background: var(--color-surface); }
+  }
+
+  /* Tablas */
+  table tbody tr:hover { background: rgba(255,255,255,.04); }
+
+  /* Badges y pills neutros */
+  [class*="badge--"], [class*="pill"] {
+    border-color: var(--color-border);
+  }
+
+  /* Modales y overlays */
+  .app-modal, .cp-panel, .ob-card, .ap-modal {
+    background: #18282480;
+    backdrop-filter: blur(12px);
+    border-color: var(--color-border);
+  }
 }
 
 .card--hover:hover {

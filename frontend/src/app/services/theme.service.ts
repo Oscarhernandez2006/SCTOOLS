@@ -7,9 +7,9 @@ export class ThemeService {
   readonly isDark = signal(false);
 
   constructor() {
+    // Solo aplicar dark si el usuario lo guardó manualmente; nunca por preferencia del OS.
     const saved = localStorage.getItem(THEME_KEY);
-    const dark = saved === 'dark' || (!saved && matchMedia('(prefers-color-scheme: dark)').matches);
-    this.apply(dark);
+    this.apply(saved === 'dark');
   }
 
   toggle(): void { this.apply(!this.isDark()); }

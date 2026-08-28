@@ -110,6 +110,22 @@
   &:hover { background: rgba(255, 255, 255, 0.08); color: var(--color-white); }
 }
 
+/* Toggle de tema: siempre visible y con indicador de estado activo */
+.tn__theme-btn {
+  color: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+
+  &:hover { background: rgba(255, 255, 255, 0.1); color: #fff; border-color: rgba(255, 255, 255, 0.2); }
+
+  &--dark {
+    color: var(--color-accent-light);
+    background: rgba(87, 173, 49, 0.18);
+    border-color: rgba(123, 196, 86, 0.3);
+    .material-symbols-outlined { font-variation-settings: 'FILL' 1; }
+    &:hover { background: rgba(87, 173, 49, 0.26); }
+  }
+}
+
 .tn__user {
   display: flex;
   align-items: center;
