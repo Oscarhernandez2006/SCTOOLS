@@ -75,9 +75,10 @@
       }
     </div>
 
-    <!-- Modo oscuro -->
-    <button class="tn__icon-btn tn__theme-btn" (click)="theme.toggle()" [title]="theme.isDark() ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'">
+    <!-- Modo oscuro: pill con texto para que sea siempre visible -->
+    <button class="tn__theme-pill" (click)="theme.toggle()" [title]="theme.isDark() ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'">
       <span class="material-symbols-outlined">{{ theme.isDark() ? 'light_mode' : 'dark_mode' }}</span>
+      <span class="tn__theme-pill__label">{{ theme.isDark() ? 'Claro' : 'Oscuro' }}</span>
     </button>
 
     <!-- Centro de notificaciones -->
@@ -137,6 +138,11 @@
           <button class="tn__dropdown-item" (click)="goToActivity()">
             <span class="material-symbols-outlined">history</span>
             Mi actividad
+          </button>
+          <!-- Toggle tema en el dropdown como acceso garantizado -->
+          <button class="tn__dropdown-item" (click)="theme.toggle(); $event.stopPropagation()">
+            <span class="material-symbols-outlined">{{ theme.isDark() ? 'light_mode' : 'dark_mode' }}</span>
+            {{ theme.isDark() ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro' }}
           </button>
           @if (isAdmin) {
             <button class="tn__dropdown-item" (click)="goToPermissions()">
