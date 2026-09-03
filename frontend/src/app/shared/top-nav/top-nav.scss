@@ -111,34 +111,6 @@
   &:hover { background: rgba(255, 255, 255, 0.1); color: #fff; }
 }
 
-// Botón de tema: pill con texto, siempre visible independiente del overflow
-.tn__theme-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.3rem;
-  padding: 0.28rem 0.7rem;
-  background: rgba(255, 255, 255, 0.12);
-  border: 1px solid rgba(255, 255, 255, 0.22);
-  border-radius: 999px;
-  color: rgba(255, 255, 255, 0.95);
-  font-family: var(--font-body);
-  font-size: 0.78rem;
-  font-weight: 600;
-  cursor: pointer;
-  flex-shrink: 0;
-  transition: all var(--transition-fast);
-
-  .material-symbols-outlined { font-size: 17px; }
-
-  &:hover {
-    background: rgba(255, 255, 255, 0.2);
-    border-color: rgba(255, 255, 255, 0.35);
-    color: #fff;
-  }
-
-  &__label { white-space: nowrap; }
-}
-
 // Botón de tema: fondo ligeramente visible para que siempre sea localizable
 .tn__theme-btn {
   background: rgba(255, 255, 255, 0.08);

@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { DatePipe } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { AppCard, AppCardData } from '../shared/app-card/app-card';
+import { Sidebar } from '../shared/sidebar/sidebar';
 import { AuthService } from '../services/auth.service';
 import { Application, ApplicationsService } from '../services/applications.service';
 import { DashboardStats, StatsService } from '../services/stats.service';
@@ -55,7 +56,7 @@ function emptyAppForm(): AppFormModel {
 
 @Component({
   selector: 'app-portal',
-  imports: [FormsModule, DatePipe, AppCard, ChartCard, LineChart, BarChart, DonutChart, OnboardingTour, RouterLink],
+  imports: [FormsModule, DatePipe, AppCard, Sidebar, ChartCard, LineChart, BarChart, DonutChart, OnboardingTour, RouterLink],
   templateUrl: './portal.html',
   styleUrl: './portal.scss',
 })
@@ -72,10 +73,6 @@ export class Portal implements OnInit, OnDestroy {
   constructor(private router: Router) {}
 
   ngOnInit(): void {
-    this.clockInterval = setInterval(() => {
-      this.currentTime.set(new Date());
-    }, 1000);
-    this.fetchWeather();
     this.loadApplications();
     this.authService.refreshUser();
     this.loadStats();

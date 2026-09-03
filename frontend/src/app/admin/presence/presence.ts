@@ -3,12 +3,11 @@ import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { Sidebar } from '../../shared/sidebar/sidebar';
-import { TopNav } from '../../shared/top-nav/top-nav';
 import { AdminService, PresenceMonthly, PresenceReport } from '../../services/admin.service';
 
 @Component({
   selector: 'app-presence-admin',
-  imports: [Sidebar, DatePipe, FormsModule, TopNav],
+  imports: [Sidebar, DatePipe, FormsModule],
   templateUrl: './presence.html',
   styleUrl: './presence.scss',
 })

@@ -1,7 +1,6 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
-import { TopNav } from '../shared/top-nav/top-nav';
 import { Sidebar } from '../shared/sidebar/sidebar';
 import { AppCard, AppCardData } from '../shared/app-card/app-card';
 import { AuthService } from '../services/auth.service';
@@ -42,7 +41,7 @@ function emptyAppForm(): AppFormModel {
 @Component({
   selector: 'app-apps-page',
   standalone: true,
-  imports: [FormsModule, TopNav, Sidebar, AppCard],
+  imports: [FormsModule, Sidebar, AppCard],
   templateUrl: './apps.html',
   styleUrl: './apps.scss',
 })

@@ -38,26 +38,6 @@
   --transition-slow: 400ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* ---- Modo oscuro ---- */
-:root.dark {
-  --color-primary:      #111b1f;
-  --color-primary-mid:  #162224;
-  --color-accent:       #5dc436;
-  --color-accent-light: #82d15f;
-  --color-canvas:       #111916;
-  --color-surface:      #1c2b27;
-  --color-white:        #243330;
-  --color-border:       #2e4038;
-  --color-text-primary: #dff0e8;
-  --color-text-secondary: #a3bfb4;
-  --color-text-muted:   #6b9080;   /* elevado para que sea legible en fondos oscuros */
-  --color-alert:        #f08058;
-  --shadow-sm:  0 1px 4px rgba(0,0,0,.35);
-  --shadow-md:  0 4px 14px rgba(0,0,0,.45);
-  --shadow-lg:  0 8px 32px rgba(0,0,0,.5);
-  --shadow-xl:  0 16px 48px rgba(0,0,0,.55);
-}
-
 /* ---- Reset ---- */
 *, *::before, *::after {
   box-sizing: border-box;

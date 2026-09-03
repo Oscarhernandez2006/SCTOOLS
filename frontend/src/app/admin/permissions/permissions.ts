@@ -2,7 +2,6 @@ import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { Sidebar } from '../../shared/sidebar/sidebar';
-import { TopNav } from '../../shared/top-nav/top-nav';
 import { AdminService, AdminUser, AppAccess, AppProvisioningCatalog, CatalogApplication } from '../../services/admin.service';
 
 /** Etiquetas legibles para cada habilidad granular. */
@@ -17,7 +16,7 @@ const ABILITY_LABELS: Record<string, string> = {
 
 @Component({
   selector: 'app-permissions',
-  imports: [FormsModule, Sidebar, TopNav],
+  imports: [FormsModule, Sidebar],
   templateUrl: './permissions.html',
   styleUrl: './permissions.scss',
 })

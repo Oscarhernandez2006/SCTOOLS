@@ -19,10 +19,10 @@
     </div>
 
     <!-- Clima -->
-    @if (weatherTemp() !== null) {
+    @if (weather.temp() !== null) {
       <div class="tn__weather">
-        <span class="material-symbols-outlined tn__weather-icon">{{ weatherIcon() }}</span>
-        <span>{{ weatherTemp() }}°C</span>
+        <span class="material-symbols-outlined tn__weather-icon">{{ weather.icon() }}</span>
+        <span>{{ weather.temp() }}°C</span>
       </div>
     }
 
@@ -74,12 +74,6 @@
         </div>
       }
     </div>
-
-    <!-- Modo oscuro: pill con texto para que sea siempre visible -->
-    <button class="tn__theme-pill" (click)="theme.toggle()" [title]="theme.isDark() ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'">
-      <span class="material-symbols-outlined">{{ theme.isDark() ? 'light_mode' : 'dark_mode' }}</span>
-      <span class="tn__theme-pill__label">{{ theme.isDark() ? 'Claro' : 'Oscuro' }}</span>
-    </button>
 
     <!-- Centro de notificaciones -->
     <div class="tn__notif">
@@ -138,11 +132,6 @@
           <button class="tn__dropdown-item" (click)="goToActivity()">
             <span class="material-symbols-outlined">history</span>
             Mi actividad
-          </button>
-          <!-- Toggle tema en el dropdown como acceso garantizado -->
-          <button class="tn__dropdown-item" (click)="theme.toggle(); $event.stopPropagation()">
-            <span class="material-symbols-outlined">{{ theme.isDark() ? 'light_mode' : 'dark_mode' }}</span>
-            {{ theme.isDark() ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro' }}
           </button>
           @if (isAdmin) {
             <button class="tn__dropdown-item" (click)="goToPermissions()">

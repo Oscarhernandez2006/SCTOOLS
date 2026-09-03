@@ -3,7 +3,6 @@ import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { Sidebar } from '../../shared/sidebar/sidebar';
-import { TopNav } from '../../shared/top-nav/top-nav';
 import { FaceService } from '../../services/face.service';
 import {
   AdminService,
@@ -47,7 +46,7 @@ function emptyForm(): UserFormModel {
 
 @Component({
   selector: 'app-users-admin',
-  imports: [FormsModule, DatePipe, Sidebar, TopNav],
+  imports: [FormsModule, DatePipe, Sidebar],
   templateUrl: './users.html',
   styleUrl: './users.scss',
 })

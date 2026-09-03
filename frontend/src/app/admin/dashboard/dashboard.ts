@@ -2,7 +2,6 @@ import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { Router } from '@angular/router';
 import { Sidebar } from '../../shared/sidebar/sidebar';
-import { TopNav } from '../../shared/top-nav/top-nav';
 import { AdminService, SuiteStats } from '../../services/admin.service';
 import {
   BarChart,
@@ -18,7 +17,7 @@ import {
 
 @Component({
   selector: 'app-dashboard',
-  imports: [Sidebar, DatePipe, TopNav, ChartCard, LineChart, BarChart, DonutChart],
+  imports: [Sidebar, DatePipe, ChartCard, LineChart, BarChart, DonutChart],
   templateUrl: './dashboard.html',
   styleUrl: './dashboard.scss',
 })

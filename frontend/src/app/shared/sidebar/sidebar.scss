@@ -1,10 +1,10 @@
 :host {
   position: sticky;
-  top: var(--sidebar-top, 64px);
+  top: var(--sidebar-top, 72px);
   align-self: flex-start;
   flex-shrink: 0;
   width: 240px;
-  height: calc(100vh - var(--sidebar-top, 64px));
+  height: calc(100vh - var(--sidebar-top, 72px));
   background: var(--color-primary-mid);
   display: flex;
   flex-direction: column;

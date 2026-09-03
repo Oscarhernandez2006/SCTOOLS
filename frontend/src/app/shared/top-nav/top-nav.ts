@@ -1,10 +1,9 @@
 import { Component, HostListener, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
-import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 import { PresenceService } from '../../services/presence.service';
-import { ThemeService } from '../../services/theme.service';
+import { WeatherService } from '../../services/weather.service';
 import { AdminService, NotificationItem } from '../../services/admin.service';
 import { CommandPalette } from '../command-palette/command-palette';
 
@@ -16,12 +15,11 @@ import { CommandPalette } from '../command-palette/command-palette';
   styleUrl: './top-nav.scss',
 })
 export class TopNav implements OnInit, OnDestroy {
-  private http = inject(HttpClient);
   private authService = inject(AuthService);
   private adminService = inject(AdminService);
   private router = inject(Router);
   readonly presence = inject(PresenceService);
-  readonly theme = inject(ThemeService);
+  readonly weather = inject(WeatherService);
 
   private clockInterval: ReturnType<typeof setInterval> | null = null;
   private notifInterval: ReturnType<typeof setInterval> | null = null;
@@ -32,8 +30,6 @@ export class TopNav implements OnInit, OnDestroy {
   readonly notifOpen = signal(false);
   readonly paletteOpen = signal(false);
 
-  readonly weatherTemp = signal<number | null>(null);
-  readonly weatherIcon = signal('');
   readonly calendarDate = signal(new Date());
   readonly selectedDay = signal<number | null>(null);
 
@@ -44,7 +40,7 @@ export class TopNav implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.clockInterval = setInterval(() => this.currentTime.set(new Date()), 1000);
-    this.fetchWeather();
+    this.weather.ensureLoaded();
     this.loadNotifications();
     this.notifInterval = setInterval(() => this.loadNotifications(), 60_000);
   }
@@ -196,37 +192,4 @@ export class TopNav implements OnInit, OnDestroy {
     ['2026-4-15', ['Pago de nómina quincenal']],
     ['2026-4-18', ['Corpus Christi - Festivo']],
   ]);
-
-  // ---- Clima (se define al final del primer bloque de clima) ----
-
-  // ---- Clima ----
-  private fetchWeather(): void {
-    const load = (lat: number, lon: number) => {
-      const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weather_code&timezone=auto`;
-      this.http.get<any>(url).subscribe({
-        next: (res) => {
-          this.weatherTemp.set(Math.round(res.current.temperature_2m));
-          this.weatherIcon.set(this.getWeatherIcon(res.current.weather_code));
-        },
-      });
-    };
-    if (!navigator.geolocation) {
-      load(4.71, -74.07);
-      return;
-    }
-    navigator.geolocation.getCurrentPosition(
-      (pos) => load(pos.coords.latitude, pos.coords.longitude),
-      () => load(4.71, -74.07)
-    );
-  }
-
-  private getWeatherIcon(code: number): string {
-    if (code === 0) return 'wb_sunny';
-    if (code <= 3) return 'partly_cloudy_day';
-    if (code <= 48) return 'cloud';
-    if (code <= 67) return 'rainy';
-    if (code <= 77) return 'weather_snowy';
-    if (code <= 82) return 'thunderstorm';
-    return 'cloud';
-  }
 }

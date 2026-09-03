@@ -1,7 +1,6 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { DatePipe } from '@angular/common';
-import { TopNav } from '../../shared/top-nav/top-nav';
 import { Sidebar } from '../../shared/sidebar/sidebar';
 import { AdminService, AnnouncementItem } from '../../services/admin.service';
 
@@ -12,7 +11,7 @@ function emptyForm(): Form { return { title: '', body: '', expires_at: '' }; }
 @Component({
   selector: 'app-announcements-admin',
   standalone: true,
-  imports: [TopNav, Sidebar, DatePipe, FormsModule],
+  imports: [Sidebar, DatePipe, FormsModule],
   templateUrl: './announcements.html',
   styleUrl: './announcements.scss',
 })

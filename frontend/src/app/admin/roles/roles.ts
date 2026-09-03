@@ -2,7 +2,6 @@ import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { Sidebar } from '../../shared/sidebar/sidebar';
-import { TopNav } from '../../shared/top-nav/top-nav';
 import { AdminService, CatalogApplication, Role, RolePayload } from '../../services/admin.service';
 
 const ABILITY_LABELS: Record<string, string> = {
@@ -11,7 +10,7 @@ const ABILITY_LABELS: Record<string, string> = {
 
 @Component({
   selector: 'app-roles',
-  imports: [Sidebar, FormsModule, TopNav],
+  imports: [Sidebar, FormsModule],
   templateUrl: './roles.html',
   styleUrl: './roles.scss',
 })

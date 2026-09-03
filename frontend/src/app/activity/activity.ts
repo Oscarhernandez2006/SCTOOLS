@@ -1,14 +1,13 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { TopNav } from '../shared/top-nav/top-nav';
 import { Sidebar } from '../shared/sidebar/sidebar';
 import { AuthService, LoginHistoryEntry } from '../services/auth.service';
 
 @Component({
   selector: 'app-activity-page',
   standalone: true,
-  imports: [TopNav, Sidebar, DatePipe, FormsModule],
+  imports: [Sidebar, DatePipe, FormsModule],
   templateUrl: './activity.html',
   styleUrl: './activity.scss',
 })
