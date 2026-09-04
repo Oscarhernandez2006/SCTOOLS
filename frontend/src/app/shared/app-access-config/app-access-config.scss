@@ -1,0 +1,68 @@
+:host {
+  display: block;
+}
+
+.aac {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+
+  &__head {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  &__icon {
+    font-size: 20px;
+  }
+
+  &__name {
+    font-weight: 600;
+    color: var(--color-text-primary);
+    font-size: 0.9rem;
+  }
+
+  &__loading {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--color-text-muted);
+    font-size: 0.85rem;
+  }
+
+  &__modules {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+
+  &__group-label {
+    display: block;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--color-text-muted);
+    margin-bottom: 0.25rem;
+  }
+
+  &__module + &__module {
+    border-top: 1px solid #F0F4F2;
+  }
+
+  &__actions {
+    margin-left: 0.9rem;
+    padding-left: 0.6rem;
+    border-left: 2px solid #EEF3F0;
+  }
+
+  &__hint {
+    font-size: 0.8rem;
+    color: var(--color-text-muted);
+  }
+}

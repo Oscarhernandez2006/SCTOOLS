@@ -39,7 +39,7 @@
 
     <div class="users__list">
       @if (loadingUsers()) {
-        <div class="users__placeholder">Cargando usuarios...</div>
+        <div class="sc-loading"><span class="sc-spinner"></span><span>Cargando usuarios...</span></div>
       } @else {
         @for (user of filteredUsers(); track user.id) {
           <button
@@ -87,7 +87,7 @@
       </div>
 
       @if (loadingAccess()) {
-        <div class="access__placeholder">Cargando permisos...</div>
+        <div class="sc-loading"><span class="sc-spinner"></span><span>Cargando permisos...</span></div>
       } @else {
         <div class="access__grid">
           @for (app of applications(); track app.id) {
@@ -178,14 +178,18 @@
                   <div class="company-access">
                     @for (co of companiesFor(app.id); track co.id) {
                       <div class="company-access__row">
-                        <label class="module-check">
-                          <input
-                            type="checkbox"
-                            [checked]="isCompanyEnabled(app.id, co.id)"
-                            (change)="toggleCompany(app.id, co.id)"
-                          />
-                          <span>{{ co.name }}</span>
-                        </label>
+                        <div class="sc-toggle-row" style="flex:1">
+                          <span class="sc-toggle-row__label">{{ co.name }}</span>
+                          <label class="sc-switch">
+                            <input
+                              type="checkbox"
+                              class="sc-switch__input"
+                              [checked]="isCompanyEnabled(app.id, co.id)"
+                              (change)="toggleCompany(app.id, co.id)"
+                            />
+                            <span class="sc-switch__track"><span class="sc-switch__thumb"></span></span>
+                          </label>
+                        </div>
                         @if (isCompanyEnabled(app.id, co.id)) {
                           <input
                             class="company-access__seller"
@@ -218,14 +222,18 @@
                         <span class="perm-card__module-group-label">{{ group.label }}</span>
                         <div class="perm-card__modules">
                           @for (mod of group.modules; track mod.key) {
-                            <label class="module-check">
-                              <input
-                                type="checkbox"
-                                [checked]="appCompanyHasPerm(app.id, activeCompanyId(app.id), mod.key)"
-                                (change)="toggleAppCompanyPerm(app.id, activeCompanyId(app.id), mod.key)"
-                              />
-                              <span>{{ mod.label }}</span>
-                            </label>
+                            <div class="sc-toggle-row">
+                              <span class="sc-toggle-row__label">{{ mod.label }}</span>
+                              <label class="sc-switch">
+                                <input
+                                  type="checkbox"
+                                  class="sc-switch__input"
+                                  [checked]="appCompanyHasPerm(app.id, activeCompanyId(app.id), mod.key)"
+                                  (change)="toggleAppCompanyPerm(app.id, activeCompanyId(app.id), mod.key)"
+                                />
+                                <span class="sc-switch__track"><span class="sc-switch__thumb"></span></span>
+                              </label>
+                            </div>
                           }
                         </div>
                       </div>
@@ -244,25 +252,33 @@
                       <div class="perm-card__modules">
                         @for (mod of group.modules; track mod.key) {
                           <div class="module-item">
-                            <label class="module-check">
-                              <input
-                                type="checkbox"
-                                [checked]="appHasPerm(app.id, mod.key)"
-                                (change)="toggleAppPerm(app.id, mod.key)"
-                              />
-                              <span>{{ mod.label }}</span>
-                            </label>
+                            <div class="sc-toggle-row">
+                              <span class="sc-toggle-row__label">{{ mod.label }}</span>
+                              <label class="sc-switch">
+                                <input
+                                  type="checkbox"
+                                  class="sc-switch__input"
+                                  [checked]="appHasPerm(app.id, mod.key)"
+                                  (change)="toggleAppPerm(app.id, mod.key)"
+                                />
+                                <span class="sc-switch__track"><span class="sc-switch__thumb"></span></span>
+                              </label>
+                            </div>
                             @if (mod.actions?.length && appHasPerm(app.id, mod.key)) {
                               <div class="module-actions">
                                 @for (act of mod.actions; track act.key) {
-                                  <label class="module-check module-check--action">
-                                    <input
-                                      type="checkbox"
-                                      [checked]="appHasPerm(app.id, act.key)"
-                                      (change)="toggleAppPerm(app.id, act.key)"
-                                    />
-                                    <span>{{ act.label }}</span>
-                                  </label>
+                                  <div class="sc-toggle-row">
+                                    <span class="sc-toggle-row__label sc-toggle-row__label--action">{{ act.label }}</span>
+                                    <label class="sc-switch sc-switch--sm">
+                                      <input
+                                        type="checkbox"
+                                        class="sc-switch__input"
+                                        [checked]="appHasPerm(app.id, act.key)"
+                                        (change)="toggleAppPerm(app.id, act.key)"
+                                      />
+                                      <span class="sc-switch__track"><span class="sc-switch__thumb"></span></span>
+                                    </label>
+                                  </div>
                                 }
                               </div>
                             }

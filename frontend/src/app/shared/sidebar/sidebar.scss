@@ -1,23 +1,40 @@
 :host {
-  position: sticky;
-  top: var(--sidebar-top, 72px);
-  align-self: flex-start;
+  align-self: stretch;
   flex-shrink: 0;
   width: 240px;
-  height: calc(100vh - var(--sidebar-top, 72px));
+  min-height: calc(100vh - var(--sidebar-top, 72px));
   background: var(--color-primary-mid);
-  display: flex;
-  flex-direction: column;
-  padding: 1rem 0.75rem;
-  overflow-x: hidden;
-  overflow-y: auto;
+  display: block;
 }
 
 .sc-sidebar {
   &__nav {
+    position: sticky;
+    top: var(--sidebar-top, 72px);
+    max-height: calc(100vh - var(--sidebar-top, 72px));
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 1rem 0.75rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  &__group {
     display: flex;
     flex-direction: column;
     gap: 0.25rem;
+
+    & + & { margin-top: 0.9rem; }
+  }
+
+  &__group-label {
+    padding: 0.35rem 0.75rem 0.2rem;
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.38);
   }
 
   &__item {

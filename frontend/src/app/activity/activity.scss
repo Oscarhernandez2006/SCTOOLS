@@ -1,7 +1,7 @@
-:host { display: block; min-height: 100vh; }
+:host { display: block; min-height: calc(100vh - 72px); }
 .admin-shell { display: flex; align-items: flex-start; }
 .admin-shell__main { flex: 1; min-width: 0; }
-.act-page { max-width: 1100px; margin: 0 auto; padding: clamp(1rem,1.8vw,1.5rem); display: flex; flex-direction: column; gap: 1rem; }
+.act-page { max-width: 1400px; margin: 0 auto; padding: clamp(1rem,1.8vw,1.5rem); display: flex; flex-direction: column; gap: 1rem; }
 .act-filters { display: flex; gap: 0.5rem; }
 .act-filter {
   padding: 0.4rem 0.9rem; border-radius: 999px; border: 1px solid var(--color-border);

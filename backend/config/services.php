@@ -51,9 +51,12 @@ return [
         'base_urls' => [
             'sigcom' => env('SIGCOM_API_URL', env('SIGCOM_URL')),
             'sigcompro' => env('SIGCOMPRO_API_URL', env('SIGCOMPRO_URL')),
+            'sigtraz' => env('SIGTRAZ_API_URL'),
+            'creditos' => env('CREDITOS_API_URL'),
+            'sigcan' => env('SIGCAN_API_URL', env('SIGCAN_URL')),
         ],
         // Slugs de apps que exponen la API de aprovisionamiento.
-        'apps' => ['sigcom', 'sigcompro'],
+        'apps' => ['sigcom', 'sigcompro', 'sigtraz', 'creditos', 'sigcan'],
         'timeout' => (int) env('PROVISIONING_TIMEOUT', 8),
     ],
 

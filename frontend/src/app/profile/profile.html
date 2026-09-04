@@ -82,7 +82,7 @@
       <div class="profile-card">
         <h2 class="profile-card__title">Mis últimos accesos</h2>
         @if (loadingLogins()) {
-          <div class="profile-loading">Cargando historial...</div>
+          <div class="sc-loading"><span class="sc-spinner"></span><span>Cargando historial...</span></div>
         } @else if (logins().length === 0) {
           <p class="profile-empty">Sin registros de acceso</p>
         } @else {

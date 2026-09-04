@@ -1,6 +1,6 @@
 <!-- Toast -->
 @if (toastVisible()) {
-  <div class="toast">
+  <div class="toast toast--success">
     <span class="material-symbols-outlined toast__icon">check_circle</span>
     {{ toastMessage() }}
   </div>
@@ -42,7 +42,7 @@
   </div>
 
   @if (loading()) {
-    <div class="placeholder">Cargando usuarios...</div>
+    <div class="sc-loading"><span class="sc-spinner"></span><span>Cargando usuarios...</span></div>
   } @else {
     <div class="cards">
       @for (user of filteredUsers(); track user.id) {
@@ -230,28 +230,19 @@
 
       @if (!editing() && selectedProvisionableApps().length) {
         <div class="field">
-          <label class="field__label">Rol en cada aplicación</label>
-          <div class="app-roles">
+          <label class="field__label">Rol y permisos por aplicación</label>
+          <div class="app-access-list">
             @for (app of selectedProvisionableApps(); track app.id) {
-              <div class="app-roles__row">
-                <span class="app-roles__name">
-                  <span class="material-symbols-outlined" [style.color]="app.color || '#57AD31'">{{ app.icon || 'apps' }}</span>
-                  {{ app.name }}
-                </span>
-                <select
-                  class="app-roles__select"
-                  [value]="getAppRole(app.id)"
-                  (change)="setAppRole(app.id, $any($event.target).value)"
-                >
-                  <option value="">— Rol por defecto —</option>
-                  @for (role of appRolesFor(app.id); track role) {
-                    <option [value]="role" [selected]="getAppRole(app.id) === role">{{ role }}</option>
-                  }
-                </select>
-              </div>
+              <sc-app-access-config
+                [app]="app"
+                [catalog]="appCatalogFor(app.id)"
+                [loading]="isLoadingCatalog(app.id)"
+                [selection]="selectionFor(app.id)"
+                (selectionChange)="onSelectionChange(app.id, $event)"
+              />
             }
           </div>
-          <span class="field__hint">Los módulos finos por app se ajustan luego en “Permisos”.</span>
+          <span class="field__hint">Ajusta el rol y activa los módulos finos; podrás editarlos luego en “Permisos”.</span>
         </div>
       }
 

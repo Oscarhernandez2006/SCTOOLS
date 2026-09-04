@@ -1,0 +1,77 @@
+<div class="aac">
+  <div class="aac__head">
+    <span class="material-symbols-outlined aac__icon" [style.color]="app().color || '#57AD31'">
+      {{ app().icon || 'apps' }}
+    </span>
+    <span class="aac__name">{{ app().name }}</span>
+  </div>
+
+  @if (loading()) {
+    <div class="aac__loading">
+      <span class="sc-spinner sc-spinner--sm"></span>
+      Cargando catálogo…
+    </div>
+  } @else if (catalog()) {
+    <label class="field">
+      <span class="field__label">Rol en {{ app().name }}</span>
+      <select
+        class="field__select"
+        [value]="selection().role"
+        (change)="setRole($any($event.target).value)"
+      >
+        <option value="">— Rol por defecto —</option>
+        @for (role of roles(); track role) {
+          <option [value]="role" [selected]="selection().role === role">{{ role }}</option>
+        }
+      </select>
+    </label>
+
+    @if (groups().length) {
+      <div class="aac__modules">
+        @for (group of groups(); track group.label) {
+          <div class="aac__group">
+            <span class="aac__group-label">{{ group.label }}</span>
+            @for (mod of group.modules; track mod.key) {
+              <div class="aac__module">
+                <div class="sc-toggle-row">
+                  <span class="sc-toggle-row__label">{{ mod.label }}</span>
+                  <label class="sc-switch">
+                    <input
+                      type="checkbox"
+                      class="sc-switch__input"
+                      [checked]="hasPerm(mod.key)"
+                      (change)="togglePerm(mod.key)"
+                    />
+                    <span class="sc-switch__track"><span class="sc-switch__thumb"></span></span>
+                  </label>
+                </div>
+                @if (mod.actions?.length && hasPerm(mod.key)) {
+                  <div class="aac__actions">
+                    @for (act of mod.actions; track act.key) {
+                      <div class="sc-toggle-row">
+                        <span class="sc-toggle-row__label sc-toggle-row__label--action">{{ act.label }}</span>
+                        <label class="sc-switch sc-switch--sm">
+                          <input
+                            type="checkbox"
+                            class="sc-switch__input"
+                            [checked]="hasPerm(act.key)"
+                            (change)="togglePerm(act.key)"
+                          />
+                          <span class="sc-switch__track"><span class="sc-switch__thumb"></span></span>
+                        </label>
+                      </div>
+                    }
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        }
+      </div>
+    } @else {
+      <span class="aac__hint">Esta app solo define rol; no expone módulos granulares.</span>
+    }
+  } @else {
+    <span class="aac__hint">No se pudo cargar el catálogo. Verifica el backend y el SSO_SHARED_SECRET.</span>
+  }
+</div>

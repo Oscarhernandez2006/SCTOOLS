@@ -3,9 +3,11 @@ import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { Sidebar } from '../../shared/sidebar/sidebar';
+import { AppAccessConfig, AppAccessSelection } from '../../shared/app-access-config/app-access-config';
 import { FaceService } from '../../services/face.service';
 import {
   AdminService,
+  AppProvisioningCatalog,
   CatalogApplication,
   ManagedUser,
   Role,
@@ -23,6 +25,7 @@ interface UserFormModel {
   role_id: number | null;
   application_ids: number[];
   appRoles: Record<number, string>;
+  appPerms: Record<number, string[]>;
   siesa_username: string;
   siesa_password: string;
 }
@@ -39,6 +42,7 @@ function emptyForm(): UserFormModel {
     role_id: null,
     application_ids: [],
     appRoles: {},
+    appPerms: {},
     siesa_username: '',
     siesa_password: '',
   };
@@ -46,7 +50,7 @@ function emptyForm(): UserFormModel {
 
 @Component({
   selector: 'app-users-admin',
-  imports: [FormsModule, DatePipe, Sidebar],
+  imports: [FormsModule, DatePipe, Sidebar, AppAccessConfig],
   templateUrl: './users.html',
   styleUrl: './users.scss',
 })
@@ -58,8 +62,9 @@ export class UsersAdmin implements OnInit {
   readonly users = signal<ManagedUser[]>([]);
   readonly catalog = signal<CatalogApplication[]>([]);
   readonly roles = signal<Role[]>([]);
-  // Roles disponibles por app externa (cargados bajo demanda para el alta).
-  readonly appRoleCatalogs = signal<Map<number, string[]>>(new Map());
+  // Catálogo completo (roles + módulos) por app externa, cargado bajo demanda.
+  readonly appCatalogs = signal<Map<number, AppProvisioningCatalog>>(new Map());
+  readonly loadingCatalogs = signal<Set<number>>(new Set());
   readonly loading = signal(true);
   readonly saving = signal(false);
 
@@ -144,6 +149,7 @@ export class UsersAdmin implements OnInit {
       role_id: user.role_id,
       application_ids: [...user.application_ids],
       appRoles: {},
+      appPerms: {},
       siesa_username: '',
       siesa_password: '',
     });
@@ -171,7 +177,7 @@ export class UsersAdmin implements OnInit {
     this.form.set({ ...f, application_ids: ids });
     const app = this.catalog().find((a) => a.id === appId);
     if (app && this.isProvisionable(app) && ids.includes(appId)) {
-      this.ensureAppRoles(appId);
+      this.ensureAppCatalog(appId);
     }
   }
 
@@ -192,7 +198,31 @@ export class UsersAdmin implements OnInit {
   );
 
   appRolesFor(appId: number): string[] {
-    return this.appRoleCatalogs().get(appId) ?? [];
+    return this.appCatalogs().get(appId)?.roles ?? [];
+  }
+
+  /** Catálogo completo de la app (para el editor granular reutilizable). */
+  appCatalogFor(appId: number): AppProvisioningCatalog | null {
+    return this.appCatalogs().get(appId) ?? null;
+  }
+
+  isLoadingCatalog(appId: number): boolean {
+    return this.loadingCatalogs().has(appId);
+  }
+
+  /** Modelo de selección (rol + permisos) que consume el editor reutilizable. */
+  selectionFor(appId: number): AppAccessSelection {
+    const f = this.form();
+    return { role: f.appRoles[appId] ?? '', permissions: f.appPerms[appId] ?? [] };
+  }
+
+  onSelectionChange(appId: number, selection: AppAccessSelection): void {
+    const f = this.form();
+    this.form.set({
+      ...f,
+      appRoles: { ...f.appRoles, [appId]: selection.role },
+      appPerms: { ...f.appPerms, [appId]: selection.permissions },
+    });
   }
 
   getAppRole(appId: number): string {
@@ -204,13 +234,24 @@ export class UsersAdmin implements OnInit {
     this.form.set({ ...f, appRoles: { ...f.appRoles, [appId]: role } });
   }
 
-  private ensureAppRoles(appId: number): void {
-    if (this.appRoleCatalogs().has(appId)) return;
+  private ensureAppCatalog(appId: number): void {
+    if (this.appCatalogs().has(appId) || this.loadingCatalogs().has(appId)) return;
+    this.loadingCatalogs.update((s) => new Set(s).add(appId));
     this.adminService.getAppCatalog(appId).subscribe({
       next: (cat) => {
-        const next = new Map(this.appRoleCatalogs());
-        next.set(appId, cat.roles);
-        this.appRoleCatalogs.set(next);
+        this.appCatalogs.update((m) => new Map(m).set(appId, cat));
+        this.loadingCatalogs.update((s) => {
+          const next = new Set(s);
+          next.delete(appId);
+          return next;
+        });
+      },
+      error: () => {
+        this.loadingCatalogs.update((s) => {
+          const next = new Set(s);
+          next.delete(appId);
+          return next;
+        });
       },
     });
   }
@@ -260,7 +301,7 @@ export class UsersAdmin implements OnInit {
       payload.app_access = f.application_ids.map((application_id) => ({
         application_id,
         role: f.appRoles[application_id] || null,
-        permissions: [],
+        permissions: f.appPerms[application_id] ?? [],
       }));
     }
 

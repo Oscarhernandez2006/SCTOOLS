@@ -1,6 +1,6 @@
 :host {
   display: block;
-  min-height: 100vh;
+  min-height: calc(100vh - 72px);
   background: var(--color-bg, #F4F6F5);
   --sidebar-top: 72px;
 }
@@ -33,8 +33,8 @@
 }
 
 .page {
-  padding: 1.25rem;
-  max-width: 1300px;
+  padding: clamp(1rem, 1.8vw, 1.5rem);
+  max-width: 1400px;
   margin: 0 auto;
   &__loading { padding: 3rem; text-align: center; color: var(--color-text-muted); }
   &__empty { color: var(--color-text-muted); font-size: 0.85rem; }
@@ -54,6 +54,12 @@
     font-size: 0.84rem;
     outline: none;
     &:focus { border-color: var(--color-accent); }
+  }
+
+  .btn {
+    padding: 0.45rem 1rem;
+    font-size: 0.84rem;
+    .material-symbols-outlined { font-size: 18px; }
   }
 }
 

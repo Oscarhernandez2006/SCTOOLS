@@ -57,7 +57,7 @@
 
       @if (view() === 'mensual') {
         @if (monthLoading()) {
-          <div class="page__loading">Cargando ranking...</div>
+          <div class="sc-loading"><span class="sc-spinner"></span><span>Cargando ranking...</span></div>
         } @else if (monthly(); as m) {
           @if (m.ranking.length) {
             <!-- Estadísticas del equipo -->
@@ -112,7 +112,7 @@
                 <tbody>
                   @for (u of m.ranking; track u.user_id; let i = $index) {
                     <tr [class.rank__top]="i < 3">
-                      <td class="rank__pos">{{ i < 3 ? medal(i) : (i + 1) }}</td>
+                      <td class="rank__pos">{{ i + 1 }}</td>
                       <td>
                         <div class="rank__user"><span class="rank__avatar">{{ initials(u.user) }}</span>{{ u.user }}</div>
                       </td>
@@ -147,7 +147,7 @@
         }
       } @else {
         @if (loading()) {
-          <div class="page__loading">Cargando presencia...</div>
+          <div class="sc-loading"><span class="sc-spinner"></span><span>Cargando presencia...</span></div>
         } @else if (report(); as r) {
           <!-- Resumen por usuario -->
           <section class="card">

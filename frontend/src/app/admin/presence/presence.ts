@@ -56,10 +56,6 @@ export class PresenceAdmin implements OnInit {
     return new Date(y, m - 1, 1).toLocaleDateString('es-CO', { month: 'long', year: 'numeric' });
   }
 
-  medal(index: number): string {
-    return ['🥇', '🥈', '🥉'][index] ?? `${index + 1}`;
-  }
-
   complianceClass(pct: number): string {
     if (pct >= 90) return 'good';
     if (pct >= 70) return 'mid';

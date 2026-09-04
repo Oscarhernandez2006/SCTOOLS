@@ -1,6 +1,6 @@
 :host {
   display: block;
-  min-height: 100vh;
+  min-height: calc(100vh - 72px);
 }
 
 .admin-shell { display: flex; align-items: flex-start; }
@@ -12,31 +12,7 @@
   padding: clamp(1rem, 1.8vw, 1.5rem);
 }
 
-// ---- Toast ----
-.toast {
-  position: fixed;
-  top: 80px;
-  right: 1.5rem;
-  z-index: 1200;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.875rem 1.25rem;
-  background: var(--color-accent);
-  color: var(--color-white);
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-xl);
-  font-size: 0.875rem;
-  font-weight: 500;
-  animation: toastIn 300ms ease-out;
-
-  &__icon { font-size: 18px; }
-}
-
-@keyframes toastIn {
-  from { opacity: 0; transform: translateX(20px); }
-  to   { opacity: 1; transform: translateX(0); }
-}
+// Toast viene del sistema central (styles.scss).
 
 // ---- Search ----
 .ap-search {
@@ -102,6 +78,25 @@
     .material-symbols-outlined { display: block; font-size: 48px; margin-bottom: 0.5rem; color: #CBD8D2; }
   }
 }
+
+.card-skeleton {
+  height: 150px;
+  border-radius: var(--radius-lg, 14px);
+  border: 1px solid var(--color-border, #D5DDD9);
+  background: #fff;
+  position: relative;
+  overflow: hidden;
+
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    transform: translateX(-100%);
+    background: linear-gradient(90deg, transparent, rgba(87, 173, 49, 0.10), transparent);
+    animation: scShimmer 1.4s ease-in-out infinite;
+  }
+}
+
 
 // ---- Siesa modal ----
 .ap-overlay {

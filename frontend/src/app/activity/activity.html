@@ -20,7 +20,7 @@
 
       <div class="card">
         @if (loading()) {
-          <div class="act-empty">Cargando historial...</div>
+          <div class="sc-loading"><span class="sc-spinner"></span><span>Cargando historial...</span></div>
         } @else if (filtered().length === 0) {
           <div class="act-empty">Sin registros para el filtro seleccionado</div>
         } @else {

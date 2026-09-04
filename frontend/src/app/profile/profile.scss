@@ -1,4 +1,4 @@
-:host { display: block; min-height: 100vh; }
+:host { display: block; min-height: calc(100vh - 72px); }
 .admin-shell { display: flex; align-items: flex-start; }
 .admin-shell__main { flex: 1; min-width: 0; }
 

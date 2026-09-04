@@ -1,21 +1,9 @@
-:host { display: block; min-height: 100vh; }
+:host { display: block; min-height: calc(100vh - 72px); }
 .admin-shell { display: flex; align-items: flex-start; }
 .admin-shell__main { flex: 1; min-width: 0; }
-.container { max-width: 860px; margin: 0 auto; padding: 1rem; }
+.container { max-width: 1400px; margin: 0 auto; padding: clamp(1rem, 1.8vw, 1.5rem); }
 
-.toast { position: fixed; top: 80px; right: 1.5rem; z-index: 1200; display: flex; align-items: center; gap: 0.5rem; padding: 0.875rem 1.25rem; background: var(--color-accent); color: #fff; border-radius: var(--radius-md); box-shadow: var(--shadow-xl); font-size: 0.875rem; font-weight: 500; animation: toastIn 300ms ease-out; &__icon { font-size: 18px; } }
-@keyframes toastIn { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
-
-.modal-overlay { position: fixed; inset: 0; background: rgba(18,25,31,.54); backdrop-filter: blur(2px); z-index: 1000; }
-.modal { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: min(560px, calc(100vw - 2rem)); max-height: calc(100vh - 3rem); display: flex; flex-direction: column; background: var(--color-white); border-radius: var(--radius-lg); box-shadow: var(--shadow-xl); z-index: 1001; overflow: hidden;
-  &__header { display: flex; align-items: center; justify-content: space-between; padding: 1rem 1.25rem; border-bottom: 1px solid var(--color-border); }
-  &__title { margin: 0; font-size: 1rem; font-weight: 700; color: var(--color-text-primary); }
-  &__close { border: none; background: transparent; cursor: pointer; color: var(--color-text-muted); display: grid; place-items: center; width: 32px; height: 32px; border-radius: var(--radius-sm); &:hover { background: #f0f4f2; } }
-  &__body { padding: 1.1rem 1.25rem; overflow-y: auto; display: flex; flex-direction: column; gap: 0.75rem; }
-  &__footer { display: flex; justify-content: flex-end; gap: 0.6rem; padding: 0.9rem 1.25rem; border-top: 1px solid var(--color-border); background: #fbfdfc; }
-}
-
-.field { display: flex; flex-direction: column; gap: 0.28rem; &__label { font-size: 0.75rem; font-weight: 600; color: var(--color-text-secondary); text-transform: uppercase; letter-spacing: 0.03em; } &__input { border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: 0.55rem 0.7rem; font-size: 0.875rem; font-family: inherit; color: var(--color-text-primary); background: var(--color-white); width: 100%; outline: none; &:focus { border-color: var(--color-accent); box-shadow: 0 0 0 3px rgba(87,173,49,.1); } &--area { resize: vertical; } } &__hint { font-size: 0.72rem; color: var(--color-text-muted); } }
+// Modal, toast, field, badge e icon-btn ahora vienen del sistema central (styles.scss).
 
 .placeholder { text-align: center; padding: 2.5rem 1rem; color: var(--color-text-muted); background: var(--color-white); border-radius: var(--radius-lg); border: 1px dashed #d5deda; &__icon { font-size: 44px; color: #cbd8d2; display: block; margin: 0 auto 0.5rem; } }
 
@@ -33,6 +21,3 @@
   &__meta { font-size: 0.72rem; color: var(--color-text-muted); }
   &__actions { display: flex; gap: 0.35rem; flex-shrink: 0; }
 }
-
-.badge { font-size: 0.65rem; font-weight: 700; padding: 0.1rem 0.45rem; border-radius: 999px; &--on { background: rgba(87,173,49,.14); color: var(--color-accent); } &--off { background: #fbe9e9; color: #c0392b; } }
-.icon-btn { display: grid; place-items: center; width: 34px; height: 34px; border: 1px solid var(--color-border); border-radius: var(--radius-sm); background: var(--color-white); color: var(--color-text-secondary); cursor: pointer; transition: all 130ms ease; .material-symbols-outlined { font-size: 18px; } &:hover { border-color: var(--color-accent); color: var(--color-accent); } &--danger:hover { border-color: #c0392b; color: #c0392b; } }

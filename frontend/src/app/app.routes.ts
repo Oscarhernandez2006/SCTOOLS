@@ -16,7 +16,6 @@ export const routes: Routes = [
       { path: 'siesa-launch', loadComponent: () => import('./siesa-launch/siesa-launch').then(m => m.SiesaLaunch), canActivate: [authGuard] },
       { path: 'admin/panel', loadComponent: () => import('./admin/dashboard/dashboard').then(m => m.Dashboard), canActivate: [adminGuard] },
       { path: 'admin/permisos', loadComponent: () => import('./admin/permissions/permissions').then(m => m.Permissions), canActivate: [adminGuard] },
-      { path: 'admin/aplicaciones', loadComponent: () => import('./admin/applications/applications').then(m => m.ApplicationsAdmin), canActivate: [adminGuard] },
       { path: 'admin/usuarios', loadComponent: () => import('./admin/users/users').then(m => m.UsersAdmin), canActivate: [adminGuard] },
       { path: 'admin/roles', loadComponent: () => import('./admin/roles/roles').then(m => m.Roles), canActivate: [adminGuard] },
       { path: 'admin/anuncios', loadComponent: () => import('./admin/announcements/announcements').then(m => m.AnnouncementsAdmin), canActivate: [adminGuard] },

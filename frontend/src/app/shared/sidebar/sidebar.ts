@@ -8,6 +8,11 @@ interface NavLink {
   route: string;
 }
 
+interface NavGroup {
+  label?: string;
+  items: NavLink[];
+}
+
 /** Barra lateral de navegación reutilizable (misma del dashboard) para las páginas internas. */
 @Component({
   selector: 'app-sidebar',
@@ -19,23 +24,34 @@ export class Sidebar {
   private auth = inject(AuthService);
   private router = inject(Router);
 
-  readonly links = computed<NavLink[]>(() => {
-    const items: NavLink[] = [
-      { icon: 'home', label: 'Inicio', route: '/portal' },
-      { icon: 'grid_view', label: 'Aplicaciones', route: '/apps' },
+  readonly groups = computed<NavGroup[]>(() => {
+    const isAdmin = !!this.auth.currentUser()?.is_admin;
+    const groups: NavGroup[] = [
+      { items: [{ icon: 'dashboard', label: 'Dashboard', route: '/portal' }] },
+      { label: 'Aplicaciones', items: [{ icon: 'grid_view', label: 'Explorar apps', route: '/apps' }] },
     ];
-    if (this.auth.currentUser()?.is_admin) {
-      items.push(
-        { icon: 'group', label: 'Usuarios', route: '/admin/usuarios' },
-        { icon: 'groups', label: 'Grupos', route: '/admin/roles' },
-        { icon: 'admin_panel_settings', label: 'Permisos', route: '/admin/permisos' },
-        { icon: 'campaign', label: 'Anuncios', route: '/admin/anuncios' },
-        { icon: 'history', label: 'Auditoría', route: '/admin/auditoria' },
-        { icon: 'devices', label: 'Sesiones', route: '/admin/sesiones' },
-        { icon: 'timer', label: 'Presencia', route: '/admin/presencia' },
+    if (isAdmin) {
+      groups.push(
+        {
+          label: 'Configuración',
+          items: [
+            { icon: 'group', label: 'Usuarios', route: '/admin/usuarios' },
+            { icon: 'groups', label: 'Grupos', route: '/admin/roles' },
+            { icon: 'admin_panel_settings', label: 'Permisos', route: '/admin/permisos' },
+            { icon: 'campaign', label: 'Anuncios', route: '/admin/anuncios' },
+          ],
+        },
+        {
+          label: 'Monitoreo',
+          items: [
+            { icon: 'timer', label: 'Presencia', route: '/admin/presencia' },
+            { icon: 'devices', label: 'Sesiones', route: '/admin/sesiones' },
+            { icon: 'history', label: 'Auditoría', route: '/admin/auditoria' },
+          ],
+        },
       );
     }
-    return items;
+    return groups;
   });
 
   isActive(route: string): boolean {

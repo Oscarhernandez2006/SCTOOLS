@@ -1,13 +1,20 @@
 <nav class="sc-sidebar__nav">
-  @for (item of links(); track item.route) {
-    <button
-      class="sc-sidebar__item"
-      [class.sc-sidebar__item--active]="isActive(item.route)"
-      [title]="item.label"
-      (click)="go(item.route)"
-    >
-      <span class="material-symbols-outlined sc-sidebar__icon">{{ item.icon }}</span>
-      <span class="sc-sidebar__label">{{ item.label }}</span>
-    </button>
+  @for (group of groups(); track $index) {
+    <div class="sc-sidebar__group">
+      @if (group.label) {
+        <span class="sc-sidebar__group-label">{{ group.label }}</span>
+      }
+      @for (item of group.items; track item.route) {
+        <button
+          class="sc-sidebar__item"
+          [class.sc-sidebar__item--active]="isActive(item.route)"
+          [title]="item.label"
+          (click)="go(item.route)"
+        >
+          <span class="material-symbols-outlined sc-sidebar__icon">{{ item.icon }}</span>
+          <span class="sc-sidebar__label">{{ item.label }}</span>
+        </button>
+      }
+    </div>
   }
 </nav>

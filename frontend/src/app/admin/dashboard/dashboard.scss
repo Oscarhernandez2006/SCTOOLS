@@ -1,6 +1,6 @@
 :host {
   display: block;
-  min-height: 100vh;
+  min-height: calc(100vh - 72px);
   background: var(--color-bg, #F4F6F5);
   --sidebar-top: 72px;
 }
@@ -9,7 +9,7 @@
 .admin-shell__main { flex: 1; min-width: 0; }
 
 .page {
-  padding: 1.25rem;
+  padding: clamp(1rem, 1.8vw, 1.5rem);
   max-width: 1400px;
   margin: 0 auto;
 

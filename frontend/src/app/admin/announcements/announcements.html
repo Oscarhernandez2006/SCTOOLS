@@ -1,5 +1,5 @@
 @if (toastVisible()) {
-  <div class="toast"><span class="material-symbols-outlined toast__icon">check_circle</span>{{ toast() }}</div>
+  <div class="toast toast--success"><span class="material-symbols-outlined toast__icon">check_circle</span>{{ toast() }}</div>
 }
 
 @if (modalOpen()) {
@@ -56,7 +56,7 @@
       </div>
 
       @if (loading()) {
-        <div class="placeholder">Cargando anuncios...</div>
+        <div class="sc-loading"><span class="sc-spinner"></span><span>Cargando anuncios...</span></div>
       } @else if (items().length === 0) {
         <div class="placeholder">
           <span class="material-symbols-outlined placeholder__icon">campaign</span>
