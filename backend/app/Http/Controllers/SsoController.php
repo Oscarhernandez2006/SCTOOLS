@@ -77,10 +77,10 @@ class SsoController extends Controller
      */
     public function redeem(Request $request): JsonResponse
     {
-        $secret = config('services.sso.shared_secret');
-        $provided = (string) $request->header('X-SSO-Secret', '');
+        $secret = trim((string) config('services.sso.shared_secret'));
+        $provided = trim((string) $request->header('X-SSO-Secret', ''));
 
-        if (empty($secret) || ! hash_equals((string) $secret, $provided)) {
+        if (empty($secret) || ! hash_equals($secret, $provided)) {
             return response()->json(['message' => 'No autorizado'], Response::HTTP_UNAUTHORIZED);
         }
 
