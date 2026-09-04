@@ -33,7 +33,6 @@ export class Sidebar {
         { icon: 'history', label: 'Auditoría', route: '/admin/auditoria' },
         { icon: 'devices', label: 'Sesiones', route: '/admin/sesiones' },
         { icon: 'timer', label: 'Presencia', route: '/admin/presencia' },
-        { icon: 'tv', label: 'Kiosko', route: '/kiosko' },
       );
     }
     return items;

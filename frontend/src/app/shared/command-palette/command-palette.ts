@@ -58,7 +58,6 @@ export class CommandPalette implements OnInit {
         { icon: 'campaign', label: 'Anuncios', sub: 'Comunicados internos', action: nav('/admin/anuncios') },
         { icon: 'history', label: 'Auditoría', sub: 'Bitácora de cambios', action: nav('/admin/auditoria') },
         { icon: 'timer', label: 'Presencia', sub: 'Monitor de presencia', action: nav('/admin/presencia') },
-        { icon: 'tv', label: 'Kiosko', sub: 'Pantalla de presencia', action: nav('/kiosko') },
       );
     }
 

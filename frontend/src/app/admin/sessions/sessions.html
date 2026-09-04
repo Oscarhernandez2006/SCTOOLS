@@ -8,7 +8,7 @@
           <span class="material-symbols-outlined page-head__icon">devices</span>
           <div>
             <h1 class="page-head__title">Sesiones activas</h1>
-            <p class="page-head__subtitle">Tokens de acceso vigentes en la suite</p>
+            <p class="page-head__subtitle">Personas conectadas y su estado de presencia en tiempo real</p>
           </div>
         </div>
       </div>
@@ -20,35 +20,56 @@
         </button>
       </sc-filter-bar>
 
-      <sc-data-surface [compact]="true">
-        @if (loading()) {
-          <div class="page__loading">Cargando sesiones...</div>
-        } @else {
-          <table class="table">
-            <thead>
-              <tr><th>Usuario</th><th>Dispositivo / token</th><th>Último uso</th><th>Iniciada</th><th></th></tr>
-            </thead>
-            <tbody>
-              @for (s of filtered(); track s.id) {
-                <tr>
-                  <td>{{ s.user }}</td>
-                  <td class="table__mono">{{ s.name }}</td>
-                  <td class="table__mono">{{ s.last_used_at ? (s.last_used_at | date:'dd/MM/yyyy HH:mm') : 'Nunca' }}</td>
-                  <td class="table__mono">{{ s.created_at | date:'dd/MM/yyyy HH:mm' }}</td>
-                  <td>
-                    <button class="btn-revoke" [disabled]="revoking() === s.id" (click)="revoke(s)">
-                      <span class="material-symbols-outlined">logout</span>
-                      {{ revoking() === s.id ? '...' : 'Revocar' }}
-                    </button>
-                  </td>
-                </tr>
-              } @empty {
-                <tr><td colspan="5" class="table__empty">No hay sesiones activas</td></tr>
-              }
-            </tbody>
-          </table>
-        }
-      </sc-data-surface>
+      @if (loading()) {
+        <div class="page__loading">Cargando sesiones...</div>
+      } @else {
+        <div class="sess-summary">
+          <span class="sess-summary__item">
+            <span class="material-symbols-outlined">group</span>
+            <strong>{{ filtered().length }}</strong> sesiones activas
+          </span>
+          <span class="sess-summary__item sess-summary__item--cam">
+            <span class="material-symbols-outlined">videocam</span>
+            <strong>{{ onCameraCount() }}</strong> en cámara
+          </span>
+        </div>
+
+        <div class="sess-grid">
+          @for (s of filtered(); track s.id) {
+            <div class="scard" [class.scard--on]="onCamera(s.user_id)">
+              <span class="scard__pill" [class.scard__pill--on]="onCamera(s.user_id)">
+                <span class="material-symbols-outlined">{{ onCamera(s.user_id) ? 'videocam' : 'videocam_off' }}</span>
+                {{ onCamera(s.user_id) ? 'En cámara' : 'Ausente' }}
+              </span>
+
+              <div class="scard__avatar">
+                <span class="material-symbols-outlined">person</span>
+                @if (onCamera(s.user_id)) {
+                  <span class="scard__dot" title="Frente a la cámara"></span>
+                }
+              </div>
+
+              <div class="scard__name">{{ s.user || 'Usuario' }}</div>
+              <div class="scard__device">{{ s.name }}</div>
+
+              <div class="scard__meta">
+                <span class="material-symbols-outlined">schedule</span>
+                {{ s.last_used_at ? (s.last_used_at | date:'dd/MM HH:mm') : 'Sin actividad' }}
+              </div>
+
+              <button class="scard__revoke" [disabled]="revoking() === s.id" (click)="revoke(s)">
+                <span class="material-symbols-outlined">logout</span>
+                {{ revoking() === s.id ? '...' : 'Revocar' }}
+              </button>
+            </div>
+          } @empty {
+            <div class="sess-empty">
+              <span class="material-symbols-outlined">devices_off</span>
+              <p>No hay sesiones activas</p>
+            </div>
+          }
+        </div>
+      }
     </div>
   </main>
 </div>

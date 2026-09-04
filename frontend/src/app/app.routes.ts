@@ -4,7 +4,6 @@ import { adminGuard, authGuard, guestGuard } from './guards/auth.guard';
 export const routes: Routes = [
   { path: '', redirectTo: 'login', pathMatch: 'full' },
   { path: 'login', loadComponent: () => import('./login/login').then(m => m.Login), canActivate: [guestGuard] },
-  { path: 'kiosko', loadComponent: () => import('./kiosk/kiosk').then(m => m.KioskPage), canActivate: [adminGuard] },
   {
     // Layout con nav persistente: se monta una sola vez y no se recrea al navegar.
     path: '',
