@@ -703,40 +703,52 @@
 
 // Overlays and modal styles were moved to portal-overlay.scss
 
-// ---- Banner de anuncios ----
-.ann-banner {
+// ---- Anuncios como toasts fijos (abajo a la derecha) ----
+.ann-toasts {
+  position: fixed;
+  right: 1rem;
+  bottom: 1rem;
+  z-index: 1200;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  width: min(360px, calc(100vw - 2rem));
+  pointer-events: none;
+}
+
+.ann-toast {
+  pointer-events: auto;
   display: flex;
   align-items: flex-start;
-  gap: 0.75rem;
-  padding: 0.85rem 1rem;
-  background: linear-gradient(135deg, rgba(87,173,49,.12) 0%, rgba(87,173,49,.06) 100%);
+  gap: 0.6rem;
+  padding: 0.75rem 0.85rem;
+  background: var(--color-white);
   border: 1px solid rgba(87,173,49,.28);
   border-left: 4px solid var(--color-accent);
   border-radius: var(--radius-md);
-  margin-bottom: 0.75rem;
+  box-shadow: 0 12px 28px rgba(18,25,31,.16);
   animation: toastIn 300ms ease-out;
 
-  &__icon { font-size: 22px; color: var(--color-accent); flex-shrink: 0; margin-top: 0.05rem; }
+  &__icon { font-size: 20px; color: var(--color-accent); flex-shrink: 0; margin-top: 0.05rem; }
 
   &__body {
     flex: 1;
     display: flex;
     flex-direction: column;
-    gap: 0.18rem;
-    font-size: 0.86rem;
-    color: var(--color-text-primary);
-
-    strong { font-weight: 700; }
-    span { color: var(--color-text-secondary); }
+    gap: 0.15rem;
+    min-width: 0;
   }
+
+  &__title { font-weight: 700; font-size: 0.85rem; color: var(--color-text-primary); }
+  &__text { font-size: 0.8rem; color: var(--color-text-secondary); line-height: 1.35; }
 
   &__close {
     border: none; background: none; cursor: pointer;
     color: var(--color-text-muted); display: grid; place-items: center;
-    width: 28px; height: 28px; border-radius: 50%;
+    width: 26px; height: 26px; border-radius: 50%;
     flex-shrink: 0;
     &:hover { background: rgba(0,0,0,.06); }
-    .material-symbols-outlined { font-size: 18px; }
+    .material-symbols-outlined { font-size: 17px; }
   }
 }
 

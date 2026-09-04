@@ -388,21 +388,26 @@
 
   <!-- Content -->
   <main class="content">
-    @if (activeView() === 'inicio') {
 
-    <!-- Banners de anuncios activos -->
-    @for (ann of announcements(); track ann.id) {
-      <div class="ann-banner">
-        <span class="material-symbols-outlined ann-banner__icon">campaign</span>
-        <div class="ann-banner__body">
-          <strong>{{ ann.title }}</strong>
-          <span>{{ ann.body }}</span>
-        </div>
-        <button class="ann-banner__close" (click)="dismissAnnouncement(ann)" title="Descartar">
-          <span class="material-symbols-outlined">close</span>
-        </button>
+    <!-- Anuncios como toasts fijos (abajo a la derecha), cerrables -->
+    @if (announcements().length) {
+      <div class="ann-toasts">
+        @for (ann of announcements(); track ann.id) {
+          <div class="ann-toast">
+            <span class="material-symbols-outlined ann-toast__icon">campaign</span>
+            <div class="ann-toast__body">
+              <strong class="ann-toast__title">{{ ann.title }}</strong>
+              <span class="ann-toast__text">{{ ann.body }}</span>
+            </div>
+            <button class="ann-toast__close" (click)="dismissAnnouncement(ann)" title="Descartar">
+              <span class="material-symbols-outlined">close</span>
+            </button>
+          </div>
+        }
       </div>
     }
+
+    @if (activeView() === 'inicio') {
 
     <!-- Greeting -->
     <section class="greeting">
