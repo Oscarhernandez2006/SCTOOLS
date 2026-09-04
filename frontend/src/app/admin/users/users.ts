@@ -359,6 +359,11 @@ export class UsersAdmin implements OnInit {
     return this.catalog().find((a) => a.id === appId)?.name ?? '';
   }
 
+  /** Rol legible del usuario. */
+  roleLabel(user: ManagedUser): string {
+    return user.role_name ?? (user.is_admin ? 'Administrador' : 'Usuario');
+  }
+
   goBack(): void {
     this.router.navigate(['/portal']);
   }

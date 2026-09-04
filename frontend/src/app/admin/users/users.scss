@@ -56,46 +56,66 @@
 }
 
 // ---- Cards / rows ----
-.cards { display: flex; flex-direction: column; gap: 0.6rem; }
-
-.user-row {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
+// ---- Tabla de usuarios ----
+.users-table-wrap {
   background: var(--color-white);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
-  padding: 0.82rem 0.95rem;
   box-shadow: 0 8px 18px rgba(18, 25, 31, 0.04);
-  transition: transform 140ms ease, box-shadow 140ms ease, border-color 140ms ease;
+  overflow-x: auto;
+}
 
-  &:hover {
-    transform: translateY(-1px);
-    border-color: #c7d7cf;
-    box-shadow: 0 12px 22px rgba(18, 25, 31, 0.07);
+.users-table {
+  width: 100%;
+
+  th, td { vertical-align: middle; white-space: nowrap; }
+  &__center { text-align: center; }
+  &__actions-h { text-align: right; }
+
+  tr.user-row--inactive { opacity: 0.55; }
+}
+
+.ucell {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+
+  &__name { display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; }
+  &__name-text { font-weight: 600; color: var(--color-text-primary); }
+  &__mono { font-variant-numeric: tabular-nums; color: var(--color-text-secondary); }
+  &__email {
+    max-width: 260px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: var(--color-text-secondary);
   }
+  &__badges { display: flex; align-items: center; gap: 0.35rem; flex-wrap: wrap; }
+  &__actions { display: flex; justify-content: flex-end; gap: 0.4rem; }
+}
 
+.urole {
+  display: inline-block;
+  font-size: 0.8rem;
+  color: var(--color-text-secondary);
+  font-weight: 600;
+}
+
+.user-row {
   &--inactive { opacity: 0.6; }
 
   &__avatar {
     flex-shrink: 0;
     display: grid;
     place-items: center;
-    width: 46px;
-    height: 46px;
+    width: 38px;
+    height: 38px;
     border-radius: 50%;
     background: #E7F0EB;
     color: var(--color-accent);
     font-weight: 700;
-    font-size: 1.1rem;
+    font-size: 0.95rem;
     &--admin { background: #EDE4F5; color: #7A4CA0; }
   }
-
-  &__info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0.3rem; }
-
-  &__head { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
-
-  &__name { font-size: 0.95rem; font-weight: 600; color: var(--color-text-primary); }
 
   &__badge {
     display: inline-flex;
@@ -115,22 +135,6 @@
     &--noface { background: #FBF0E0; color: #B9770F; }
     &--bypass { background: #E6F0FA; color: #2B6CB0; }
   }
-
-  &__meta {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.25rem 1rem;
-    font-size: 0.78rem;
-    color: var(--color-text-secondary);
-    span {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.25rem;
-      .material-symbols-outlined { font-size: 15px; color: var(--color-text-muted); }
-    }
-  }
-
-  &__actions { display: flex; gap: 0.4rem; flex-shrink: 0; }
 }
 
 .icon-btn {

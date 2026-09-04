@@ -43,70 +43,92 @@
 
   @if (loading()) {
     <div class="sc-loading"><span class="sc-spinner"></span><span>Cargando usuarios...</span></div>
+  } @else if (filteredUsers().length) {
+    <div class="users-table-wrap">
+      <table class="sc-table users-table">
+        <thead>
+          <tr>
+            <th>Usuario</th>
+            <th>Cédula</th>
+            <th>Correo</th>
+            <th>Rol</th>
+            <th>Estado</th>
+            <th class="users-table__center">Accesos</th>
+            <th class="users-table__actions-h">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (user of filteredUsers(); track user.id) {
+            <tr [class.user-row--inactive]="!user.is_active">
+              <td>
+                <div class="ucell">
+                  <span class="user-row__avatar" [class.user-row__avatar--admin]="user.is_admin">
+                    {{ user.name.charAt(0).toUpperCase() }}
+                  </span>
+                  <div class="ucell__name">
+                    <span class="ucell__name-text">{{ user.name }}</span>
+                    @if (user.is_admin) {
+                      <span class="user-row__badge user-row__badge--admin">Administrador</span>
+                    } @else {
+                      <span class="user-row__badge">Usuario</span>
+                    }
+                    @if (!user.is_active) { <span class="user-row__badge user-row__badge--off">Inactivo</span> }
+                  </div>
+                </div>
+              </td>
+              <td class="ucell__mono">{{ user.cedula }}</td>
+              <td class="ucell__email">{{ user.email || '—' }}</td>
+              <td><span class="urole">{{ roleLabel(user) }}</span></td>
+              <td>
+                <div class="ucell__badges">
+                  @if (user.has_siesa) {
+                    <span class="user-row__badge user-row__badge--siesa">
+                      <span class="material-symbols-outlined">cloud_done</span>Siesa
+                    </span>
+                  }
+                  @if (!user.is_admin) {
+                    @if (user.has_face) {
+                      <span class="user-row__badge user-row__badge--face">
+                        <span class="material-symbols-outlined">face</span>Rostro
+                      </span>
+                    } @else {
+                      <span class="user-row__badge user-row__badge--noface">
+                        <span class="material-symbols-outlined">no_accounts</span>Sin rostro
+                      </span>
+                    }
+                    @if (isBypassActive(user)) {
+                      <span class="user-row__badge user-row__badge--bypass">
+                        <span class="material-symbols-outlined">key</span>Bypass
+                      </span>
+                    }
+                  }
+                </div>
+              </td>
+              <td class="users-table__center ucell__mono">{{ user.application_ids.length }}</td>
+              <td>
+                <div class="ucell__actions">
+                  @if (!user.is_admin) {
+                    <button class="icon-btn" (click)="openFaceModal(user)" title="Gestionar rostro (2FA)">
+                      <span class="material-symbols-outlined">face</span>
+                    </button>
+                  }
+                  <button class="icon-btn" (click)="openEdit(user)" title="Editar">
+                    <span class="material-symbols-outlined">edit</span>
+                  </button>
+                  <button class="icon-btn icon-btn--danger" (click)="askDelete(user)" title="Eliminar">
+                    <span class="material-symbols-outlined">delete</span>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
   } @else {
-    <div class="cards">
-      @for (user of filteredUsers(); track user.id) {
-        <div class="user-row" [class.user-row--inactive]="!user.is_active">
-          <span class="user-row__avatar" [class.user-row__avatar--admin]="user.is_admin">
-            {{ user.name.charAt(0).toUpperCase() }}
-          </span>
-          <div class="user-row__info">
-            <div class="user-row__head">
-              <span class="user-row__name">{{ user.name }}</span>
-              @if (user.is_admin) {
-                <span class="user-row__badge user-row__badge--admin">Administrador</span>
-              } @else {
-                <span class="user-row__badge">Usuario</span>
-              }
-              @if (!user.is_active) { <span class="user-row__badge user-row__badge--off">Inactivo</span> }
-              @if (user.has_siesa) {
-                <span class="user-row__badge user-row__badge--siesa">
-                  <span class="material-symbols-outlined">cloud_done</span>Siesa
-                </span>
-              }
-              @if (!user.is_admin) {
-                @if (user.has_face) {
-                  <span class="user-row__badge user-row__badge--face">
-                    <span class="material-symbols-outlined">face</span>Rostro
-                  </span>
-                } @else {
-                  <span class="user-row__badge user-row__badge--noface">
-                    <span class="material-symbols-outlined">no_accounts</span>Sin rostro
-                  </span>
-                }
-                @if (isBypassActive(user)) {
-                  <span class="user-row__badge user-row__badge--bypass">
-                    <span class="material-symbols-outlined">key</span>Bypass
-                  </span>
-                }
-              }
-            </div>
-            <div class="user-row__meta">
-              <span><span class="material-symbols-outlined">badge</span>{{ user.cedula }}</span>
-              <span><span class="material-symbols-outlined">mail</span>{{ user.email }}</span>
-              <span><span class="material-symbols-outlined">apps</span>{{ user.application_ids.length }} apps</span>
-            </div>
-          </div>
-          <div class="user-row__actions">
-            @if (!user.is_admin) {
-              <button class="icon-btn" (click)="openFaceModal(user)" title="Gestionar rostro (2FA)">
-                <span class="material-symbols-outlined">face</span>
-              </button>
-            }
-            <button class="icon-btn" (click)="openEdit(user)" title="Editar">
-              <span class="material-symbols-outlined">edit</span>
-            </button>
-            <button class="icon-btn icon-btn--danger" (click)="askDelete(user)" title="Eliminar">
-              <span class="material-symbols-outlined">delete</span>
-            </button>
-          </div>
-        </div>
-      } @empty {
-        <div class="placeholder">
-          <span class="material-symbols-outlined placeholder__icon">group</span>
-          <p>No hay usuarios todavía. Crea el primero con "Nuevo usuario".</p>
-        </div>
-      }
+    <div class="placeholder">
+      <span class="material-symbols-outlined placeholder__icon">group</span>
+      <p>No hay usuarios todavía. Crea el primero con "Nuevo usuario".</p>
     </div>
   }
 </div>
